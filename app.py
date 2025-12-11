@@ -586,6 +586,11 @@ def index():
 def login():
     return render_template('login.html')
 
+@app.route('/password-reset')
+def password_reset():
+    """Password reset page for admin"""
+    return render_template('password_reset.html')
+
 @app.route('/register')
 def register():
     return render_template('register.html')
@@ -811,7 +816,31 @@ def api_login():
     email = data.get('email')
     password = data.get('password')
     
-    # Demo login - in production, validate against database
+    # Check for reset password first
+    import os
+    reset_file = 'admin_reset.txt'
+    reset_password = None
+    
+    if os.path.exists(reset_file):
+        try:
+            with open(reset_file, 'r') as f:
+                content = f.read().strip()
+                if ':' in content:
+                    reset_email, reset_password = content.split(':', 1)
+                    if email == reset_email and password == reset_password:
+                        return jsonify({
+                            "message": "Login successful (with reset password)",
+                            "token": "demo-jwt-token",
+                            "user": {
+                                "id": "demo-user-id",
+                                "email": email,
+                                "business_type": "both"
+                            }
+                        })
+        except:
+            pass
+    
+    # Default demo login
     if email == "bizpulse.erp@gmail.com" and password == "demo123":
         return jsonify({
             "message": "Login successful",
@@ -824,6 +853,55 @@ def api_login():
         })
     
     return jsonify({"message": "Invalid credentials"}), 401
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Reset admin password - Emergency reset"""
+    data = request.json
+    
+    # Security question for admin reset (your phone number)
+    if data.get('security_answer') != '7093635305':
+        return jsonify({"message": "Invalid security answer"}), 401
+    
+    new_password = data.get('new_password')
+    if not new_password or len(new_password) < 6:
+        return jsonify({"message": "Password must be at least 6 characters"}), 400
+    
+    # Update the demo password (in production, this would update database)
+    # For now, we'll create a simple file-based storage
+    try:
+        import os
+        reset_file = 'admin_reset.txt'
+        with open(reset_file, 'w') as f:
+            f.write(f"bizpulse.erp@gmail.com:{new_password}")
+        
+        return jsonify({"message": "Password reset successful! New password saved."})
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
+
+@app.route('/api/auth/get-current-password', methods=['POST'])
+def get_current_password():
+    """Get current admin password - Emergency access"""
+    data = request.json
+    
+    # Security question for admin access
+    if data.get('security_answer') != '7093635305':
+        return jsonify({"message": "Invalid security answer"}), 401
+    
+    try:
+        import os
+        reset_file = 'admin_reset.txt'
+        if os.path.exists(reset_file):
+            with open(reset_file, 'r') as f:
+                content = f.read().strip()
+                if ':' in content:
+                    email, password = content.split(':', 1)
+                    return jsonify({"email": email, "password": password})
+        
+        # Default credentials
+        return jsonify({"email": "bizpulse.erp@gmail.com", "password": "demo123"})
+    except Exception as e:
+        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 @app.route('/api/auth/register', methods=['POST'])
 def api_register():
