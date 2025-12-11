@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#732C3F">
+    <title>BizPulse - Business Management</title>
+    <style>
+        /* Universal Reset */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #732C3F 0%, #8B3A47 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Container - Responsive */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header - Responsive */
+        .header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+        
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+        
+        .nav-menu a:hover {
+            opacity: 0.8;
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        /* Hero Section - Responsive */
+        .hero {
+            text-align: center;
+            padding: 60px 0;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: #732C3F;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        /* Features Section - Responsive Grid */
+        .features {
+            padding: 80px 0;
+        }
+        
+        .features h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+        
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .feature-desc {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        /* Login Section - Responsive */
+        .login-section {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 40px 0;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .login-section h3 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .form-group input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: white;
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .login-btn {
+            width: 100%;
+            background: white;
+            color: #732C3F;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .login-btn:hover {
+            background: #f0f0f0;
+            transform: translateY(-1px);
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            opacity: 0.8;
+        }
+        
+        /* Mobile Responsive - Tablet */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .features h2 {
+                font-size: 2rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .feature-card {
+                padding: 20px;
+            }
+            
+            .login-section {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+        }
+        
+        /* Mobile Responsive - Phone */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 15px;
+            }
+            
+            .hero {
+                padding: 40px 0;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 0.9rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 280px;
+                justify-content: center;
+            }
+            
+            .features {
+                padding: 40px 0;
+            }
+            
+            .features h2 {
+                font-size: 1.8rem;
+                margin-bottom: 30px;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .feature-card {
+                padding: 20px 15px;
+            }
+            
+            .feature-icon {
+                font-size: 2.5rem;
+                margin-bottom: 15px;
+            }
+            
+            .feature-title {
+                font-size: 1.1rem;
+                margin-bottom: 10px;
+            }
+            
+            .login-section {
+                margin: 15px;
+                padding: 25px 15px;
+            }
+            
+            .login-section h3 {
+                font-size: 1.3rem;
+                margin-bottom: 20px;
+            }
+        }
+        
+        /* Very Small Screens */
+        @media (max-width: 320px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .feature-card {
+                padding: 15px 10px;
+            }
+        }
+        
+        /* Landscape Mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .hero {
+                padding: 20px 0;
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+                margin-bottom: 10px;
+            }
+            
+            .hero p {
+                font-size: 0.9rem;
+                margin-bottom: 20px;
+            }
+            
+            .features {
+                padding: 30px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">BizPulse</div>
+                <nav class="nav-menu">
+                    <a href="#features">Features</a>
+                    <a href="#login">Login</a>
+                    <a href="#contact">Contact</a>
+                </nav>
+                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Business Management Made Simple</h1>
+            <p>Complete ERP solution for modern businesses. Manage inventory, billing, customers, and reports all in one place.</p>
+            <div class="cta-buttons">
+                <a href="#login" class="btn btn-primary">🚀 Get Started</a>
+                <a href="#features" class="btn btn-secondary">📱 Learn More</a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Login Section -->
+    <section class="login-section" id="login">
+        <h3>Quick Login</h3>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="bizpulse.erp@gmail.com" placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" value="demo123" placeholder="Enter your password">
+            </div>
+            <button type="submit" class="login-btn">Login to Dashboard</button>
+        </form>
+    </section>
+    
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2>Why Choose BizPulse?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">📊</span>
+                    <div class="feature-title">Complete ERP System</div>
+                    <div class="feature-desc">Manage products, customers, billing, and reports in one integrated platform.</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📱</span>
+                    <div class="feature-title">Mobile Optimized</div>
+                    <div class="feature-desc">Access your business data anywhere with our responsive design that works on all devices.</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">👥</span>
+                    <div class="feature-title">Client Management</div>
+                    <div class="feature-desc">Create and manage multiple client accounts with secure authentication.</div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📄</span>
+                    <div class="feature-title">WhatsApp Reports</div>
+                    <div class="feature-desc">Automated daily reports sent directly to your WhatsApp - completely free!</div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 BizPulse. All rights reserved. | Contact: 7093635305</p>
+        </div>
+    </footer>
+    
+    <script>
+        // Handle login form
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (email === 'bizpulse.erp@gmail.com' && password === 'demo123') {
+                alert('✅ Login Successful! Redirecting to ERP Dashboard...');
+                window.location.href = '/retail/dashboard';
+            } else {
+                alert('❌ Invalid credentials. Use: bizpulse.erp@gmail.com / demo123');
+            }
+        });
+        
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            alert('Mobile menu - Feature coming soon!');
+        }
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -576,25 +576,9 @@ def require_cms_auth(f):
 # Routes
 @app.route('/')
 def index():
-    """Same URL - Different interface based on device (like Amazon/Flipkart)"""
-    # Get user agent for device detection
-    user_agent = request.headers.get('User-Agent', '').lower()
-    
-    # Check if mobile device (including tablets)
-    is_mobile = any(device in user_agent for device in [
-        'mobile', 'android', 'iphone', 'ipod', 'ipad', 'tablet', 'blackberry', 'windows phone'
-    ])
-    
-    # Check if user wants desktop view (force parameter)
-    force_desktop = request.args.get('desktop') == '1'
-    
-    # Device-specific rendering - Same URL, Different Interface
-    if is_mobile and not force_desktop:
-        # Mobile/Tablet users get mobile-optimized ERP interface
-        return render_template('mobile_optimized.html')
-    else:
-        # Desktop users get business website interface
-        return render_template('index.html')
+    """Universal responsive design - Same template for all devices (like Vyapar)"""
+    # Single template with CSS media queries - no device detection needed
+    return render_template('responsive_universal.html')
 
 
 
