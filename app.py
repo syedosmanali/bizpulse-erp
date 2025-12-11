@@ -591,6 +591,11 @@ def password_reset():
     """Password reset page for admin"""
     return render_template('password_reset.html')
 
+@app.route('/reports')
+def reports_dashboard():
+    """Reports dashboard page"""
+    return render_template('reports_dashboard.html')
+
 @app.route('/register')
 def register():
     return render_template('register.html')
@@ -1043,6 +1048,166 @@ def get_sales_report():
         "total_sales": dict(total_sales) if total_sales else {"total": 0, "count": 0},
         "daily_sales": [dict(row) for row in daily_sales],
         "top_products": [dict(row) for row in top_products]
+    })
+
+# Enhanced Reports API
+@app.route('/api/reports/dashboard', methods=['GET'])
+def get_dashboard_report():
+    """Get dashboard summary report"""
+    conn = get_db_connection()
+    
+    # Today's stats
+    today_sales = conn.execute('''
+        SELECT SUM(total_amount) as total, COUNT(*) as count
+        FROM bills 
+        WHERE DATE(created_at) = DATE('now')
+    ''').fetchone()
+    
+    # This month's stats
+    month_sales = conn.execute('''
+        SELECT SUM(total_amount) as total, COUNT(*) as count
+        FROM bills 
+        WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
+    ''').fetchone()
+    
+    # Total products
+    total_products = conn.execute('SELECT COUNT(*) as count FROM products WHERE is_active = 1').fetchone()
+    
+    # Low stock products
+    low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock_quantity <= 10 AND is_active = 1').fetchone()
+    
+    # Recent transactions
+    recent_transactions = conn.execute('''
+        SELECT id, customer_name, total_amount, created_at
+        FROM bills 
+        ORDER BY created_at DESC 
+        LIMIT 5
+    ''').fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        "today": dict(today_sales) if today_sales else {"total": 0, "count": 0},
+        "month": dict(month_sales) if month_sales else {"total": 0, "count": 0},
+        "products": dict(total_products)["count"] if total_products else 0,
+        "low_stock": dict(low_stock)["count"] if low_stock else 0,
+        "recent_transactions": [dict(row) for row in recent_transactions]
+    })
+
+@app.route('/api/reports/inventory', methods=['GET'])
+def get_inventory_report():
+    """Get inventory report"""
+    conn = get_db_connection()
+    
+    # All products with stock info
+    products = conn.execute('''
+        SELECT name, stock_quantity, price, 
+               (stock_quantity * price) as stock_value,
+               CASE 
+                   WHEN stock_quantity <= 5 THEN 'Critical'
+                   WHEN stock_quantity <= 10 THEN 'Low'
+                   ELSE 'Good'
+               END as stock_status
+        FROM products 
+        WHERE is_active = 1
+        ORDER BY stock_quantity ASC
+    ''').fetchall()
+    
+    # Stock summary
+    stock_summary = conn.execute('''
+        SELECT 
+            SUM(stock_quantity * price) as total_value,
+            COUNT(*) as total_products,
+            SUM(CASE WHEN stock_quantity <= 5 THEN 1 ELSE 0 END) as critical_stock,
+            SUM(CASE WHEN stock_quantity <= 10 THEN 1 ELSE 0 END) as low_stock
+        FROM products 
+        WHERE is_active = 1
+    ''').fetchone()
+    
+    conn.close()
+    
+    return jsonify({
+        "products": [dict(row) for row in products],
+        "summary": dict(stock_summary) if stock_summary else {}
+    })
+
+@app.route('/api/reports/customers', methods=['GET'])
+def get_customers_report():
+    """Get customers report"""
+    conn = get_db_connection()
+    
+    # Top customers by sales
+    top_customers = conn.execute('''
+        SELECT customer_name, 
+               COUNT(*) as total_orders,
+               SUM(total_amount) as total_spent,
+               AVG(total_amount) as avg_order_value,
+               MAX(created_at) as last_order
+        FROM bills 
+        WHERE customer_name IS NOT NULL AND customer_name != ''
+        GROUP BY customer_name
+        ORDER BY total_spent DESC
+        LIMIT 20
+    ''').fetchall()
+    
+    # Customer summary
+    customer_summary = conn.execute('''
+        SELECT 
+            COUNT(DISTINCT customer_name) as total_customers,
+            AVG(total_amount) as avg_order_value,
+            SUM(total_amount) as total_revenue
+        FROM bills 
+        WHERE customer_name IS NOT NULL AND customer_name != ''
+    ''').fetchone()
+    
+    conn.close()
+    
+    return jsonify({
+        "top_customers": [dict(row) for row in top_customers],
+        "summary": dict(customer_summary) if customer_summary else {}
+    })
+
+@app.route('/api/reports/profit', methods=['GET'])
+def get_profit_report():
+    """Get profit analysis report"""
+    start_date = request.args.get('start_date', '2024-01-01')
+    end_date = request.args.get('end_date', '2024-12-31')
+    
+    conn = get_db_connection()
+    
+    # Profit by product (assuming cost price is 70% of selling price)
+    profit_by_product = conn.execute('''
+        SELECT 
+            bi.product_name,
+            SUM(bi.quantity) as total_sold,
+            SUM(bi.total_price) as revenue,
+            SUM(bi.total_price * 0.3) as estimated_profit,
+            AVG(bi.unit_price) as avg_selling_price
+        FROM bill_items bi
+        JOIN bills b ON bi.bill_id = b.id
+        WHERE DATE(b.created_at) BETWEEN ? AND ?
+        GROUP BY bi.product_name
+        ORDER BY estimated_profit DESC
+        LIMIT 15
+    ''', (start_date, end_date)).fetchall()
+    
+    # Monthly profit trend
+    monthly_profit = conn.execute('''
+        SELECT 
+            strftime('%Y-%m', created_at) as month,
+            SUM(total_amount) as revenue,
+            SUM(total_amount * 0.3) as estimated_profit
+        FROM bills 
+        WHERE DATE(created_at) BETWEEN ? AND ?
+        GROUP BY strftime('%Y-%m', created_at)
+        ORDER BY month
+    ''', (start_date, end_date)).fetchall()
+    
+    conn.close()
+    
+    return jsonify({
+        "profit_by_product": [dict(row) for row in profit_by_product],
+        "monthly_profit": [dict(row) for row in monthly_profit]
     })
 
 # Hotel Guests API

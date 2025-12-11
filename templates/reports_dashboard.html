@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#732C3F">
+    <title>BizPulse - Reports Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #732C3F 0%, #8B3A47 100%);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Page Title */
+        .page-title {
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        /* Report Tabs */
+        .report-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px 16px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #732C3F;
+        }
+        
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            display: block;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: white;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+            color: white;
+        }
+        
+        /* Report Cards */
+        .report-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .report-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Table Styles */
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .report-table th,
+        .report-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .report-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: white;
+        }
+        
+        .report-table td {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .report-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Date Filter */
+        .date-filter {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .date-input {
+            padding: 10px 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+        }
+        
+        .date-input:focus {
+            outline: none;
+            border-color: white;
+        }
+        
+        .filter-btn {
+            background: white;
+            color: #732C3F;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .filter-btn:hover {
+            background: #f0f0f0;
+        }
+        
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-critical {
+            background: rgba(220, 53, 69, 0.2);
+            color: #FFB6C1;
+            border: 1px solid rgba(220, 53, 69, 0.5);
+        }
+        
+        .status-low {
+            background: rgba(255, 193, 7, 0.2);
+            color: #FFE066;
+            border: 1px solid rgba(255, 193, 7, 0.5);
+        }
+        
+        .status-good {
+            background: rgba(40, 167, 69, 0.2);
+            color: #90EE90;
+            border: 1px solid rgba(40, 167, 69, 0.5);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .page-title {
+                font-size: 24px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .report-tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                flex: none;
+                width: 100%;
+            }
+            
+            .date-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .date-input,
+            .filter-btn {
+                width: 100%;
+            }
+            
+            .report-table {
+                font-size: 12px;
+            }
+            
+            .report-table th,
+            .report-table td {
+                padding: 8px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .logo {
+                font-size: 20px;
+            }
+            
+            .page-title {
+                font-size: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .stat-card {
+                padding: 20px 16px;
+            }
+            
+            .report-card {
+                padding: 20px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">📊 Reports</div>
+        <a href="/retail/dashboard" class="back-btn">← Back</a>
+    </header>
+    
+    <!-- Main Container -->
+    <div class="container">
+        <h1 class="page-title">Business Reports Dashboard</h1>
+        
+        <!-- Report Tabs -->
+        <div class="report-tabs">
+            <div class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</div>
+            <div class="tab" onclick="switchTab('sales')">💰 Sales</div>
+            <div class="tab" onclick="switchTab('inventory')">📦 Inventory</div>
+            <div class="tab" onclick="switchTab('customers')">👥 Customers</div>
+            <div class="tab" onclick="switchTab('profit')">📈 Profit</div>
+        </div>
+        
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+            <div class="stats-grid" id="dashboardStats">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading dashboard...</div>
+                </div>
+            </div>
+            
+            <div class="report-card">
+                <h3 class="report-title">📋 Recent Transactions</h3>
+                <div id="recentTransactions">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Loading transactions...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sales Tab -->
+        <div id="salesTab" class="tab-content">
+            <div class="date-filter">
+                <label style="color: white;">From:</label>
+                <input type="date" id="salesStartDate" class="date-input" value="2024-01-01">
+                <label style="color: white;">To:</label>
+                <input type="date" id="salesEndDate" class="date-input" value="2024-12-31">
+                <button onclick="loadSalesReport()" class="filter-btn">📊 Generate Report</button>
+            </div>
+            
+            <div id="salesReport">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading sales report...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Inventory Tab -->
+        <div id="inventoryTab" class="tab-content">
+            <div id="inventoryReport">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading inventory report...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customers Tab -->
+        <div id="customersTab" class="tab-content">
+            <div id="customersReport">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading customers report...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Profit Tab -->
+        <div id="profitTab" class="tab-content">
+            <div class="date-filter">
+                <label style="color: white;">From:</label>
+                <input type="date" id="profitStartDate" class="date-input" value="2024-01-01">
+                <label style="color: white;">To:</label>
+                <input type="date" id="profitEndDate" class="date-input" value="2024-12-31">
+                <button onclick="loadProfitReport()" class="filter-btn">📈 Generate Report</button>
+            </div>
+            
+            <div id="profitReport">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Loading profit report...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Current active tab
+        let currentTab = 'dashboard';
+        
+        // Switch tabs
+        function switchTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab:nth-child(${getTabIndex(tab)})`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById(tab + 'Tab').classList.add('active');
+            
+            currentTab = tab;
+            
+            // Load data for the tab
+            loadTabData(tab);
+        }
+        
+        function getTabIndex(tab) {
+            const tabs = ['dashboard', 'sales', 'inventory', 'customers', 'profit'];
+            return tabs.indexOf(tab) + 1;
+        }
+        
+        // Load data for specific tab
+        function loadTabData(tab) {
+            switch(tab) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'sales':
+                    loadSalesReport();
+                    break;
+                case 'inventory':
+                    loadInventoryReport();
+                    break;
+                case 'customers':
+                    loadCustomersReport();
+                    break;
+                case 'profit':
+                    loadProfitReport();
+                    break;
+            }
+        }
+        
+        // Load dashboard
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/reports/dashboard');
+                const data = await response.json();
+                
+                // Update stats
+                document.getElementById('dashboardStats').innerHTML = `
+                    <div class="stat-card">
+                        <span class="stat-icon">💰</span>
+                        <div class="stat-value">₹${(data.today.total || 0).toLocaleString()}</div>
+                        <div class="stat-label">Today's Sales</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">📊</span>
+                        <div class="stat-value">₹${(data.month.total || 0).toLocaleString()}</div>
+                        <div class="stat-label">This Month</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">📦</span>
+                        <div class="stat-value">${data.products || 0}</div>
+                        <div class="stat-label">Total Products</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-icon">⚠️</span>
+                        <div class="stat-value">${data.low_stock || 0}</div>
+                        <div class="stat-label">Low Stock Items</div>
+                    </div>
+                `;
+                
+                // Update recent transactions
+                let transactionsHtml = '<table class="report-table"><thead><tr><th>ID</th><th>Customer</th><th>Amount</th><th>Date</th></tr></thead><tbody>';
+                data.recent_transactions.forEach(transaction => {
+                    transactionsHtml += `
+                        <tr>
+                            <td>#${transaction.id}</td>
+                            <td>${transaction.customer_name || 'Walk-in'}</td>
+                            <td>₹${transaction.total_amount.toLocaleString()}</td>
+                            <td>${new Date(transaction.created_at).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                });
+                transactionsHtml += '</tbody></table>';
+                document.getElementById('recentTransactions').innerHTML = transactionsHtml;
+                
+            } catch (error) {
+                document.getElementById('dashboardStats').innerHTML = '<div style="color: #FFB6C1;">Error loading dashboard data</div>';
+            }
+        }
+        
+        // Load sales report
+        async function loadSalesReport() {
+            const startDate = document.getElementById('salesStartDate').value;
+            const endDate = document.getElementById('salesEndDate').value;
+            
+            try {
+                const response = await fetch(`/api/reports/sales?start_date=${startDate}&end_date=${endDate}`);
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-icon">💰</span>
+                            <div class="stat-value">₹${(data.total_sales.total || 0).toLocaleString()}</div>
+                            <div class="stat-label">Total Sales</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">📋</span>
+                            <div class="stat-value">${data.total_sales.count || 0}</div>
+                            <div class="stat-label">Total Orders</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">📊</span>
+                            <div class="stat-value">₹${data.total_sales.count > 0 ? Math.round((data.total_sales.total || 0) / data.total_sales.count).toLocaleString() : 0}</div>
+                            <div class="stat-label">Avg Order Value</div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3 class="report-title">📈 Top Selling Products</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr><th>Product</th><th>Quantity Sold</th><th>Revenue</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.top_products.forEach(product => {
+                    html += `
+                        <tr>
+                            <td>${product.product_name}</td>
+                            <td>${product.quantity}</td>
+                            <td>₹${product.sales.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                document.getElementById('salesReport').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('salesReport').innerHTML = '<div style="color: #FFB6C1;">Error loading sales report</div>';
+            }
+        }
+        
+        // Load inventory report
+        async function loadInventoryReport() {
+            try {
+                const response = await fetch('/api/reports/inventory');
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-icon">💰</span>
+                            <div class="stat-value">₹${(data.summary.total_value || 0).toLocaleString()}</div>
+                            <div class="stat-label">Total Stock Value</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">📦</span>
+                            <div class="stat-value">${data.summary.total_products || 0}</div>
+                            <div class="stat-label">Total Products</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">⚠️</span>
+                            <div class="stat-value">${data.summary.critical_stock || 0}</div>
+                            <div class="stat-label">Critical Stock</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">📉</span>
+                            <div class="stat-value">${data.summary.low_stock || 0}</div>
+                            <div class="stat-label">Low Stock</div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3 class="report-title">📦 Stock Status</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr><th>Product</th><th>Stock</th><th>Price</th><th>Value</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.products.forEach(product => {
+                    const statusClass = product.stock_status.toLowerCase();
+                    html += `
+                        <tr>
+                            <td>${product.name}</td>
+                            <td>${product.stock_quantity}</td>
+                            <td>₹${product.price.toLocaleString()}</td>
+                            <td>₹${product.stock_value.toLocaleString()}</td>
+                            <td><span class="status-badge status-${statusClass}">${product.stock_status}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                document.getElementById('inventoryReport').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('inventoryReport').innerHTML = '<div style="color: #FFB6C1;">Error loading inventory report</div>';
+            }
+        }
+        
+        // Load customers report
+        async function loadCustomersReport() {
+            try {
+                const response = await fetch('/api/reports/customers');
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-icon">👥</span>
+                            <div class="stat-value">${data.summary.total_customers || 0}</div>
+                            <div class="stat-label">Total Customers</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">💰</span>
+                            <div class="stat-value">₹${(data.summary.avg_order_value || 0).toLocaleString()}</div>
+                            <div class="stat-label">Avg Order Value</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-icon">📊</span>
+                            <div class="stat-value">₹${(data.summary.total_revenue || 0).toLocaleString()}</div>
+                            <div class="stat-label">Total Revenue</div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3 class="report-title">🏆 Top Customers</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr><th>Customer</th><th>Orders</th><th>Total Spent</th><th>Avg Order</th><th>Last Order</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.top_customers.forEach(customer => {
+                    html += `
+                        <tr>
+                            <td>${customer.customer_name}</td>
+                            <td>${customer.total_orders}</td>
+                            <td>₹${customer.total_spent.toLocaleString()}</td>
+                            <td>₹${Math.round(customer.avg_order_value).toLocaleString()}</td>
+                            <td>${new Date(customer.last_order).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                document.getElementById('customersReport').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('customersReport').innerHTML = '<div style="color: #FFB6C1;">Error loading customers report</div>';
+            }
+        }
+        
+        // Load profit report
+        async function loadProfitReport() {
+            const startDate = document.getElementById('profitStartDate').value;
+            const endDate = document.getElementById('profitEndDate').value;
+            
+            try {
+                const response = await fetch(`/api/reports/profit?start_date=${startDate}&end_date=${endDate}`);
+                const data = await response.json();
+                
+                let html = `
+                    <div class="report-card">
+                        <h3 class="report-title">💰 Profit by Product</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr><th>Product</th><th>Sold</th><th>Revenue</th><th>Est. Profit</th><th>Avg Price</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.profit_by_product.forEach(product => {
+                    html += `
+                        <tr>
+                            <td>${product.product_name}</td>
+                            <td>${product.total_sold}</td>
+                            <td>₹${product.revenue.toLocaleString()}</td>
+                            <td>₹${Math.round(product.estimated_profit).toLocaleString()}</td>
+                            <td>₹${Math.round(product.avg_selling_price).toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `</tbody></table></div>
+                    <div class="report-card">
+                        <h3 class="report-title">📈 Monthly Profit Trend</h3>
+                        <table class="report-table">
+                            <thead>
+                                <tr><th>Month</th><th>Revenue</th><th>Est. Profit</th><th>Profit Margin</th></tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.monthly_profit.forEach(month => {
+                    const margin = month.revenue > 0 ? ((month.estimated_profit / month.revenue) * 100).toFixed(1) : 0;
+                    html += `
+                        <tr>
+                            <td>${month.month}</td>
+                            <td>₹${month.revenue.toLocaleString()}</td>
+                            <td>₹${Math.round(month.estimated_profit).toLocaleString()}</td>
+                            <td>${margin}%</td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                document.getElementById('profitReport').innerHTML = html;
+                
+            } catch (error) {
+                document.getElementById('profitReport').innerHTML = '<div style="color: #FFB6C1;">Error loading profit report</div>';
+            }
+        }
+        
+        // Set current date as default
+        function setDefaultDates() {
+            const today = new Date().toISOString().split('T')[0];
+            const firstDay = new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
+            
+            document.getElementById('salesEndDate').value = today;
+            document.getElementById('profitEndDate').value = today;
+            document.getElementById('salesStartDate').value = firstDay;
+            document.getElementById('profitStartDate').value = firstDay;
+        }
+        
+        // Initialize
+        window.addEventListener('load', function() {
+            setDefaultDates();
+            loadDashboard();
+        });
+    </script>
+</body>
+</html>

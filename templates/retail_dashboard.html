@@ -909,6 +909,7 @@
                 if (module === 'invoices') return window.location.href = '/retail/invoices';
                 if (module === 'inventory') return window.location.href = '/retail/inventory';
                 if (module === 'settings') return window.location.href = '/retail/settings';
+                if (module === 'reports') return window.location.href = '/reports';
                 // otherwise show placeholder
                 const contentArea = document.getElementById('contentArea');
                 if (contentArea) contentArea.innerHTML = `<div style="text-align:center;padding:50px;"><h2>🚧 ${module.charAt(0).toUpperCase()+module.slice(1)} Module</h2><p>Coming soon.</p><button onclick="showModule('dashboard')" style="margin-top:20px;padding:10px 20px;background:#732C3F;color:#fff;border:none;border-radius:5px;">Back</button></div>`;
