@@ -576,9 +576,9 @@ def require_cms_auth(f):
 # Routes
 @app.route('/')
 def index():
-    """Mobile perfect - No zoom issues, no animations freeze, perfect mobile experience"""
-    # Mobile-perfect template with strict zoom prevention and no animation freeze
-    return render_template('mobile_perfect_final.html')
+    """Existing website with mobile support - keeping everything same, just mobile responsive"""
+    # Using existing website with mobile responsive CSS - no content changes
+    return render_template('index.html')
 
 
 
