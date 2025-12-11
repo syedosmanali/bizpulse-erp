@@ -590,8 +590,8 @@ def index():
     
     # Device-specific rendering - Same URL, Different Interface
     if is_mobile and not force_desktop:
-        # Mobile/Tablet users get mobile ERP interface
-        return render_template('mobile_simple_working.html')
+        # Mobile/Tablet users get mobile-optimized ERP interface
+        return render_template('mobile_optimized.html')
     else:
         # Desktop users get business website interface
         return render_template('index.html')
