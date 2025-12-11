@@ -576,9 +576,9 @@ def require_cms_auth(f):
 # Routes
 @app.route('/')
 def index():
-    """Universal responsive design - Same template for all devices (like Vyapar)"""
-    # Single template with CSS media queries - no device detection needed
-    return render_template('responsive_universal.html')
+    """Mobile-first responsive design - Perfect for all devices"""
+    # Mobile-first template with proper CSS media queries
+    return render_template('mobile_first_perfect.html')
 
 
 
