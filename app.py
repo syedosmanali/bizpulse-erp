@@ -133,6 +133,7 @@ def init_db():
             id TEXT PRIMARY KEY,
             bill_number TEXT UNIQUE,
             customer_id TEXT,
+            customer_name TEXT,
             business_type TEXT,
             subtotal REAL,
             tax_amount REAL,
@@ -143,6 +144,13 @@ def init_db():
             FOREIGN KEY (customer_id) REFERENCES customers (id)
         )
     ''')
+    
+    # Add customer_name column if it doesn't exist (for existing databases)
+    try:
+        cursor.execute('ALTER TABLE bills ADD COLUMN customer_name TEXT')
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
     
     # Bill items table
     cursor.execute('''
@@ -1074,7 +1082,7 @@ def get_dashboard_report():
     total_products = conn.execute('SELECT COUNT(*) as count FROM products WHERE is_active = 1').fetchone()
     
     # Low stock products
-    low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock_quantity <= 10 AND is_active = 1').fetchone()
+    low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock <= 10 AND is_active = 1').fetchone()
     
     # Recent transactions
     recent_transactions = conn.execute('''
