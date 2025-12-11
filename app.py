@@ -576,9 +576,9 @@ def require_cms_auth(f):
 # Routes
 @app.route('/')
 def index():
-    """Mobile-first responsive design - Perfect for all devices"""
-    # Mobile-first template with proper CSS media queries
-    return render_template('mobile_first_perfect.html')
+    """Fully responsive ERP frontend - Mobile-first with perfect scaling"""
+    # Complete responsive ERP frontend with mobile-first design
+    return render_template('responsive_erp_frontend.html')
 
 
 
