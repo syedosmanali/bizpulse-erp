@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#635BFF">
+    <title>BizPulse - Modern Business Management Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #635BFF;
+            --primary-dark: #0A2540;
+            --accent: #00D4FF;
+            --text-primary: #0A2540;
+            --text-secondary: #425466;
+            --bg-light: #F6F9FC;
+            --white: #FFFFFF;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--white);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Device Detection Banner */
+        .device-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .device-banner.show {
+            display: block;
+        }
+
+        .device-banner button {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* Responsive Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 999;
+            border-bottom: 1px solid rgba(99, 91, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 20px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .hero-content {
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: var(--white);
+            color: var(--primary);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 20px;
+            background: var(--bg-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .device-banner {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 100px 15px 20px;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 0 15px;
+            }
+        }
+
+        /* Tablet Responsive */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .hero h1 {
+                font-size: 3rem;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Device Detection Banner -->
+    <div class="device-banner" id="deviceBanner">
+        <span id="deviceMessage">📱 Mobile device detected! Switch to mobile app for better experience.</span>
+        <button onclick="switchToMobile()">Switch to Mobile</button>
+        <button onclick="stayDesktop()">Stay Desktop</button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">BizPulse</div>
+        <ul class="nav-links">
+            <li><a href="#features">Features</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="/login">Login</a></li>
+        </ul>
+        <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰</button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Business Management Made Simple</h1>
+            <p>Complete ERP solution for modern businesses. Manage inventory, billing, customers, and reports all in one place.</p>
+            <div class="cta-buttons">
+                <a href="/login" class="btn btn-primary">Get Started</a>
+                <a href="/mobile-simple" class="btn btn-secondary">📱 Mobile App</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 style="text-align: center; font-size: 2.5rem; margin-bottom: 20px;">Why Choose BizPulse?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Complete ERP System</h3>
+                    <p>Manage products, customers, billing, and reports in one integrated platform.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📱</div>
+                    <h3>Mobile Optimized</h3>
+                    <p>Access your business data anywhere with our responsive mobile application.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💼</div>
+                    <h3>Client Management</h3>
+                    <p>Create and manage multiple client accounts with secure authentication.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📄</div>
+                    <h3>WhatsApp Reports</h3>
+                    <p>Automated daily reports sent directly to your WhatsApp - completely free!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Device Detection
+        function detectDevice() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /mobile|android|iphone|ipad|ipod|blackberry|windows phone/.test(userAgent);
+            const isTablet = /ipad|tablet/.test(userAgent);
+            
+            if (isMobile && !localStorage.getItem('preferDesktop')) {
+                document.getElementById('deviceBanner').classList.add('show');
+                if (isTablet) {
+                    document.getElementById('deviceMessage').textContent = '📱 Tablet detected! Switch to mobile app for touch-optimized experience.';
+                }
+            }
+        }
+
+        function switchToMobile() {
+            window.location.href = '/mobile-simple';
+        }
+
+        function stayDesktop() {
+            localStorage.setItem('preferDesktop', 'true');
+            document.getElementById('deviceBanner').style.display = 'none';
+        }
+
+        function toggleMobileMenu() {
+            // Mobile menu toggle logic
+            alert('Mobile menu - implement as needed');
+        }
+
+        // Auto-detect on page load
+        window.addEventListener('load', detectDevice);
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            setTimeout(detectDevice, 500);
+        });
+    </script>
+</body>
+</html>

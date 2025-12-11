@@ -576,8 +576,13 @@ def require_cms_auth(f):
 # Routes
 @app.route('/')
 def index():
-    """Main website - loads saved content if available, or returns default template"""
-    return render_template('index.html')
+    """Main website - Responsive design with device detection"""
+    return render_template('responsive_index.html')
+
+@app.route('/desktop')
+def desktop_view():
+    """Force desktop view"""
+    return render_template('responsive_index.html')
 
 @app.route('/login')
 def login():

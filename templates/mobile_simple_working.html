@@ -38,6 +38,17 @@
         
         .title { color: #732C3F; font-weight: bold; }
         
+        .desktop-btn {
+            background: #732C3F;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        
         /* Side Menu */
         .side-menu {
             position: fixed;
@@ -1182,7 +1193,10 @@
     <div class="top-bar" id="topBar" style="display: none;">
         <div class="menu-btn" onclick="toggleMenu()">☰</div>
         <div class="title">BizPulse</div>
-        <div>👤</div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <a href="/desktop" class="desktop-btn">🖥️ Desktop</a>
+            <div>👤</div>
+        </div>
     </div>
     
     <!-- Overlay -->
