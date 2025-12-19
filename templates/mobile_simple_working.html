@@ -1575,19 +1575,7 @@
                 </button>
             </div>
             
-            <!-- Payment Method -->
-            <div style="margin-top: 15px;">
-                <label style="font-size: 14px; color: #666; display: block; margin-bottom: 8px; font-weight: 600;">Payment Method</label>
-                <select id="billPaymentMethod" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;">
-                    <option value="cash">💵 Cash</option>
-                    <option value="upi">📱 UPI</option>
-                    <option value="card">💳 Card</option>
-                </select>
-            </div>
-            
-            <!-- Generate Bill Button -->
-            <button onclick="generateBillMobile()" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-size: 18px; font-weight: 700; margin-top: 15px; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);">
-                🧾 Generate Bill
+
             </button>
         </div>
         
@@ -3645,9 +3633,10 @@
                 
                 camera.innerHTML = `
                     <video id="billBarcodeVideo" autoplay playsinline style="width: 100%; border-radius: 8px; background: #000;"></video>
-                    <div style="text-align: center; margin-top: 10px;">
-                        <button onclick="captureBillBarcode()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 8px; margin-right: 10px;">📸 Capture</button>
-                        <button onclick="closeBillBarcodeScanner()" style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px;">✕ Cancel</button>
+                    <div style="text-align: center; margin-top: 10px; padding: 10px; background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
+                        <div style="color: #28a745; font-weight: 600; margin-bottom: 5px;">📱 Scanning automatically...</div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Point camera at barcode</div>
+                        <button onclick="closeBillBarcodeScanner()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px;">✕ Close Scanner</button>
                     </div>
                 `;
                 
@@ -3710,21 +3699,46 @@
                     Quagga.start();
                 });
                 
-                // Listen for barcode detection
+                // Listen for barcode detection - Real mart style
+                let lastDetectedBarcode = null;
+                let detectionTimeout = null;
+                
                 Quagga.onDetected(function(data) {
                     const barcode = data.codeResult.code;
+                    
+                    // Prevent duplicate detections
+                    if (barcode === lastDetectedBarcode) return;
+                    
+                    lastDetectedBarcode = barcode;
                     console.log('🎯 Billing barcode detected:', barcode);
                     
-                    // Search product by barcode and add to bill
-                    searchAndAddProductByBarcode(barcode);
+                    // Clear previous timeout
+                    if (detectionTimeout) clearTimeout(detectionTimeout);
+                    
+                    // Add slight delay to prevent multiple detections
+                    detectionTimeout = setTimeout(() => {
+                        searchAndAddProductByBarcode(barcode);
+                        lastDetectedBarcode = null; // Reset after processing
+                    }, 500);
                 });
             }
         }
         
-        // Search product by barcode and add to bill
+        // Search product by barcode and add to bill - Real mart style
         async function searchAndAddProductByBarcode(barcode) {
             try {
-                showToast('🔍 Searching product...', 'info');
+                // Show scanning feedback
+                const camera = document.getElementById('billBarcodeCamera');
+                const originalContent = camera.innerHTML;
+                
+                camera.innerHTML = `
+                    <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 8px; color: white;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">✅</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Barcode Detected!</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Searching product...</div>
+                        <div style="font-size: 12px; margin-top: 10px; opacity: 0.8;">Code: ${barcode}</div>
+                    </div>
+                `;
                 
                 const response = await fetch(`/api/products/search/barcode/${barcode}`);
                 const result = await response.json();
@@ -3732,19 +3746,53 @@
                 if (result.success && result.product) {
                     const product = result.product;
                     
-                    // Close scanner
-                    closeBillBarcodeScanner();
+                    // Show success feedback
+                    camera.innerHTML = `
+                        <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 8px; color: white;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">🛒</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">${product.name}</div>
+                            <div style="font-size: 16px; margin-bottom: 8px;">₹${product.price}</div>
+                            <div style="font-size: 14px; opacity: 0.9;">Added to bill!</div>
+                        </div>
+                    `;
                     
                     // Add product to bill
                     addProductToBill(product.id);
                     
-                    showToast(`✅ ${product.name} added to bill!`, 'success');
+                    // Close scanner after 2 seconds
+                    setTimeout(() => {
+                        closeBillBarcodeScanner();
+                        showToast(`✅ ${product.name} added to bill!`, 'success');
+                    }, 2000);
+                    
                 } else {
-                    showToast(`❌ Product not found for barcode: ${barcode}`, 'error');
+                    // Show error feedback
+                    camera.innerHTML = `
+                        <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border-radius: 8px; color: white;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Product Not Found</div>
+                            <div style="font-size: 14px; opacity: 0.9;">Barcode: ${barcode}</div>
+                            <button onclick="closeBillBarcodeScanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 8px; margin-top: 15px;">Try Again</button>
+                        </div>
+                    `;
+                    
+                    showToast(`❌ Product not found: ${barcode}`, 'error');
                 }
             } catch (error) {
                 console.error('Error searching product by barcode:', error);
-                showToast('❌ Error searching product', 'error');
+                
+                // Show network error
+                const camera = document.getElementById('billBarcodeCamera');
+                camera.innerHTML = `
+                    <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); border-radius: 8px; color: white;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Connection Error</div>
+                        <div style="font-size: 14px; opacity: 0.9;">Please check internet connection</div>
+                        <button onclick="closeBillBarcodeScanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 8px; margin-top: 15px;">Close</button>
+                    </div>
+                `;
+                
+                showToast('❌ Network error. Please try again.', 'error');
             }
         }
         
@@ -3828,64 +3876,7 @@
             }
         }
         
-        // Generate bill
-        async function generateBillMobile() {
-            if (billItems.length === 0) {
-                alert('❌ Please add at least one product to the bill!');
-                return;
-            }
-            
-            const paymentMethod = document.getElementById('billPaymentMethod').value;
-            const subtotal = billItems.reduce((sum, item) => sum + item.total, 0);
-            const gst = subtotal * 0.18;
-            const total = subtotal + gst;
-            
-            const billData = {
-                business_type: 'retail',
-                items: billItems.map(item => ({
-                    product_id: item.id,
-                    product_name: item.name,
-                    quantity: item.quantity,
-                    unit_price: item.price,
-                    total_price: item.total
-                })),
-                subtotal: subtotal,
-                tax_amount: gst,
-                total_amount: total,
-                payment_method: paymentMethod
-            };
-            
-            try {
-                console.log('📝 Generating bill...', billData);
-                
-                const response = await fetch('/api/bills', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(billData)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    alert(`✅ Bill Generated Successfully!\n\nBill Number: ${result.bill_number}\nTotal: ₹${total.toFixed(2)}`);
-                    
-                    // Clear bill
-                    billItems = [];
-                    renderBillItems();
-                    calculateBillTotal();
-                    
-                    console.log('✅ Bill generated:', result.bill_number);
-                } else {
-                    alert('❌ Failed to generate bill: ' + result.error);
-                    console.error('❌ Bill generation failed:', result);
-                }
-            } catch (error) {
-                alert('❌ Error generating bill: ' + error.message);
-                console.error('❌ Error generating bill:', error);
-            }
-        }
+
         
         // ========== EARNINGS/PROFIT MODULE ==========
         
