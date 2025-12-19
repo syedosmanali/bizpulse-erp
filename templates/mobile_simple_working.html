@@ -3632,10 +3632,30 @@
                 });
                 
                 camera.innerHTML = `
-                    <video id="billBarcodeVideo" autoplay playsinline style="width: 100%; border-radius: 8px; background: #000;"></video>
+                    <div style="position: relative;">
+                        <video id="billBarcodeVideo" autoplay playsinline style="width: 100%; border-radius: 8px; background: #000;"></video>
+                        
+                        <!-- Scanning Overlay -->
+                        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; height: 150px; border: 3px solid #28a745; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); pointer-events: none;">
+                            <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #28a745; color: white; padding: 5px 15px; border-radius: 15px; font-size: 12px; font-weight: 600; white-space: nowrap;">
+                                📱 Point at barcode
+                            </div>
+                            <!-- Scanning line animation -->
+                            <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #28a745, transparent); animation: scan 2s linear infinite;"></div>
+                        </div>
+                    </div>
+                    
+                    <style>
+                        @keyframes scan {
+                            0% { top: 0; }
+                            50% { top: 100%; }
+                            100% { top: 0; }
+                        }
+                    </style>
+                    
                     <div style="text-align: center; margin-top: 10px; padding: 10px; background: rgba(40, 167, 69, 0.1); border-radius: 8px;">
-                        <div style="color: #28a745; font-weight: 600; margin-bottom: 5px;">📱 Scanning automatically...</div>
-                        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Point camera at barcode</div>
+                        <div style="color: #28a745; font-weight: 600; margin-bottom: 5px;">🔍 Scanning automatically...</div>
+                        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Align barcode within the green box</div>
                         <button onclick="closeBillBarcodeScanner()" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 14px;">✕ Close Scanner</button>
                     </div>
                 `;
@@ -3680,6 +3700,12 @@
                             facingMode: "environment"
                         }
                     },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    frequency: 10,
                     decoder: {
                         readers: [
                             "code_128_reader",
@@ -3689,37 +3715,39 @@
                             "upc_reader",
                             "upc_e_reader"
                         ]
-                    }
+                    },
+                    locate: true
                 }, function(err) {
                     if (err) {
                         console.log('Billing barcode detection error:', err);
                         return;
                     }
-                    console.log("✅ Billing barcode detection started");
+                    console.log("✅ Billing barcode detection started - Real mart style");
                     Quagga.start();
                 });
                 
-                // Listen for barcode detection - Real mart style
-                let lastDetectedBarcode = null;
-                let detectionTimeout = null;
+                // Listen for barcode detection - Real mart style (instant detection)
+                let isProcessing = false;
                 
                 Quagga.onDetected(function(data) {
                     const barcode = data.codeResult.code;
                     
-                    // Prevent duplicate detections
-                    if (barcode === lastDetectedBarcode) return;
+                    // Prevent multiple detections while processing
+                    if (isProcessing) return;
                     
-                    lastDetectedBarcode = barcode;
+                    // Validate barcode (minimum length check)
+                    if (!barcode || barcode.length < 4) return;
+                    
+                    isProcessing = true;
                     console.log('🎯 Billing barcode detected:', barcode);
                     
-                    // Clear previous timeout
-                    if (detectionTimeout) clearTimeout(detectionTimeout);
-                    
-                    // Add slight delay to prevent multiple detections
-                    detectionTimeout = setTimeout(() => {
-                        searchAndAddProductByBarcode(barcode);
-                        lastDetectedBarcode = null; // Reset after processing
-                    }, 500);
+                    // Immediate processing - no delay for real mart experience
+                    searchAndAddProductByBarcode(barcode).finally(() => {
+                        // Reset processing flag after 2 seconds
+                        setTimeout(() => {
+                            isProcessing = false;
+                        }, 2000);
+                    });
                 });
             }
         }
