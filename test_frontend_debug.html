@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Filter Debug Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .result { background: #e8f5e8; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffe8e8; padding: 10px; margin: 10px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Sales Filter Debug Test</h1>
+    
+    <div class="debug">
+        <h3>Current Date Info:</h3>
+        <p id="dateInfo"></p>
+    </div>
+    
+    <div class="debug">
+        <h3>Test Sales Data:</h3>
+        <button onclick="testTodayFilter()">Test Today Filter</button>
+        <button onclick="testYesterdayFilter()">Test Yesterday Filter</button>
+        <button onclick="loadRealData()">Load Real Sales Data</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Show current date info
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        document.getElementById('dateInfo').innerHTML = `
+            <strong>Today:</strong> ${todayStr} (${today.toLocaleDateString()})<br>
+            <strong>Yesterday:</strong> ${yesterdayStr} (${yesterday.toLocaleDateString()})<br>
+            <strong>Full Date:</strong> ${today}
+        `;
+        
+        // Mock sales data for testing
+        const mockSales = [
+            { sale_date: '2025-12-18', product_name: 'Rice 1kg', total_price: 80 },
+            { sale_date: '2025-12-18', product_name: 'Rice 1kg', total_price: 80 },
+            { sale_date: '2025-12-17', product_name: 'Tea 250g', total_price: 200 },
+            { sale_date: '2025-12-17', product_name: 'Rice 1kg', total_price: 80 }
+        ];
+        
+        function testTodayFilter() {
+            console.log('🎯 Testing Today Filter');
+            const todayFilter = todayStr;
+            
+            const todaySales = mockSales.filter(sale => {
+                const saleDate = sale.sale_date;
+                return saleDate === todayFilter;
+            });
+            
+            showResult('Today Filter Test', {
+                filterDate: todayFilter,
+                totalSales: mockSales.length,
+                filteredSales: todaySales.length,
+                sales: todaySales
+            });
+        }
+        
+        function testYesterdayFilter() {
+            console.log('📅 Testing Yesterday Filter');
+            const yesterdayFilter = yesterdayStr;
+            
+            const yesterdaySales = mockSales.filter(sale => {
+                const saleDate = sale.sale_date;
+                return saleDate === yesterdayFilter;
+            });
+            
+            showResult('Yesterday Filter Test', {
+                filterDate: yesterdayFilter,
+                totalSales: mockSales.length,
+                filteredSales: yesterdaySales.length,
+                sales: yesterdaySales
+            });
+        }
+        
+        async function loadRealData() {
+            try {
+                console.log('📊 Loading real sales data...');
+                const response = await fetch('/api/sales?per_page=100');
+                const data = await response.json();
+                const sales = data.sales || data;
+                
+                // Test today filter on real data
+                const todaySales = sales.filter(sale => {
+                    const saleDate = sale.sale_date ? sale.sale_date.split(' ')[0] : '';
+                    return saleDate === todayStr;
+                });
+                
+                // Test yesterday filter on real data
+                const yesterdaySales = sales.filter(sale => {
+                    const saleDate = sale.sale_date ? sale.sale_date.split(' ')[0] : '';
+                    return saleDate === yesterdayStr;
+                });
+                
+                showResult('Real Data Test', {
+                    totalSales: sales.length,
+                    todayCount: todaySales.length,
+                    yesterdayCount: yesterdaySales.length,
+                    todayDate: todayStr,
+                    yesterdayDate: yesterdayStr,
+                    availableDates: [...new Set(sales.map(s => s.sale_date ? s.sale_date.split(' ')[0] : ''))].sort().reverse()
+                });
+                
+            } catch (error) {
+                showError('Failed to load real data: ' + error.message);
+            }
+        }
+        
+        function showResult(title, data) {
+            const div = document.createElement('div');
+            div.className = 'result';
+            div.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        function showError(message) {
+            const div = document.createElement('div');
+            div.className = 'error';
+            div.innerHTML = `<strong>Error:</strong> ${message}`;
+            document.getElementById('results').appendChild(div);
+        }
+        
+        // Auto-run tests
+        console.log('🚀 Running automatic tests...');
+        testTodayFilter();
+        testYesterdayFilter();
+    </script>
+</body>
+</html>
