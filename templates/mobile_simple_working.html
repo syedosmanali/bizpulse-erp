@@ -2622,11 +2622,30 @@
                     } 
                 });
                 
-                // Success! Show camera preview
+                // Success! Show camera preview with payment app style animation
                 section.innerHTML = `
                     <div class="camera-container">
-                        <video id="barcodeVideo" autoplay playsinline style="width: 100%; border-radius: 10px; background: #000;"></video>
-                        <canvas id="barcodeCanvas" style="display: none;"></canvas>
+                        <div style="position: relative;">
+                            <video id="barcodeVideo" autoplay playsinline style="width: 100%; border-radius: 10px; background: #000;"></video>
+                            <canvas id="barcodeCanvas" style="display: none;"></canvas>
+                            
+                            <!-- Scanning Overlay - Payment App Style -->
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; height: 150px; border: 3px solid #4CAF50; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5); pointer-events: none;">
+                                <div style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #4CAF50; color: white; padding: 5px 15px; border-radius: 15px; font-size: 12px; font-weight: 600; white-space: nowrap;">
+                                    📱 Align barcode here
+                                </div>
+                                <!-- Scanning line animation -->
+                                <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #4CAF50, transparent); animation: scan 2s linear infinite;"></div>
+                            </div>
+                        </div>
+                        
+                        <style>
+                            @keyframes scan {
+                                0% { top: 0; }
+                                50% { top: 100%; }
+                                100% { top: 0; }
+                            }
+                        </style>
                         
                         <div id="barcodePreview" style="display: none;">
                             <img id="barcodeImage" style="width: 100%; border-radius: 10px; margin-bottom: 10px;">
@@ -2635,13 +2654,13 @@
                             </div>
                         </div>
                         
-                        <div class="camera-buttons" id="cameraButtons" style="display: flex;">
-                            <button type="button" class="btn-camera" onclick="captureBarcode()">📸 Capture</button>
-                            <button type="button" class="btn-camera secondary" onclick="closeBarcodeScanner()">✕ Cancel</button>
+                        <div style="text-align: center; margin-top: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
+                            <div style="color: #4CAF50; font-weight: 600; margin-bottom: 5px;">🔍 Scanning automatically...</div>
+                            <div style="font-size: 12px; color: #666;">Align barcode within the green box</div>
                         </div>
                         
-                        <div style="text-align: center; margin-top: 10px; padding: 10px; background: rgba(76, 175, 80, 0.1); border-radius: 8px;">
-                            <small style="color: #4CAF50; font-weight: 600;">📱 Point camera at barcode for auto-detection</small>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <button type="button" class="btn-camera secondary" onclick="closeBarcodeScanner()" style="padding: 10px 20px;">✕ Close Scanner</button>
                         </div>
                         
                         <div style="text-align: center; margin-top: 10px;">
@@ -2894,7 +2913,7 @@
             section.style.display = 'none';
         }
         
-        // Start Real-time Barcode Detection
+        // Start Real-time Barcode Detection - Payment App Style
         function startBarcodeDetection() {
             if (typeof Quagga !== 'undefined') {
                 const video = document.getElementById('barcodeVideo');
@@ -2911,6 +2930,12 @@
                             facingMode: "environment"
                         }
                     },
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true
+                    },
+                    numOfWorkers: 2,
+                    frequency: 10,
                     decoder: {
                         readers: [
                             "code_128_reader",
@@ -2927,33 +2952,131 @@
                         console.log('Quagga initialization error:', err);
                         return;
                     }
-                    console.log("✅ Real-time barcode detection started");
+                    console.log("✅ Payment-style barcode detection started");
                     Quagga.start();
                 });
                 
-                // Listen for barcode detection
+                // Listen for barcode detection - Payment App Style
+                let isProcessingBarcode = false;
+                
                 Quagga.onDetected(function(data) {
                     const code = data.codeResult.code;
-                    console.log('🎯 Barcode auto-detected:', code);
                     
-                    // Auto-fill product code
-                    const productCodeField = document.getElementById('productCode');
-                    if (productCodeField) {
-                        productCodeField.value = code;
-                        window.detectedBarcodeData = code; // Store for saving
-                        showToast('✅ Barcode detected: ' + code, 'success');
-                        
-                        // Close scanner and focus next field
-                        closeBarcodeScanner();
-                        setTimeout(() => {
-                            const productNameField = document.getElementById('productName');
-                            if (productNameField) productNameField.focus();
-                        }, 500);
-                    }
+                    // Prevent multiple detections
+                    if (isProcessingBarcode) return;
+                    
+                    // Validate barcode
+                    if (!code || code.length < 4) return;
+                    
+                    isProcessingBarcode = true;
+                    console.log('🎯 Payment-style barcode detected:', code);
+                    
+                    // Show payment app style success animation
+                    showBarcodeSuccessAnimation(code);
+                    
+                    // Process barcode after animation
+                    setTimeout(() => {
+                        processBarcodeForProduct(code);
+                        isProcessingBarcode = false;
+                    }, 1500);
                 });
             } else {
                 console.log('⚠️ Quagga library not loaded, manual capture only');
             }
+        }
+        
+        // Show payment app style success animation
+        function showBarcodeSuccessAnimation(code) {
+            const section = document.getElementById('barcodeUploadSection');
+            const originalContent = section.innerHTML;
+            
+            // Payment app style success screen
+            section.innerHTML = `
+                <div style="text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border-radius: 15px; color: white; margin-bottom: 15px;">
+                    <div style="font-size: 64px; margin-bottom: 20px; animation: bounce 0.6s ease-in-out;">✅</div>
+                    <div style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">Barcode Scanned!</div>
+                    <div style="font-size: 16px; opacity: 0.9; margin-bottom: 15px;">Processing product details...</div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 25px; font-family: monospace; font-size: 14px; font-weight: 600;">
+                        ${code}
+                    </div>
+                </div>
+                
+                <style>
+                    @keyframes bounce {
+                        0%, 20%, 60%, 100% { transform: translateY(0); }
+                        40% { transform: translateY(-20px); }
+                        80% { transform: translateY(-10px); }
+                    }
+                </style>
+            `;
+        }
+        
+        // Process barcode for product - Auto-fill details
+        function processBarcodeForProduct(code) {
+            // Store barcode data
+            window.detectedBarcodeData = code;
+            
+            // Auto-fill product code
+            const productCodeField = document.getElementById('productCode');
+            if (productCodeField) {
+                productCodeField.value = code;
+            }
+            
+            // Try to get product details from barcode (if it's a known format)
+            const productDetails = extractProductDetailsFromBarcode(code);
+            
+            if (productDetails.name) {
+                const productNameField = document.getElementById('productName');
+                if (productNameField && !productNameField.value) {
+                    productNameField.value = productDetails.name;
+                }
+            }
+            
+            if (productDetails.category) {
+                const categoryField = document.getElementById('productCategory');
+                if (categoryField) {
+                    categoryField.value = productDetails.category;
+                }
+            }
+            
+            // Close scanner and show success
+            closeBarcodeScanner();
+            showToast(`✅ Barcode ${code} captured successfully!`, 'success');
+            
+            // Focus on next empty field
+            setTimeout(() => {
+                const nameField = document.getElementById('productName');
+                const priceField = document.getElementById('productPrice');
+                
+                if (nameField && !nameField.value) {
+                    nameField.focus();
+                } else if (priceField && !priceField.value) {
+                    priceField.focus();
+                }
+            }, 500);
+        }
+        
+        // Extract product details from barcode (basic implementation)
+        function extractProductDetailsFromBarcode(barcode) {
+            // This is a basic implementation - in real app, you'd use barcode database
+            const details = {
+                name: '',
+                category: 'General'
+            };
+            
+            // Basic pattern matching for common barcodes
+            if (barcode.startsWith('890') || barcode.startsWith('891')) {
+                details.category = 'Food & Beverages';
+            } else if (barcode.startsWith('300') || barcode.startsWith('301')) {
+                details.category = 'Personal Care';
+            } else if (barcode.startsWith('400') || barcode.startsWith('401')) {
+                details.category = 'Health & Beauty';
+            }
+            
+            // You can add more sophisticated barcode-to-product mapping here
+            // For now, we'll let user fill the name manually
+            
+            return details;
         }
         
         // Save Product
