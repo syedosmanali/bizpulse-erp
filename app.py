@@ -1275,22 +1275,55 @@ def get_products():
 @app.route('/api/products', methods=['POST'])
 @require_auth
 def add_product():
-    data = request.json
-    product_id = generate_id()
-    
-    conn = get_db_connection()
-    conn.execute('''
-        INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, business_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        product_id, data['code'], data['name'], data.get('category', 'General'),
-        data['price'], data.get('cost', 0), data.get('stock', 0),
-        data.get('min_stock', 0), data.get('unit', 'piece'), data.get('business_type', 'both')
-    ))
-    conn.commit()
-    conn.close()
-    
-    return jsonify({"message": "Product added successfully", "id": product_id}), 201
+    try:
+        data = request.json
+        
+        # Validate required fields
+        if not data or not data.get('name') or not data.get('price'):
+            return jsonify({"error": "Product name and price are required"}), 400
+        
+        # Generate product ID and code if not provided
+        product_id = generate_id()
+        product_code = data.get('code') or f"P{len(str(product_id))[:6]}"
+        
+        conn = get_db_connection()
+        
+        # Check if code already exists
+        existing = conn.execute('SELECT id FROM products WHERE code = ?', (product_code,)).fetchone()
+        if existing:
+            product_code = f"{product_code}_{datetime.now().strftime('%H%M%S')}"
+        
+        # Insert product with error handling
+        conn.execute('''
+            INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, business_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            product_id, 
+            product_code, 
+            data['name'], 
+            data.get('category', 'General'),
+            float(data['price']), 
+            float(data.get('cost', 0)), 
+            int(data.get('stock', 0)),
+            int(data.get('min_stock', 0)), 
+            data.get('unit', 'piece'), 
+            data.get('business_type', 'both')
+        ))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": "Product added successfully", 
+            "id": product_id,
+            "code": product_code
+        }), 201
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to add product: {str(e)}"
+        }), 500
 
 # Customers API
 @app.route('/api/customers', methods=['GET'])
