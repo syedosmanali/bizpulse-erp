@@ -1362,19 +1362,32 @@ def add_barcode_to_product(product_id):
 
 @app.route('/api/products/search/barcode/<barcode>', methods=['GET'])
 def search_product_by_barcode(barcode):
-    """Search product by barcode data - Production ready"""
+    """Search product by barcode data - Production ready with enhanced logging"""
     try:
-        print(f"🔍 [BARCODE SEARCH] Searching for barcode: {barcode}")
+        print(f"🔍 [BARCODE SEARCH] Searching for barcode: '{barcode}'")
         
         # Validate barcode input
         if not barcode or len(barcode.strip()) == 0:
+            print(f"❌ [BARCODE SEARCH] Invalid barcode - empty or null")
             return jsonify({
                 "success": False,
                 "error": "Invalid barcode - empty or null"
             }), 400
         
         barcode = barcode.strip()
+        print(f"🔍 [BARCODE SEARCH] Cleaned barcode: '{barcode}' (length: {len(barcode)})")
+        
         conn = get_db_connection()
+        
+        # Debug: Check all products with barcodes
+        all_barcodes = conn.execute('''
+            SELECT id, name, barcode_data FROM products 
+            WHERE barcode_data IS NOT NULL AND barcode_data != '' AND is_active = 1
+        ''').fetchall()
+        
+        print(f"🔍 [BARCODE SEARCH] Available barcodes in database: {len(all_barcodes)}")
+        for bc in all_barcodes:
+            print(f"   - Product: {bc['name']}, Barcode: '{bc['barcode_data']}'")
         
         # EXACT MATCH ONLY - Primary lookup by barcode_data
         product = conn.execute('''
@@ -1386,24 +1399,28 @@ def search_product_by_barcode(barcode):
         conn.close()
         
         if product:
-            print(f"✅ [BARCODE SEARCH] Found product: {product['name']}")
+            print(f"✅ [BARCODE SEARCH] Found product: {product['name']} (ID: {product['id']})")
             return jsonify({
                 "success": True,
                 "product": dict(product)
             }), 200
         else:
-            print(f"❌ [BARCODE SEARCH] No product found for barcode: {barcode}")
+            print(f"❌ [BARCODE SEARCH] No product found for barcode: '{barcode}'")
+            print(f"❌ [BARCODE SEARCH] Available barcodes: {[bc['barcode_data'] for bc in all_barcodes]}")
             return jsonify({
                 "success": False,
-                "message": f"Product not found",
-                "barcode": barcode
+                "message": f"Product not found for barcode: {barcode}",
+                "barcode": barcode,
+                "available_barcodes": [bc['barcode_data'] for bc in all_barcodes]  # Debug info
             }), 404
             
     except Exception as e:
         print(f"❌ [BARCODE SEARCH] Error: {str(e)}")
+        import traceback
+        print(f"❌ [BARCODE SEARCH] Traceback: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "error": "Search failed",
+            "error": f"Search failed: {str(e)}",
             "barcode": barcode
         }), 500
 

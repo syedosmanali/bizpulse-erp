@@ -2167,6 +2167,70 @@
         const API_BASE_URL = window.location.origin;
         console.log('🌐 API Base URL:', API_BASE_URL);
         
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            // Remove existing toast
+            const existingToast = document.getElementById('toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.id = 'toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : type === 'warning' ? '#ff9800' : '#2196F3'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 25px;
+                font-size: 14px;
+                font-weight: 600;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                max-width: 90%;
+                text-align: center;
+                animation: slideDown 0.3s ease-out;
+            `;
+            
+            // Add animation keyframes
+            if (!document.getElementById('toast-styles')) {
+                const style = document.createElement('style');
+                style.id = 'toast-styles';
+                style.textContent = `
+                    @keyframes slideDown {
+                        from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+                        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                        to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.style.animation = 'slideUp 0.3s ease-out';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.remove();
+                        }
+                    }, 300);
+                }
+            }, 3000);
+            
+            console.log(`📢 Toast [${type.toUpperCase()}]: ${message}`);
+        }
+        
         // Helper function for API calls
         async function apiCall(endpoint, options = {}) {
             try {
@@ -3013,13 +3077,16 @@
         
         // Process barcode for product - Auto-fill details
         function processBarcodeForProduct(code) {
-            // Store barcode data
+            console.log('[BARCODE PROCESS] Processing barcode for product:', code);
+            
+            // Store barcode data globally
             window.detectedBarcodeData = code;
             
-            // Auto-fill product code
+            // Auto-fill product code field
             const productCodeField = document.getElementById('productCode');
             if (productCodeField) {
                 productCodeField.value = code;
+                console.log('[BARCODE PROCESS] Auto-filled product code:', code);
             }
             
             // Try to get product details from barcode (if it's a known format)
@@ -3029,6 +3096,7 @@
                 const productNameField = document.getElementById('productName');
                 if (productNameField && !productNameField.value) {
                     productNameField.value = productDetails.name;
+                    console.log('[BARCODE PROCESS] Auto-filled product name:', productDetails.name);
                 }
             }
             
@@ -3036,6 +3104,7 @@
                 const categoryField = document.getElementById('productCategory');
                 if (categoryField) {
                     categoryField.value = productDetails.category;
+                    console.log('[BARCODE PROCESS] Auto-filled category:', productDetails.category);
                 }
             }
             
@@ -3101,7 +3170,7 @@
                 return;
             }
             
-            // Prepare form data
+            // Prepare form data with proper barcode handling
             const formData = {
                 code: document.getElementById('productCode').value.trim() || undefined,
                 name: name,
@@ -3116,7 +3185,11 @@
                 barcode_image: barcodeImageData || null // Include barcode image if captured
             };
             
-            console.log('[PRODUCT SAVE] Form data:', formData);
+            console.log('[PRODUCT SAVE] Form data prepared:', {
+                ...formData,
+                barcode_data: formData.barcode_data ? `"${formData.barcode_data}"` : null,
+                barcode_image: formData.barcode_image ? '[IMAGE_DATA]' : null
+            });
             
             // Show loading
             const saveBtn = event.target.querySelector('button[type="submit"]') || event.target;
@@ -3125,6 +3198,7 @@
             saveBtn.disabled = true;
             
             try {
+                console.log('[PRODUCT SAVE] Making API request...');
                 const response = await fetch('/api/products', {
                     method: 'POST',
                     headers: {
@@ -3146,10 +3220,14 @@
                     window.detectedBarcodeData = null;
                     barcodeImageData = null;
                     
+                    console.log('[PRODUCT SAVE] Product saved successfully:', result.product);
+                    
                 } else if (response.status === 409) {
                     // Handle duplicate barcode error
                     const errorMsg = result.error || 'Product with this barcode already exists';
                     showToast('❌ ' + errorMsg, 'error');
+                    
+                    console.log('[PRODUCT SAVE] Duplicate barcode error:', result);
                     
                     if (result.existing_product) {
                         setTimeout(() => {
@@ -3159,9 +3237,10 @@
                 } else {
                     const errorMsg = result.error || result.message || 'Failed to add product';
                     showToast('❌ ' + errorMsg, 'error');
+                    console.log('[PRODUCT SAVE] Save failed:', result);
                 }
             } catch (error) {
-                console.error('[PRODUCT SAVE] Error:', error);
+                console.error('[PRODUCT SAVE] Network error:', error);
                 showToast('❌ Network error. Please check connection.', 'error');
             } finally {
                 // Restore button state
@@ -3925,7 +4004,7 @@
         // Search product by barcode and add to bill - Real mart style
         async function searchAndAddProductByBarcode(barcode) {
             try {
-                console.log('🔍 Searching for barcode:', barcode);
+                console.log('🔍 [BILLING BARCODE] Searching for barcode:', barcode);
                 
                 // Show scanning feedback
                 const camera = document.getElementById('billBarcodeCamera');
@@ -3940,20 +4019,18 @@
                     </div>
                 `;
                 
-                console.log('📡 Making API request to:', `/api/products/search/barcode/${barcode}`);
+                const apiUrl = `/api/products/search/barcode/${encodeURIComponent(barcode)}`;
+                console.log('📡 [BILLING BARCODE] Making API request to:', apiUrl);
                 
-                const response = await fetch(`/api/products/search/barcode/${barcode}`);
-                console.log('📡 Response status:', response.status);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
+                const response = await fetch(apiUrl);
+                console.log('📡 [BILLING BARCODE] Response status:', response.status);
                 
                 const result = await response.json();
-                console.log('📡 API Response:', result);
+                console.log('📡 [BILLING BARCODE] API Response:', result);
                 
-                if (result.success && result.product) {
+                if (response.ok && result.success && result.product) {
                     const product = result.product;
+                    console.log('✅ [BILLING BARCODE] Product found:', product.name);
                     
                     // Show success feedback
                     camera.innerHTML = `
@@ -3975,21 +4052,25 @@
                     }, 2000);
                     
                 } else {
+                    console.log('❌ [BILLING BARCODE] Product not found for barcode:', barcode);
+                    console.log('❌ [BILLING BARCODE] Available barcodes:', result.available_barcodes);
+                    
                     // Show error feedback
                     camera.innerHTML = `
                         <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); border-radius: 8px; color: white;">
                             <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
                             <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Product Not Found</div>
-                            <div style="font-size: 14px; opacity: 0.9;">Barcode: ${barcode}</div>
-                            <button onclick="closeBillBarcodeScanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 8px; margin-top: 15px;">Try Again</button>
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Barcode: ${barcode}</div>
+                            <div style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">This product is not in your inventory</div>
+                            <button onclick="closeBillBarcodeScanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 8px;">Try Again</button>
                         </div>
                     `;
                     
                     showToast(`❌ Product not found: ${barcode}`, 'error');
                 }
             } catch (error) {
-                console.error('❌ Error searching product by barcode:', error);
-                console.error('❌ Error details:', {
+                console.error('❌ [BILLING BARCODE] Error searching product by barcode:', error);
+                console.error('❌ [BILLING BARCODE] Error details:', {
                     message: error.message,
                     stack: error.stack,
                     barcode: barcode
@@ -4000,7 +4081,7 @@
                 camera.innerHTML = `
                     <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); border-radius: 8px; color: white;">
                         <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
-                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Search Error</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Connection Error</div>
                         <div style="font-size: 14px; opacity: 0.9; margin-bottom: 8px;">Barcode: ${barcode}</div>
                         <div style="font-size: 12px; opacity: 0.8; margin-bottom: 15px;">Error: ${error.message}</div>
                         <button onclick="closeBillBarcodeScanner()" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 16px; border-radius: 8px; margin-right: 10px;">Close</button>
@@ -4008,7 +4089,7 @@
                     </div>
                 `;
                 
-                showToast(`❌ Error: ${error.message}`, 'error');
+                showToast(`❌ Connection error: ${error.message}`, 'error');
             }
         }
         
