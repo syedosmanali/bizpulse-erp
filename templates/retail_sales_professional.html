@@ -308,8 +308,13 @@
         <div class="header">
             <h1 class="page-title">Sales Management</h1>
             <div class="header-actions">
-                <button class="btn btn-secondary" onclick="exportData()">
-                    📥 Export
+                <button class="btn btn-secondary" onclick="exportSales()">
+                    📥 Export CSV
+                </button>
+                <a href="/retail/billing" class="btn btn-primary">
+                    ➕ New Sale
+                </a>
+            </div>
                 </button>
                 <button class="btn btn-primary" onclick="addSale()">
                     ➕ New Sale
@@ -320,24 +325,24 @@
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label">Today's Sales</div>
-                <div class="stat-value" id="todaySales">₹0</div>
-                <div class="stat-change">+12.5% from yesterday</div>
+                <div class="stat-label">Total Sales</div>
+                <div class="stat-value" data-stat="total-sales">₹0</div>
+                <div class="stat-change">Current filter period</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">This Week</div>
-                <div class="stat-value" id="weekSales">₹0</div>
-                <div class="stat-change">+8.2% from last week</div>
+                <div class="stat-label">Total Bills</div>
+                <div class="stat-value" data-stat="total-bills">0</div>
+                <div class="stat-change">Number of transactions</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">This Month</div>
-                <div class="stat-value" id="monthSales">₹0</div>
-                <div class="stat-change">+15.3% from last month</div>
+                <div class="stat-label">Average Sale</div>
+                <div class="stat-value" data-stat="avg-sale">₹0</div>
+                <div class="stat-change">Per transaction</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Total Transactions</div>
-                <div class="stat-value" id="totalTransactions">0</div>
-                <div class="stat-change">+24 today</div>
+                <div class="stat-label">Total Profit</div>
+                <div class="stat-value" data-stat="total-profit">₹0</div>
+                <div class="stat-change">Estimated profit</div>
             </div>
         </div>
         
@@ -367,8 +372,14 @@
                 <input type="text" class="filter-input" placeholder="Search..." id="searchInput" oninput="filterSales()">
             </div>
             <button class="btn btn-secondary" onclick="resetFilters()" style="margin-top: 22px;">
-                Reset
+                🔄 Reset
             </button>
+            <div class="filter-group">
+                <div class="filter-label">Filter Info</div>
+                <div id="filterInfo" style="font-size: 0.875rem; color: #6b7280; margin-top: 6px;">
+                    Loading...
+                </div>
+            </div>
         </div>
         
         <!-- Table -->
@@ -400,54 +411,211 @@
     </div>
     
     <script>
-        // Load sales data
+        let currentSales = [];
+        let currentFilters = {
+            filter: 'today',
+            category: 'all',
+            payment_method: 'all',
+            search: ''
+        };
+
+        // Load sales data with filters
         async function loadSales() {
             try {
-                const response = await fetch('/api/sales/all');
+                showLoading();
+                
+                // Build query parameters
+                const params = new URLSearchParams();
+                params.append('filter', currentFilters.filter);
+                params.append('category', currentFilters.category);
+                params.append('payment_method', currentFilters.payment_method);
+                params.append('limit', '100');
+                
+                if (currentFilters.filter === 'custom' && currentFilters.from_date && currentFilters.to_date) {
+                    params.append('from_date', currentFilters.from_date);
+                    params.append('to_date', currentFilters.to_date);
+                }
+                
+                const response = await fetch(`/api/sales/all?${params.toString()}`);
                 const data = await response.json();
                 
-                if (data.sales && data.sales.length > 0) {
-                    renderSales(data.sales);
-                    updateStats(data);
+                if (data.success && data.sales) {
+                    currentSales = data.sales;
+                    renderSales(currentSales);
+                    updateStats(data.summary);
+                    updateFilterInfo(data.filters, data.total_records);
                 } else {
-                    document.getElementById('salesTable').innerHTML = `
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">📊</div>
-                                    <div class="empty-state-text">No sales data available</div>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
+                    showEmptyState('No sales data available');
                 }
             } catch (error) {
                 console.error('Error loading sales:', error);
-                document.getElementById('salesTable').innerHTML = `
-                    <tr>
-                        <td colspan="7">
-                            <div class="empty-state">
-                                <div class="empty-state-icon">⚠️</div>
-                                <div class="empty-state-text">Failed to load sales data</div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                showEmptyState('Failed to load sales data');
             }
+        }
+
+        function showLoading() {
+            document.getElementById('salesTable').innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">⏳</div>
+                            <div class="empty-state-text">Loading sales data...</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function showEmptyState(message) {
+            document.getElementById('salesTable').innerHTML = `
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-text">${message}</div>
+                        </div>
+                    </td>
+                </tr>
+            `;
         }
         
         function renderSales(sales) {
             const tbody = document.getElementById('salesTable');
-            tbody.innerHTML = sales.slice(0, 50).map(sale => `
+            
+            if (!sales || sales.length === 0) {
+                showEmptyState('No sales found for the selected filters');
+                return;
+            }
+            
+            tbody.innerHTML = sales.map(sale => `
                 <tr>
-                    <td><strong>#${sale.id || 'N/A'}</strong></td>
-                    <td>${formatDate(sale.date)}</td>
-                    <td>${sale.customer_name || 'Walk-in'}</td>
-                    <td>${sale.items_count || 1} items</td>
-                    <td><strong>₹${formatNumber(sale.total_amount)}</strong></td>
-                    <td><span class="badge badge-info">${sale.payment_method || 'Cash'}</span></td>
+                    <td><strong>#${sale.bill_number || sale.id || 'N/A'}</strong></td>
+                    <td>${formatDate(sale.date || sale.created_at)}</td>
+                    <td>${sale.customer_name || 'Walk-in Customer'}</td>
+                    <td>${sale.product_name || 'N/A'} (${sale.quantity || 1}x)</td>
+                    <td><strong>₹${formatNumber(sale.total_amount || sale.total_price || 0)}</strong></td>
+                    <td><span class="badge badge-info">${(sale.payment_method || 'cash').toUpperCase()}</span></td>
                     <td><span class="badge badge-success">Completed</span></td>
                 </tr>
+            `).join('');
+        }
+
+        function updateStats(summary) {
+            if (!summary) return;
+            
+            // Update stat cards if they exist
+            const totalSalesEl = document.querySelector('[data-stat="total-sales"]');
+            const totalBillsEl = document.querySelector('[data-stat="total-bills"]');
+            const avgSaleEl = document.querySelector('[data-stat="avg-sale"]');
+            const totalProfitEl = document.querySelector('[data-stat="total-profit"]');
+            
+            if (totalSalesEl) totalSalesEl.textContent = `₹${formatNumber(summary.total_sales || 0)}`;
+            if (totalBillsEl) totalBillsEl.textContent = summary.total_bills || 0;
+            if (avgSaleEl) avgSaleEl.textContent = `₹${formatNumber(summary.avg_sale_value || 0)}`;
+            if (totalProfitEl) totalProfitEl.textContent = `₹${formatNumber(summary.total_profit || 0)}`;
+        }
+
+        function updateFilterInfo(filters, totalRecords) {
+            // Update filter info display if exists
+            const filterInfoEl = document.getElementById('filterInfo');
+            if (filterInfoEl) {
+                filterInfoEl.textContent = `Showing ${totalRecords} records for ${filters.filter} filter`;
+            }
+        }
+
+        // Filter functions
+        function filterSales() {
+            const dateRange = document.getElementById('dateRange').value;
+            const paymentFilter = document.getElementById('paymentFilter').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            
+            // Update current filters
+            currentFilters.filter = dateRange;
+            currentFilters.payment_method = paymentFilter;
+            currentFilters.search = searchInput;
+            
+            // Reload data with new filters
+            loadSales();
+        }
+
+        function resetFilters() {
+            document.getElementById('dateRange').value = 'today';
+            document.getElementById('paymentFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            
+            currentFilters = {
+                filter: 'today',
+                category: 'all',
+                payment_method: 'all',
+                search: ''
+            };
+            
+            loadSales();
+        }
+
+        // Utility functions
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-IN', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                return dateStr;
+            }
+        }
+        
+        function formatNumber(num) {
+            if (!num) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Export functions
+        function exportSales() {
+            if (!currentSales || currentSales.length === 0) {
+                alert('No sales data to export');
+                return;
+            }
+            
+            // Create CSV content
+            const headers = ['Bill Number', 'Date', 'Customer', 'Product', 'Quantity', 'Amount', 'Payment Method'];
+            const csvContent = [
+                headers.join(','),
+                ...currentSales.map(sale => [
+                    sale.bill_number || sale.id || '',
+                    sale.date || sale.created_at || '',
+                    sale.customer_name || 'Walk-in Customer',
+                    sale.product_name || '',
+                    sale.quantity || 1,
+                    sale.total_amount || sale.total_price || 0,
+                    sale.payment_method || 'cash'
+                ].join(','))
+            ].join('\n');
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `sales_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSales();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(loadSales, 30000);
+        });
+    </script>
             `).join('');
         }
         

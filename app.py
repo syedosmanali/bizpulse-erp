@@ -3533,30 +3533,89 @@ def sales_api():
 
 @app.route('/api/sales/all', methods=['GET'])
 def get_all_sales():
-    """Get all sales entries with filtering options"""
-    date_from = request.args.get('from', datetime.now().strftime('%Y-%m-%d'))
-    date_to = request.args.get('to', datetime.now().strftime('%Y-%m-%d'))
+    """Get all sales entries with filtering options - Fixed for Frontend"""
+    from datetime import datetime, timedelta
+    
+    # Get filter parameters
+    date_filter = request.args.get('filter', 'today')  # today, yesterday, week, month, all, custom
+    from_date = request.args.get('from_date')
+    to_date = request.args.get('to_date')
     category = request.args.get('category', 'all')
+    payment_method = request.args.get('payment_method', 'all')
     limit = int(request.args.get('limit', 100))
+    
+    # Get current time
+    now = datetime.now()
     
     conn = get_db_connection()
     
-    query = '''
+    # Build date filter
+    if date_filter == 'today':
+        filter_date = now.strftime('%Y-%m-%d')
+        date_condition = "DATE(s.created_at) = ?"
+        params = [filter_date]
+    elif date_filter == 'yesterday':
+        filter_date = (now - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_condition = "DATE(s.created_at) = ?"
+        params = [filter_date]
+    elif date_filter == 'week':
+        week_start = (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')
+        date_condition = "DATE(s.created_at) >= ?"
+        params = [week_start]
+    elif date_filter == 'month':
+        month_start = now.replace(day=1).strftime('%Y-%m-%d')
+        date_condition = "DATE(s.created_at) >= ?"
+        params = [month_start]
+    elif date_filter == 'all':
+        date_condition = "1=1"
+        params = []
+    elif date_filter == 'custom' and from_date and to_date:
+        date_condition = "DATE(s.created_at) BETWEEN ? AND ?"
+        params = [from_date, to_date]
+    else:
+        # Default to today
+        filter_date = now.strftime('%Y-%m-%d')
+        date_condition = "DATE(s.created_at) = ?"
+        params = [filter_date]
+    
+    # Build main query with proper field mapping for frontend
+    query = f'''
         SELECT 
-            s.*,
+            s.id,
+            s.bill_id,
+            s.bill_number,
+            s.customer_id,
+            s.customer_name,
+            s.product_id,
+            s.product_name,
+            s.category,
+            s.quantity,
+            s.unit_price,
+            s.total_price as total_amount,
+            s.tax_amount,
+            s.discount_amount,
+            s.payment_method,
+            s.sale_date as date,
+            s.sale_time as time,
+            s.created_at,
+            p.cost as product_cost,
             p.stock as current_stock,
-            p.min_stock,
-            p.cost as purchase_price,
-            p.price as selling_price
+            (s.total_price - (COALESCE(p.cost, 0) * s.quantity)) as profit,
+            1 as items_count
         FROM sales s
         LEFT JOIN products p ON s.product_id = p.id
-        WHERE s.sale_date BETWEEN ? AND ?
+        WHERE {date_condition}
     '''
-    params = [date_from, date_to]
     
+    # Add category filter
     if category != 'all':
         query += ' AND s.category = ?'
         params.append(category)
+    
+    # Add payment method filter
+    if payment_method != 'all':
+        query += ' AND s.payment_method = ?'
+        params.append(payment_method)
     
     query += ' ORDER BY s.created_at DESC LIMIT ?'
     params.append(limit)
@@ -3564,37 +3623,52 @@ def get_all_sales():
     sales = conn.execute(query, params).fetchall()
     
     # Get summary statistics
-    summary_query = '''
+    summary_query = f'''
         SELECT 
-            COUNT(DISTINCT bill_id) as total_bills,
+            COUNT(DISTINCT s.bill_id) as total_bills,
             COUNT(*) as total_items,
-            SUM(quantity) as total_quantity,
-            SUM(total_price) as total_sales,
-            SUM(tax_amount) as total_tax,
-            SUM(discount_amount) as total_discount,
-            AVG(total_price) as avg_sale_value
-        FROM sales
-        WHERE sale_date BETWEEN ? AND ?
+            COALESCE(SUM(s.quantity), 0) as total_quantity,
+            COALESCE(SUM(s.total_price), 0) as total_sales,
+            COALESCE(SUM(s.tax_amount), 0) as total_tax,
+            COALESCE(SUM(s.discount_amount), 0) as total_discount,
+            COALESCE(AVG(s.total_price), 0) as avg_sale_value,
+            COALESCE(SUM(s.total_price - (COALESCE(p.cost, 0) * s.quantity)), 0) as total_profit
+        FROM sales s
+        LEFT JOIN products p ON s.product_id = p.id
+        WHERE {date_condition}
     '''
-    summary_params = [date_from, date_to]
     
+    summary_params = params[:-1]  # Remove limit from summary params
+    
+    # Add filters to summary
     if category != 'all':
-        summary_query += ' AND category = ?'
-        summary_params.append(category)
+        summary_query += ' AND s.category = ?'
+        if category not in summary_params:
+            summary_params.append(category)
+    
+    if payment_method != 'all':
+        summary_query += ' AND s.payment_method = ?'
+        if payment_method not in summary_params:
+            summary_params.append(payment_method)
     
     summary = conn.execute(summary_query, summary_params).fetchone()
     
     conn.close()
     
     return jsonify({
+        'success': True,
         'sales': [dict(row) for row in sales],
         'summary': dict(summary) if summary else {},
         'filters': {
-            'from': date_from,
-            'to': date_to,
+            'filter': date_filter,
+            'from_date': from_date,
+            'to_date': to_date,
             'category': category,
+            'payment_method': payment_method,
             'limit': limit
-        }
+        },
+        'total_records': len(sales),
+        'timezone': 'Local Time (IST)'
     })
 
 @app.route('/api/sales/by-product', methods=['GET'])
