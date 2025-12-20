@@ -1023,15 +1023,49 @@ def retail_settings():
 
 @app.route('/retail/invoices')
 def retail_invoices():
-    return render_template('invoices_professional.html')
+    try:
+        return render_template('invoices_professional.html')
+    except Exception as e:
+        return f"<h1>❌ Invoice Template Error</h1><p>Error: {str(e)}</p><p>Template: invoices_professional.html</p><a href='/retail/dashboard'>Back to Dashboard</a>"
+
+@app.route('/retail/invoices-test')
+def retail_invoices_test():
+    return "<h1>✅ Invoice Route Working!</h1><p>This is a test route to verify invoices are accessible.</p><a href='/retail/dashboard'>Back to Dashboard</a>"
 
 @app.route('/retail/invoice/<invoice_id>')
 def retail_invoice_detail(invoice_id):
-    return render_template('retail_invoice_detail.html', invoice_id=invoice_id)
+    try:
+        return render_template('retail_invoice_detail.html', invoice_id=invoice_id)
+    except Exception as e:
+        return f"<h1>❌ Invoice Detail Template Error</h1><p>Error: {str(e)}</p><p>Template: retail_invoice_detail.html</p><p>Invoice ID: {invoice_id}</p><a href='/retail/invoices'>Back to Invoices</a>"
 
 @app.route('/invoice-demo')
 def invoice_demo():
     return render_template('invoice_demo.html')
+
+@app.route('/debug-routes')
+def debug_routes():
+    """Debug route to show all available routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        if 'invoice' in rule.rule.lower():
+            routes.append(f"{rule.rule} -> {rule.endpoint}")
+    
+    html = "<h1>🔍 Invoice Routes Debug</h1>"
+    html += "<h2>Available Invoice Routes:</h2><ul>"
+    for route in routes:
+        html += f"<li>{route}</li>"
+    html += "</ul>"
+    html += "<h2>Test Links:</h2>"
+    html += "<ul>"
+    html += "<li><a href='/retail/invoices-test'>Invoice Test Route</a></li>"
+    html += "<li><a href='/retail/invoices'>Invoice Main Route</a></li>"
+    html += "<li><a href='/retail/invoice/test-123'>Invoice Detail Route</a></li>"
+    html += "<li><a href='/invoice-demo'>Invoice Demo Route</a></li>"
+    html += "<li><a href='/api/invoices'>Invoice API</a></li>"
+    html += "</ul>"
+    html += "<p><a href='/retail/dashboard'>Back to Dashboard</a></p>"
+    return html
 
 @app.route('/test-navigation')
 def test_navigation():
