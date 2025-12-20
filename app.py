@@ -3127,24 +3127,34 @@ def create_bill():
         
         # Add bill items and create sales entries
         for item in data['items']:
+            # Fix product_id - try multiple field names
+            product_id = item.get('product_id') or item.get('id') or item.get('productId') or 'default-product'
+            product_name = item.get('product_name') or item.get('name') or 'Unknown Product'
+            quantity = item.get('quantity', 1)
+            unit_price = item.get('unit_price') or item.get('price', 0)
+            total_price = item.get('total_price') or (unit_price * quantity)
+            
             item_id = generate_id()
             conn.execute('''
                 INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, unit_price, total_price)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
-                item_id, bill_id, item['product_id'], item['product_name'],
-                item['quantity'], item['unit_price'], item['total_price']
+                item_id, bill_id, product_id, product_name,
+                quantity, unit_price, total_price
             ))
             
-            # Update product stock (AUTOMATIC STOCK REDUCTION)
-            conn.execute('''
-                UPDATE products SET stock = stock - ? WHERE id = ?
-            ''', (item['quantity'], item['product_id']))
+            # Update product stock (AUTOMATIC STOCK REDUCTION) - skip if product_id is default
+            if product_id != 'default-product':
+                conn.execute('''
+                    UPDATE products SET stock = stock - ? WHERE id = ?
+                ''', (quantity, product_id))
             
             # Get product details for sales entry
-            product = conn.execute('''
-                SELECT category FROM products WHERE id = ?
-            ''', (item['product_id'],)).fetchone()
+            product = None
+            if product_id != 'default-product':
+                product = conn.execute('''
+                    SELECT category FROM products WHERE id = ?
+                ''', (product_id,)).fetchone()
             
             # Create sales entry for each item (AUTOMATIC SALES ENTRY) with local timestamps
             sale_id = generate_id()
@@ -3152,8 +3162,8 @@ def create_bill():
             sale_time = now.strftime('%H:%M:%S')
             
             # Calculate item tax amount (proportional to item total)
-            item_tax = (item['total_price'] / data['subtotal']) * data['tax_amount'] if data['subtotal'] > 0 else 0
-            item_discount = (item['total_price'] / data['subtotal']) * data.get('discount_amount', 0) if data['subtotal'] > 0 else 0
+            item_tax = (total_price / data['subtotal']) * data['tax_amount'] if data['subtotal'] > 0 else 0
+            item_discount = (total_price / data['subtotal']) * data.get('discount_amount', 0) if data['subtotal'] > 0 else 0
             
             conn.execute('''
                 INSERT INTO sales (
@@ -3165,8 +3175,8 @@ def create_bill():
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
-                item['product_id'], item['product_name'], product['category'] if product else 'General',
-                item['quantity'], item['unit_price'], item['total_price'],
+                product_id, product_name, product['category'] if product else 'General',
+                quantity, unit_price, total_price,
                 item_tax, item_discount, data.get('payment_method', 'cash'),
                 sale_date, sale_time, timestamp
             ))
@@ -3789,26 +3799,36 @@ def sales_api():
                 
                 # Process each item
                 for item in data['items']:
+                    # Fix product_id - try multiple field names
+                    product_id = item.get('product_id') or item.get('id') or item.get('productId') or 'default-product'
+                    product_name = item.get('product_name') or item.get('name') or 'Unknown Product'
+                    quantity = item.get('quantity', 1)
+                    unit_price = item.get('unit_price') or item.get('price', 0)
+                    total_price = item.get('total_price') or (unit_price * quantity)
+                    
                     # Create bill item
                     item_id = generate_id()
                     conn.execute('''
                         INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, unit_price, total_price, tax_rate)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
-                        item_id, bill_id, item['product_id'], item['product_name'],
-                        item['quantity'], item['unit_price'], item['total_price'], 
+                        item_id, bill_id, product_id, product_name,
+                        quantity, unit_price, total_price, 
                         item.get('tax_rate', 18)
                     ))
                     
-                    # Update product stock (CRITICAL: Automatic stock reduction)
-                    conn.execute('''
-                        UPDATE products SET stock = stock - ? WHERE id = ?
-                    ''', (item['quantity'], item['product_id']))
+                    # Update product stock (CRITICAL: Automatic stock reduction) - skip if default
+                    if product_id != 'default-product':
+                        conn.execute('''
+                            UPDATE products SET stock = stock - ? WHERE id = ?
+                        ''', (quantity, product_id))
                     
                     # Get product details for sales entry
-                    product = conn.execute('''
-                        SELECT category, cost FROM products WHERE id = ?
-                    ''', (item['product_id'],)).fetchone()
+                    product = None
+                    if product_id != 'default-product':
+                        product = conn.execute('''
+                            SELECT category, cost FROM products WHERE id = ?
+                        ''', (product_id,)).fetchone()
                     
                     # Create sales entry (CRITICAL: One bill item = one sales record)
                     sale_id = generate_id()
@@ -3818,8 +3838,8 @@ def sales_api():
                     
                     # Calculate proportional tax and discount for this item
                     subtotal = data.get('subtotal', data['total_amount'])
-                    item_tax = (item['total_price'] / subtotal) * data.get('tax_amount', 0) if subtotal > 0 else 0
-                    item_discount = (item['total_price'] / subtotal) * data.get('discount_amount', 0) if subtotal > 0 else 0
+                    item_tax = (total_price / subtotal) * data.get('tax_amount', 0) if subtotal > 0 else 0
+                    item_discount = (total_price / subtotal) * data.get('discount_amount', 0) if subtotal > 0 else 0
                     
                     conn.execute('''
                         INSERT INTO sales (
@@ -3831,9 +3851,9 @@ def sales_api():
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
-                        item['product_id'], item['product_name'], 
+                        product_id, product_name, 
                         product['category'] if product else 'General',
-                        item['quantity'], item['unit_price'], item['total_price'],
+                        quantity, unit_price, total_price,
                         item_tax, item_discount, data.get('payment_method', 'cash'),
                         sale_date, sale_time
                     ))
