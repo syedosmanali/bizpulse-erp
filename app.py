@@ -3067,7 +3067,6 @@ def get_live_sales_stats():
 @require_auth
 def create_bill():
     """Create a new bill with proper transaction handling and error management"""
-    from datetime import datetime
     
     try:
         data = request.json
@@ -3089,12 +3088,12 @@ def create_bill():
         
         print(f"📝 Using total_amount: {data['total_amount']}")
         
-        # Use local system time for bill number generation
-        current_datetime = datetime.now()
+        # Use current time for all operations - NO LOCAL IMPORT
+        current_time = datetime.now()
         
         bill_id = generate_id()
-        bill_number = f"BILL-{current_datetime.strftime('%Y%m%d')}-{bill_id[:8]}"
-        print(f"📝 Generated bill: {bill_number} at: {current_datetime}")
+        bill_number = f"BILL-{current_time.strftime('%Y%m%d')}-{bill_id[:8]}"
+        print(f"📝 Generated bill: {bill_number} at: {current_time}")
         
         conn = get_db_connection()
         
@@ -3107,17 +3106,17 @@ def create_bill():
         # Start database transaction
         conn.execute('BEGIN TRANSACTION')
         
-        # Create bill with local timestamp
-        created_at_timestamp = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        # Create bill with timestamp string
+        bill_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
         
-        print(f"📝 Creating bill at: {created_at_timestamp}")
+        print(f"📝 Creating bill at: {bill_timestamp}")
         
         conn.execute('''
             INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, tax_amount, total_amount, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             bill_id, bill_number, data.get('customer_id'), data['business_type'],
-            data['subtotal'], data['tax_amount'], data['total_amount'], created_at_timestamp
+            data['subtotal'], data['tax_amount'], data['total_amount'], bill_timestamp
         ))
         
         # Get customer name if customer_id exists
@@ -3147,7 +3146,7 @@ def create_bill():
                 quantity, unit_price, total_price
             ))
             
-            # Update product stock (AUTOMATIC STOCK REDUCTION) - skip if product_id is default
+            # Update product stock - skip if product_id is default
             if product_id != 'default-product':
                 # Check if product exists and has sufficient stock
                 product_check = conn.execute('''
@@ -3174,12 +3173,12 @@ def create_bill():
                     SELECT category FROM products WHERE id = ?
                 ''', (product_id,)).fetchone()
             
-            # Create sales entry for each item with proper timestamps
+            # Create sales entry with proper timestamps
             sale_id = generate_id()
-            sale_date = current_datetime.strftime('%Y-%m-%d')
-            sale_time = current_datetime.strftime('%H:%M:%S')
+            sale_date_str = current_time.strftime('%Y-%m-%d')
+            sale_time_str = current_time.strftime('%H:%M:%S')
             
-            # Calculate item tax amount (proportional to item total)
+            # Calculate item tax amount
             item_tax = (total_price / data['subtotal']) * data['tax_amount'] if data['subtotal'] > 0 else 0
             item_discount = (total_price / data['subtotal']) * data.get('discount_amount', 0) if data['subtotal'] > 0 else 0
             
@@ -3196,7 +3195,7 @@ def create_bill():
                 product_id, product_name, product['category'] if product else 'General',
                 quantity, unit_price, total_price,
                 item_tax, item_discount, data.get('payment_method', 'cash'),
-                sale_date, sale_time, created_at_timestamp
+                sale_date_str, sale_time_str, bill_timestamp
             ))
         
         # Add payment record
@@ -3205,14 +3204,14 @@ def create_bill():
             conn.execute('''
                 INSERT INTO payments (id, bill_id, method, amount, processed_at)
                 VALUES (?, ?, ?, ?, ?)
-            ''', (payment_id, bill_id, data['payment_method'], data['total_amount'], created_at_timestamp))
+            ''', (payment_id, bill_id, data['payment_method'], data['total_amount'], bill_timestamp))
         
         # Commit transaction
         conn.commit()
         
-        # Get updated hourly stats for real-time update
-        current_hour = current_datetime.strftime('%H')
-        today_date = current_datetime.strftime('%Y-%m-%d')
+        # Get updated hourly stats
+        current_hour_str = current_time.strftime('%H')
+        today_date_str = current_time.strftime('%Y-%m-%d')
         
         hourly_stats = conn.execute('''
             SELECT 
@@ -3220,20 +3219,20 @@ def create_bill():
                 COALESCE(SUM(total_amount), 0) as sales
             FROM bills 
             WHERE DATE(created_at) = ? AND strftime('%H', created_at) = ?
-        ''', (today_date, current_hour)).fetchone()
+        ''', (today_date_str, current_hour_str)).fetchone()
         
         conn.close()
         
-        print(f"✅ Bill created successfully: {bill_number} at: {created_at_timestamp}")
+        print(f"✅ Bill created successfully: {bill_number} at: {bill_timestamp}")
         print(f"✅ Sales entries created: {len(data['items'])}")
         
         return jsonify({
             "message": "Bill created successfully",
             "bill_id": bill_id,
             "bill_number": bill_number,
-            "created_at": created_at_timestamp,
+            "created_at": bill_timestamp,
             "hourly_update": {
-                "hour": f"{current_hour}:00",
+                "hour": f"{current_hour_str}:00",
                 "transactions": hourly_stats['transactions'],
                 "sales": float(hourly_stats['sales']),
                 "avg_order_value": float(hourly_stats['sales'] / hourly_stats['transactions']) if hourly_stats['transactions'] > 0 else 0
@@ -3252,7 +3251,7 @@ def create_bill():
         except:
             pass
             
-        # Return clean error message (don't expose internal details)
+        # Return clean error message
         return jsonify({
             "error": "Failed to create bill. Please try again.",
             "details": "Internal server error occurred during bill creation"
@@ -3775,7 +3774,6 @@ def sales_api():
     
     elif request.method == 'POST':
         # POST: Create a new bill with proper transaction handling
-        from datetime import datetime
         
         try:
             data = request.json
@@ -3797,21 +3795,21 @@ def sales_api():
             
             print(f"📝 [SALES API] Using total_amount: {data['total_amount']}")
             
-            # Get current datetime for all operations
-            current_datetime = datetime.now()
+            # Get current time for all operations - NO LOCAL IMPORT
+            current_time = datetime.now()
             
             conn = get_db_connection()
             
             # Generate bill details
             bill_id = generate_id()
-            bill_number = f"BILL-{current_datetime.strftime('%Y%m%d')}-{bill_id[:8]}"
+            bill_number = f"BILL-{current_time.strftime('%Y%m%d')}-{bill_id[:8]}"
             
             # Start transaction
             conn.execute('BEGIN TRANSACTION')
             
             try:
                 # Create bill record with timestamp
-                created_at_timestamp = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+                bill_timestamp = current_time.strftime('%Y-%m-%d %H:%M:%S')
                 
                 conn.execute('''
                     INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, tax_amount, discount_amount, total_amount, status, created_at)
@@ -3820,7 +3818,7 @@ def sales_api():
                     bill_id, bill_number, data.get('customer_id'), 
                     data.get('business_type', 'retail'),
                     data.get('subtotal', 0), data.get('tax_amount', 0), 
-                    data.get('discount_amount', 0), data['total_amount'], 'completed', created_at_timestamp
+                    data.get('discount_amount', 0), data['total_amount'], 'completed', bill_timestamp
                 ))
                 
                 # Get customer name if exists
@@ -3849,7 +3847,7 @@ def sales_api():
                         item.get('tax_rate', 18)
                     ))
                     
-                    # Update product stock (CRITICAL: Automatic stock reduction) - skip if default
+                    # Update product stock - skip if default
                     if product_id != 'default-product':
                         conn.execute('''
                             UPDATE products SET stock = stock - ? WHERE id = ?
@@ -3862,10 +3860,10 @@ def sales_api():
                             SELECT category, cost FROM products WHERE id = ?
                         ''', (product_id,)).fetchone()
                     
-                    # Create sales entry (CRITICAL: One bill item = one sales record)
+                    # Create sales entry
                     sale_id = generate_id()
-                    sale_date = current_datetime.strftime('%Y-%m-%d')
-                    sale_time = current_datetime.strftime('%H:%M:%S')
+                    sale_date_str = current_time.strftime('%Y-%m-%d')
+                    sale_time_str = current_time.strftime('%H:%M:%S')
                     
                     # Calculate proportional tax and discount for this item
                     subtotal = data.get('subtotal', data['total_amount'])
@@ -3886,7 +3884,7 @@ def sales_api():
                         product['category'] if product else 'General',
                         quantity, unit_price, total_price,
                         item_tax, item_discount, data.get('payment_method', 'cash'),
-                        sale_date, sale_time, created_at_timestamp
+                        sale_date_str, sale_time_str, bill_timestamp
                     ))
                 
                 # Add payment record
@@ -3895,7 +3893,7 @@ def sales_api():
                     conn.execute('''
                         INSERT INTO payments (id, bill_id, method, amount, processed_at)
                         VALUES (?, ?, ?, ?, ?)
-                    ''', (payment_id, bill_id, data['payment_method'], data['total_amount'], created_at_timestamp))
+                    ''', (payment_id, bill_id, data['payment_method'], data['total_amount'], bill_timestamp))
                 
                 # Commit transaction
                 conn.commit()
@@ -3910,7 +3908,7 @@ def sales_api():
                     "bill_number": bill_number,
                     "total_amount": data['total_amount'],
                     "items_count": len(data['items']),
-                    "created_at": created_at_timestamp
+                    "created_at": bill_timestamp
                 }), 201
                 
             except Exception as e:
