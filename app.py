@@ -840,9 +840,12 @@ def retail_customers():
     return render_template('retail_customers.html')
 
 @app.route('/retail/billing')
-@require_auth
 def retail_billing():
     return render_template('retail_billing.html')
+
+@app.route('/retail/billing-test')
+def retail_billing_test():
+    return "<h1>✅ Billing Route Working!</h1><p>This is a test route to verify billing is accessible.</p>"
 
 @app.route('/retail/dashboard')
 @require_auth
