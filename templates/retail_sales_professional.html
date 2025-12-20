@@ -358,6 +358,17 @@
                     <option value="custom">Custom Range</option>
                 </select>
             </div>
+            
+            <!-- Custom Date Range Inputs (hidden by default) -->
+            <div class="filter-group" id="customDateInputs" style="display: none;">
+                <label class="filter-label">Start Date</label>
+                <input type="date" class="filter-input" id="startDate" onchange="filterSales()">
+            </div>
+            <div class="filter-group" id="customDateInputsEnd" style="display: none;">
+                <label class="filter-label">End Date</label>
+                <input type="date" class="filter-input" id="endDate" onchange="filterSales()">
+            </div>
+            
             <div class="filter-group">
                 <label class="filter-label">Payment Method</label>
                 <select class="filter-input" id="paymentFilter" onchange="filterSales()">
@@ -411,30 +422,64 @@
     </div>
     
     <script>
-        let currentSales = [];
         let currentFilters = {
             filter: 'today',
+            startDate: null,
+            endDate: null,
             category: 'all',
             payment_method: 'all',
             search: ''
         };
+        
+        let currentSales = []; // Store current sales data
 
-        // Load sales data with filters
+        // Get current date in IST timezone (YYYY-MM-DD format)
+        function getCurrentDateIST() {
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+            const istTime = new Date(now.getTime() + istOffset);
+            return istTime.toISOString().split('T')[0];
+        }
+
+        function getYesterdayDateIST() {
+            const now = new Date();
+            const istOffset = 5.5 * 60 * 60 * 1000;
+            const yesterday = new Date(now.getTime() + istOffset - 24 * 60 * 60 * 1000);
+            return yesterday.toISOString().split('T')[0];
+        }
+
+        // Load sales data with proper date handling
         async function loadSales() {
             try {
                 showLoading();
                 
-                // Build query parameters
                 const params = new URLSearchParams();
-                params.append('filter', currentFilters.filter);
+                
+                // Handle different filter types
+                if (currentFilters.filter === 'today') {
+                    params.append('filter', 'today');
+                } else if (currentFilters.filter === 'yesterday') {
+                    params.append('filter', 'yesterday');
+                } else if (currentFilters.filter === 'week') {
+                    params.append('filter', 'week');
+                } else if (currentFilters.filter === 'month') {
+                    params.append('filter', 'month');
+                } else if (currentFilters.filter === 'custom' && currentFilters.startDate && currentFilters.endDate) {
+                    params.append('filter', 'custom');
+                    params.append('startDate', currentFilters.startDate);
+                    params.append('endDate', currentFilters.endDate);
+                } else if (currentFilters.startDate && currentFilters.endDate) {
+                    // Direct date range
+                    params.append('startDate', currentFilters.startDate);
+                    params.append('endDate', currentFilters.endDate);
+                } else {
+                    // Default to today
+                    params.append('filter', 'today');
+                }
+                
                 params.append('category', currentFilters.category);
                 params.append('payment_method', currentFilters.payment_method);
                 params.append('limit', '100');
-                
-                if (currentFilters.filter === 'custom' && currentFilters.from_date && currentFilters.to_date) {
-                    params.append('from_date', currentFilters.from_date);
-                    params.append('to_date', currentFilters.to_date);
-                }
                 
                 const response = await fetch(`/api/sales/all?${params.toString()}`);
                 const data = await response.json();
@@ -445,7 +490,7 @@
                     updateStats(data.summary);
                     updateFilterInfo(data.filters, data.total_records);
                 } else {
-                    showEmptyState('No sales data available');
+                    showEmptyState(data.error || 'No sales data available');
                 }
             } catch (error) {
                 console.error('Error loading sales:', error);
@@ -487,7 +532,7 @@
                 return;
             }
             
-            // Filter out sales with None/null values for better display
+            // Filter out sales with invalid values
             const validSales = sales.filter(sale => 
                 sale.total_amount !== null && 
                 sale.total_amount !== undefined && 
@@ -517,7 +562,6 @@
         function updateStats(summary) {
             if (!summary) return;
             
-            // Update stat cards if they exist
             const totalSalesEl = document.querySelector('[data-stat="total-sales"]');
             const totalBillsEl = document.querySelector('[data-stat="total-bills"]');
             const avgSaleEl = document.querySelector('[data-stat="avg-sale"]');
@@ -530,25 +574,64 @@
         }
 
         function updateFilterInfo(filters, totalRecords) {
-            // Update filter info display if exists
             const filterInfoEl = document.getElementById('filterInfo');
             if (filterInfoEl) {
-                filterInfoEl.textContent = `Showing ${totalRecords} records for ${filters.filter} filter`;
+                let filterText = '';
+                if (filters.filter) {
+                    filterText = `${filters.filter} filter`;
+                } else if (filters.startDate && filters.endDate) {
+                    filterText = `${filters.startDate} to ${filters.endDate}`;
+                }
+                filterInfoEl.textContent = `Showing ${totalRecords} records for ${filterText}`;
             }
         }
 
-        // Filter functions
+        // Filter functions with proper date handling
         function filterSales() {
             const dateRange = document.getElementById('dateRange').value;
             const paymentFilter = document.getElementById('paymentFilter').value;
             const searchInput = document.getElementById('searchInput').value.toLowerCase();
             
-            // Update current filters
-            currentFilters.filter = dateRange;
+            // Show/hide custom date inputs
+            const customDateInputs = document.getElementById('customDateInputs');
+            const customDateInputsEnd = document.getElementById('customDateInputsEnd');
+            
+            if (dateRange === 'custom') {
+                customDateInputs.style.display = 'flex';
+                customDateInputsEnd.style.display = 'flex';
+                
+                const startDate = document.getElementById('startDate')?.value;
+                const endDate = document.getElementById('endDate')?.value;
+                
+                if (!startDate || !endDate) {
+                    // Don't make API call yet if dates are not selected
+                    if (startDate || endDate) {
+                        // Only show alert if user has started selecting dates
+                        console.log('Please select both start and end dates for custom range');
+                    }
+                    return;
+                }
+                
+                if (startDate > endDate) {
+                    alert('Start date cannot be greater than end date');
+                    return;
+                }
+                
+                currentFilters.filter = 'custom';
+                currentFilters.startDate = startDate;
+                currentFilters.endDate = endDate;
+            } else {
+                customDateInputs.style.display = 'none';
+                customDateInputsEnd.style.display = 'none';
+                
+                currentFilters.filter = dateRange;
+                currentFilters.startDate = null;
+                currentFilters.endDate = null;
+            }
+            
             currentFilters.payment_method = paymentFilter;
             currentFilters.search = searchInput;
             
-            // Reload data with new filters
             loadSales();
         }
 
@@ -557,8 +640,21 @@
             document.getElementById('paymentFilter').value = 'all';
             document.getElementById('searchInput').value = '';
             
+            // Reset and hide date inputs
+            const startDateEl = document.getElementById('startDate');
+            const endDateEl = document.getElementById('endDate');
+            const customDateInputs = document.getElementById('customDateInputs');
+            const customDateInputsEnd = document.getElementById('customDateInputsEnd');
+            
+            if (startDateEl) startDateEl.value = '';
+            if (endDateEl) endDateEl.value = '';
+            if (customDateInputs) customDateInputs.style.display = 'none';
+            if (customDateInputsEnd) customDateInputsEnd.style.display = 'none';
+            
             currentFilters = {
                 filter: 'today',
+                startDate: null,
+                endDate: null,
                 category: 'all',
                 payment_method: 'all',
                 search: ''
@@ -597,7 +693,6 @@
                 return;
             }
             
-            // Create CSV content
             const headers = ['Bill Number', 'Date', 'Customer', 'Product', 'Quantity', 'Amount', 'Payment Method'];
             const csvContent = [
                 headers.join(','),
@@ -612,7 +707,6 @@
                 ].join(','))
             ].join('\n');
             
-            // Download CSV
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -629,53 +723,10 @@
             // Auto-refresh every 30 seconds
             setInterval(loadSales, 30000);
         });
-    </script>
-            `).join('');
-        }
-        
-        function updateStats(data) {
-            document.getElementById('todaySales').textContent = '₹' + formatNumber(data.today_total || 0);
-            document.getElementById('weekSales').textContent = '₹' + formatNumber(data.week_total || 0);
-            document.getElementById('monthSales').textContent = '₹' + formatNumber(data.month_total || 0);
-            document.getElementById('totalTransactions').textContent = data.total_count || 0;
-        }
-        
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('en-IN', { 
-                day: '2-digit', 
-                month: 'short', 
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        function formatNumber(num) {
-            if (!num) return '0.00';
-            return parseFloat(num).toLocaleString('en-IN', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-        }
-        
-        function resetFilters() {
-            document.getElementById('dateRange').value = 'today';
-            document.getElementById('paymentFilter').value = 'all';
-            document.getElementById('searchInput').value = '';
-            loadSales();
-        }
         
         function addSale() {
             window.location.href = '/retail/billing';
         }
-        
-        function exportData() {
-            alert('Export functionality coming soon!');
-        }
-        
-        // Load data on page load
-        loadSales();
     </script>
 </body>
 </html>
