@@ -1942,26 +1942,60 @@ def get_quick_access_modules():
 # Sales Module APIs
 @app.route('/api/sales/summary', methods=['GET'])
 def get_sales_summary():
-    """Get sales summary for today, week, month"""
+    """Get sales summary for today, week, month with IST timezone support"""
+    from datetime import datetime, timedelta
+    import pytz
+    
+    # Get IST timezone
+    ist = pytz.timezone('Asia/Kolkata')
+    now_ist = datetime.now(ist)
+    today_ist = now_ist.strftime('%Y-%m-%d')
+    
+    # Calculate date ranges in IST
+    yesterday_ist = (now_ist - timedelta(days=1)).strftime('%Y-%m-%d')
+    week_start_ist = (now_ist - timedelta(days=now_ist.weekday())).strftime('%Y-%m-%d')
+    month_start_ist = now_ist.replace(day=1).strftime('%Y-%m-%d')
+    
     conn = get_db_connection()
     
-    # Today's sales
+    # Today's sales (IST)
     today_sales = conn.execute('''
         SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills WHERE DATE(created_at) = DATE('now')
-    ''').fetchone()
+        FROM bills WHERE DATE(created_at) = ?
+    ''', (today_ist,)).fetchone()
     
-    # This week's sales
+    # Yesterday's sales (IST)
+    yesterday_sales = conn.execute('''
+        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
+        FROM bills WHERE DATE(created_at) = ?
+    ''', (yesterday_ist,)).fetchone()
+    
+    # This week's sales (IST)
     week_sales = conn.execute('''
         SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills WHERE DATE(created_at) >= DATE('now', 'weekday 0', '-6 days')
-    ''').fetchone()
+        FROM bills WHERE DATE(created_at) >= ?
+    ''', (week_start_ist,)).fetchone()
     
-    # This month's sales
+    # This month's sales (IST)
     month_sales = conn.execute('''
         SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
-    ''').fetchone()
+        FROM bills WHERE DATE(created_at) >= ?
+    ''', (month_start_ist,)).fetchone()
+    
+    # Top products today
+    top_products = conn.execute('''
+        SELECT 
+            p.name as product_name,
+            SUM(bi.quantity) as quantity,
+            SUM(bi.total_price) as revenue
+        FROM bill_items bi
+        JOIN bills b ON bi.bill_id = b.id
+        JOIN products p ON bi.product_id = p.id
+        WHERE DATE(b.created_at) = ?
+        GROUP BY p.id, p.name
+        ORDER BY quantity DESC
+        LIMIT 5
+    ''', (today_ist,)).fetchall()
     
     # Recent transactions
     recent_transactions = conn.execute('''
@@ -1976,9 +2010,21 @@ def get_sales_summary():
     
     return jsonify({
         "today": dict(today_sales) if today_sales else {"total": 0, "count": 0},
+        "yesterday": dict(yesterday_sales) if yesterday_sales else {"total": 0, "count": 0},
         "week": dict(week_sales) if week_sales else {"total": 0, "count": 0},
         "month": dict(month_sales) if month_sales else {"total": 0, "count": 0},
-        "recent_transactions": [dict(row) for row in recent_transactions]
+        "top_products": [dict(row) for row in top_products],
+        "recent_transactions": [dict(row) for row in recent_transactions],
+        "timezone": "Asia/Kolkata",
+        "current_date_ist": today_ist,
+        "debug_info": {
+            "server_time_utc": datetime.utcnow().isoformat(),
+            "server_time_ist": now_ist.isoformat(),
+            "today_ist": today_ist,
+            "yesterday_ist": yesterday_ist,
+            "week_start_ist": week_start_ist,
+            "month_start_ist": month_start_ist
+        }
     })
 
 @app.route('/api/sales/refresh', methods=['POST'])
@@ -2094,67 +2140,500 @@ def refresh_sales_data():
             "message": f"Error refreshing sales data: {str(e)}"
         }), 500
 
-# Invoices Module APIs
-@app.route('/api/invoices', methods=['GET'])
-def get_invoices():
-    """Get all invoices with filtering options"""
-    status = request.args.get('status', 'all')
-    limit = int(request.args.get('limit', 50))
+# Invoices Module APIs - Enhanced with proper data flow
+@app.route('/api/invoices', methods=['GET', 'POST', 'DELETE'])
+def invoices_api():
+    """Invoices API - GET for listing, POST for creating, DELETE for removing"""
     
-    conn = get_db_connection()
+    if request.method == 'GET':
+        # GET: List invoices with filtering
+        status = request.args.get('status', 'all')
+        limit = int(request.args.get('limit', 50))
+        date_filter = request.args.get('filter', 'all')  # today, week, month, all
+        
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Get IST timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(ist)
+        
+        conn = get_db_connection()
+        
+        # Build query with date filtering
+        query = '''
+            SELECT b.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address
+            FROM bills b
+            LEFT JOIN customers c ON b.customer_id = c.id
+        '''
+        
+        params = []
+        conditions = []
+        
+        # Add status filter
+        if status != 'all':
+            conditions.append('b.status = ?')
+            params.append(status)
+        
+        # Add date filter
+        if date_filter == 'today':
+            filter_date = now_ist.strftime('%Y-%m-%d')
+            conditions.append('DATE(b.created_at) = ?')
+            params.append(filter_date)
+        elif date_filter == 'week':
+            week_start = (now_ist - timedelta(days=now_ist.weekday())).strftime('%Y-%m-%d')
+            conditions.append('DATE(b.created_at) >= ?')
+            params.append(week_start)
+        elif date_filter == 'month':
+            month_start = now_ist.replace(day=1).strftime('%Y-%m-%d')
+            conditions.append('DATE(b.created_at) >= ?')
+            params.append(month_start)
+        
+        # Add conditions to query
+        if conditions:
+            query += ' WHERE ' + ' AND '.join(conditions)
+        
+        query += ' ORDER BY b.created_at DESC LIMIT ?'
+        params.append(limit)
+        
+        invoices = conn.execute(query, params).fetchall()
+        
+        # Get summary statistics
+        summary_query = '''
+            SELECT 
+                COUNT(*) as total_invoices,
+                COALESCE(SUM(total_amount), 0) as total_value,
+                COALESCE(AVG(total_amount), 0) as avg_value,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count
+            FROM bills b
+        '''
+        
+        if conditions:
+            summary_query += ' WHERE ' + ' AND '.join(conditions[:-1] if date_filter != 'all' else conditions)
+            summary_params = params[:-1] if date_filter != 'all' else params[:-1]
+        else:
+            summary_params = []
+        
+        summary = conn.execute(summary_query, summary_params).fetchone()
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "invoices": [dict(row) for row in invoices],
+            "summary": dict(summary) if summary else {},
+            "filter_applied": {
+                "status": status,
+                "date_filter": date_filter
+            },
+            "total_records": len(invoices)
+        })
     
-    query = '''
-        SELECT b.*, c.name as customer_name, c.phone as customer_phone
-        FROM bills b
-        LEFT JOIN customers c ON b.customer_id = c.id
-    '''
+    elif request.method == 'POST':
+        # POST: Create invoice (same as bill creation but with invoice focus)
+        try:
+            data = request.json
+            print("📥 [INVOICE API] Creating invoice:", data)
+            
+            # Validate required fields
+            if not data.get('items') or len(data['items']) == 0:
+                return jsonify({"success": False, "error": "No items in invoice"}), 400
+            
+            # Use the same bill creation logic but return invoice-focused response
+            result = sales_api()  # Call the POST method of sales API
+            
+            if result[1] == 201:  # Success
+                response_data = result[0].get_json()
+                return jsonify({
+                    "success": True,
+                    "message": "Invoice created successfully",
+                    "invoice_id": response_data["bill_id"],
+                    "invoice_number": response_data["bill_number"],
+                    "total_amount": response_data["total_amount"],
+                    "items_count": response_data["items_count"]
+                }), 201
+            else:
+                return result
+                
+        except Exception as e:
+            print(f"❌ [INVOICE API] Error creating invoice: {str(e)}")
+            return jsonify({"success": False, "error": str(e)}), 500
     
-    params = []
-    if status != 'all':
-        query += ' WHERE b.status = ?'
-        params.append(status)
-    
-    query += ' ORDER BY b.created_at DESC LIMIT ?'
-    params.append(limit)
-    
-    invoices = conn.execute(query, params).fetchall()
-    conn.close()
-    
-    return jsonify([dict(row) for row in invoices])
+    elif request.method == 'DELETE':
+        # DELETE: Remove invoice and revert all changes
+        try:
+            invoice_id = request.args.get('id')
+            if not invoice_id:
+                return jsonify({"success": False, "error": "Invoice ID required"}), 400
+            
+            conn = get_db_connection()
+            
+            # Check if invoice exists
+            invoice = conn.execute('SELECT * FROM bills WHERE id = ?', (invoice_id,)).fetchone()
+            if not invoice:
+                conn.close()
+                return jsonify({"success": False, "error": "Invoice not found"}), 404
+            
+            # Start transaction
+            conn.execute('BEGIN TRANSACTION')
+            
+            try:
+                # Get all bill items to revert stock
+                bill_items = conn.execute('''
+                    SELECT product_id, quantity FROM bill_items WHERE bill_id = ?
+                ''', (invoice_id,)).fetchall()
+                
+                # Revert stock for each item
+                for item in bill_items:
+                    conn.execute('''
+                        UPDATE products SET stock = stock + ? WHERE id = ?
+                    ''', (item['quantity'], item['product_id']))
+                
+                # Delete related records in correct order
+                conn.execute('DELETE FROM payments WHERE bill_id = ?', (invoice_id,))
+                conn.execute('DELETE FROM sales WHERE bill_id = ?', (invoice_id,))
+                conn.execute('DELETE FROM bill_items WHERE bill_id = ?', (invoice_id,))
+                conn.execute('DELETE FROM bills WHERE id = ?', (invoice_id,))
+                
+                conn.commit()
+                conn.close()
+                
+                print(f"✅ [INVOICE API] Invoice deleted and stock reverted: {invoice['bill_number']}")
+                
+                return jsonify({
+                    "success": True,
+                    "message": f"Invoice {invoice['bill_number']} deleted successfully",
+                    "reverted_items": len(bill_items)
+                })
+                
+            except Exception as e:
+                conn.rollback()
+                conn.close()
+                print(f"❌ [INVOICE API] Delete transaction failed: {str(e)}")
+                return jsonify({"success": False, "error": f"Delete failed: {str(e)}"}), 500
+                
+        except Exception as e:
+            print(f"❌ [INVOICE API] Error deleting invoice: {str(e)}")
+            return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/api/invoices/<invoice_id>', methods=['GET'])
-def get_invoice_details(invoice_id):
-    """Get detailed invoice information"""
-    conn = get_db_connection()
-    
-    # Get invoice
-    invoice = conn.execute('''
-        SELECT b.*, c.name as customer_name, c.phone as customer_phone, c.address as customer_address
-        FROM bills b
-        LEFT JOIN customers c ON b.customer_id = c.id
-        WHERE b.id = ?
-    ''', (invoice_id,)).fetchone()
-    
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
-    
-    # Get invoice items
-    items = conn.execute('''
-        SELECT * FROM bill_items WHERE bill_id = ?
-    ''', (invoice_id,)).fetchall()
-    
-    # Get payments
-    payments = conn.execute('''
-        SELECT * FROM payments WHERE bill_id = ?
-    ''', (invoice_id,)).fetchall()
-    
-    conn.close()
-    
-    return jsonify({
-        "invoice": dict(invoice),
-        "items": [dict(row) for row in items],
-        "payments": [dict(row) for row in payments]
-    })
+# Inventory Management APIs - Complete integration with Products, Sales, and Bills
+@app.route('/api/inventory', methods=['GET'])
+def get_inventory():
+    """Get complete inventory status with stock levels, sales data, and alerts"""
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Get IST timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(ist)
+        today_ist = now_ist.strftime('%Y-%m-%d')
+        
+        conn = get_db_connection()
+        
+        # Get all products with stock information and recent sales
+        inventory = conn.execute('''
+            SELECT 
+                p.*,
+                COALESCE(recent_sales.total_sold_today, 0) as sold_today,
+                COALESCE(recent_sales.total_sold_week, 0) as sold_week,
+                COALESCE(recent_sales.total_sold_month, 0) as sold_month,
+                COALESCE(recent_sales.last_sale_date, 'Never') as last_sale_date,
+                CASE 
+                    WHEN p.stock <= 0 THEN 'out_of_stock'
+                    WHEN p.stock <= p.min_stock THEN 'low_stock'
+                    WHEN p.stock <= (p.min_stock * 2) THEN 'warning'
+                    ELSE 'good'
+                END as stock_status,
+                (p.price - p.cost) as profit_per_unit,
+                ((p.price - p.cost) / p.price * 100) as profit_margin_percent
+            FROM products p
+            LEFT JOIN (
+                SELECT 
+                    s.product_id,
+                    SUM(CASE WHEN DATE(s.created_at) = ? THEN s.quantity ELSE 0 END) as total_sold_today,
+                    SUM(CASE WHEN DATE(s.created_at) >= DATE(?, '-7 days') THEN s.quantity ELSE 0 END) as total_sold_week,
+                    SUM(CASE WHEN DATE(s.created_at) >= DATE(?, '-30 days') THEN s.quantity ELSE 0 END) as total_sold_month,
+                    MAX(DATE(s.created_at)) as last_sale_date
+                FROM sales s
+                GROUP BY s.product_id
+            ) recent_sales ON p.id = recent_sales.product_id
+            WHERE p.is_active = 1
+            ORDER BY 
+                CASE 
+                    WHEN p.stock <= 0 THEN 1
+                    WHEN p.stock <= p.min_stock THEN 2
+                    WHEN p.stock <= (p.min_stock * 2) THEN 3
+                    ELSE 4
+                END,
+                p.name
+        ''', (today_ist, today_ist, today_ist)).fetchall()
+        
+        # Get inventory summary statistics
+        summary = conn.execute('''
+            SELECT 
+                COUNT(*) as total_products,
+                COUNT(CASE WHEN stock <= 0 THEN 1 END) as out_of_stock_count,
+                COUNT(CASE WHEN stock <= min_stock AND stock > 0 THEN 1 END) as low_stock_count,
+                COUNT(CASE WHEN stock > min_stock THEN 1 END) as good_stock_count,
+                COALESCE(SUM(stock * cost), 0) as total_inventory_value,
+                COALESCE(SUM(stock * price), 0) as total_selling_value,
+                COALESCE(SUM(stock * (price - cost)), 0) as potential_profit
+            FROM products 
+            WHERE is_active = 1
+        ''').fetchone()
+        
+        # Get top selling products (last 30 days)
+        top_selling = conn.execute('''
+            SELECT 
+                p.name as product_name,
+                p.category,
+                SUM(s.quantity) as total_sold,
+                SUM(s.total_price) as total_revenue,
+                SUM(s.total_price - (p.cost * s.quantity)) as total_profit,
+                p.stock as current_stock
+            FROM sales s
+            JOIN products p ON s.product_id = p.id
+            WHERE DATE(s.created_at) >= DATE(?, '-30 days')
+            GROUP BY s.product_id, p.name, p.category, p.stock
+            ORDER BY total_sold DESC
+            LIMIT 10
+        ''', (today_ist,)).fetchall()
+        
+        # Get products needing restock (critical alerts)
+        restock_alerts = conn.execute('''
+            SELECT 
+                p.name,
+                p.category,
+                p.stock,
+                p.min_stock,
+                (p.min_stock - p.stock) as shortage,
+                COALESCE(recent_sales.avg_daily_sales, 0) as avg_daily_sales,
+                CASE 
+                    WHEN COALESCE(recent_sales.avg_daily_sales, 0) > 0 
+                    THEN CAST(p.stock / recent_sales.avg_daily_sales AS INTEGER)
+                    ELSE 999
+                END as days_remaining
+            FROM products p
+            LEFT JOIN (
+                SELECT 
+                    product_id,
+                    AVG(daily_sales) as avg_daily_sales
+                FROM (
+                    SELECT 
+                        product_id,
+                        DATE(created_at) as sale_date,
+                        SUM(quantity) as daily_sales
+                    FROM sales
+                    WHERE DATE(created_at) >= DATE(?, '-30 days')
+                    GROUP BY product_id, DATE(created_at)
+                ) daily_totals
+                GROUP BY product_id
+            ) recent_sales ON p.id = recent_sales.product_id
+            WHERE p.stock <= p.min_stock AND p.is_active = 1
+            ORDER BY 
+                CASE WHEN p.stock <= 0 THEN 1 ELSE 2 END,
+                days_remaining ASC
+        ''', (today_ist,)).fetchall()
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "inventory": [dict(row) for row in inventory],
+            "summary": dict(summary) if summary else {},
+            "top_selling": [dict(row) for row in top_selling],
+            "restock_alerts": [dict(row) for row in restock_alerts],
+            "alert_counts": {
+                "out_of_stock": summary['out_of_stock_count'] if summary else 0,
+                "low_stock": summary['low_stock_count'] if summary else 0,
+                "restock_needed": len(restock_alerts)
+            },
+            "date_generated": today_ist,
+            "timezone": "Asia/Kolkata"
+        })
+        
+    except Exception as e:
+        print(f"❌ [INVENTORY API] Error: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/inventory/stock-adjustment', methods=['POST'])
+@require_auth
+def adjust_stock():
+    """Adjust stock levels manually (for stock corrections, new arrivals, etc.)"""
+    try:
+        data = request.json
+        print("📥 [INVENTORY] Stock adjustment:", data)
+        
+        # Validate required fields
+        if not data.get('product_id') or not data.get('adjustment_type') or data.get('quantity') is None:
+            return jsonify({"success": False, "error": "Missing required fields"}), 400
+        
+        product_id = data['product_id']
+        adjustment_type = data['adjustment_type']  # 'add', 'subtract', 'set'
+        quantity = int(data['quantity'])
+        reason = data.get('reason', 'Manual adjustment')
+        
+        if quantity < 0:
+            return jsonify({"success": False, "error": "Quantity cannot be negative"}), 400
+        
+        conn = get_db_connection()
+        
+        # Get current product details
+        product = conn.execute('''
+            SELECT id, name, stock FROM products WHERE id = ? AND is_active = 1
+        ''', (product_id,)).fetchone()
+        
+        if not product:
+            conn.close()
+            return jsonify({"success": False, "error": "Product not found"}), 404
+        
+        old_stock = product['stock']
+        
+        # Calculate new stock based on adjustment type
+        if adjustment_type == 'add':
+            new_stock = old_stock + quantity
+        elif adjustment_type == 'subtract':
+            new_stock = max(0, old_stock - quantity)  # Prevent negative stock
+        elif adjustment_type == 'set':
+            new_stock = quantity
+        else:
+            conn.close()
+            return jsonify({"success": False, "error": "Invalid adjustment type"}), 400
+        
+        # Update product stock
+        conn.execute('''
+            UPDATE products SET stock = ? WHERE id = ?
+        ''', (new_stock, product_id))
+        
+        # Log the stock adjustment (optional - you can create a stock_adjustments table)
+        # For now, we'll just log it in the console
+        print(f"📦 [STOCK ADJUSTMENT] {product['name']}: {old_stock} → {new_stock} ({adjustment_type}: {quantity}) - {reason}")
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "message": f"Stock adjusted successfully for {product['name']}",
+            "product_name": product['name'],
+            "old_stock": old_stock,
+            "new_stock": new_stock,
+            "adjustment": {
+                "type": adjustment_type,
+                "quantity": quantity,
+                "reason": reason
+            }
+        })
+        
+    except Exception as e:
+        print(f"❌ [INVENTORY] Stock adjustment error: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/api/inventory/low-stock-alerts', methods=['GET'])
+def get_low_stock_alerts():
+    """Get products that need restocking with detailed analysis"""
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        ist = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(ist)
+        today_ist = now_ist.strftime('%Y-%m-%d')
+        
+        conn = get_db_connection()
+        
+        # Get products with low stock and sales analysis
+        alerts = conn.execute('''
+            SELECT 
+                p.id,
+                p.name,
+                p.category,
+                p.stock,
+                p.min_stock,
+                p.cost,
+                p.price,
+                (p.min_stock - p.stock) as shortage,
+                COALESCE(sales_data.total_sold_30d, 0) as sold_last_30_days,
+                COALESCE(sales_data.avg_daily_sales, 0) as avg_daily_sales,
+                COALESCE(sales_data.last_sale_date, 'Never') as last_sale_date,
+                CASE 
+                    WHEN p.stock <= 0 THEN 'critical'
+                    WHEN p.stock <= (p.min_stock * 0.5) THEN 'urgent'
+                    WHEN p.stock <= p.min_stock THEN 'low'
+                    ELSE 'warning'
+                END as alert_level,
+                CASE 
+                    WHEN COALESCE(sales_data.avg_daily_sales, 0) > 0 
+                    THEN CAST(p.stock / sales_data.avg_daily_sales AS INTEGER)
+                    ELSE 999
+                END as days_remaining,
+                CASE 
+                    WHEN COALESCE(sales_data.avg_daily_sales, 0) > 0 
+                    THEN CAST((p.min_stock * 2) - p.stock AS INTEGER)
+                    ELSE p.min_stock * 2
+                END as suggested_reorder_quantity
+            FROM products p
+            LEFT JOIN (
+                SELECT 
+                    s.product_id,
+                    SUM(s.quantity) as total_sold_30d,
+                    AVG(daily_totals.daily_sales) as avg_daily_sales,
+                    MAX(DATE(s.created_at)) as last_sale_date
+                FROM sales s
+                LEFT JOIN (
+                    SELECT 
+                        product_id,
+                        DATE(created_at) as sale_date,
+                        SUM(quantity) as daily_sales
+                    FROM sales
+                    WHERE DATE(created_at) >= DATE(?, '-30 days')
+                    GROUP BY product_id, DATE(created_at)
+                ) daily_totals ON s.product_id = daily_totals.product_id
+                WHERE DATE(s.created_at) >= DATE(?, '-30 days')
+                GROUP BY s.product_id
+            ) sales_data ON p.id = sales_data.product_id
+            WHERE p.stock <= (p.min_stock * 1.2) AND p.is_active = 1
+            ORDER BY 
+                CASE 
+                    WHEN p.stock <= 0 THEN 1
+                    WHEN p.stock <= (p.min_stock * 0.5) THEN 2
+                    WHEN p.stock <= p.min_stock THEN 3
+                    ELSE 4
+                END,
+                days_remaining ASC
+        ''', (today_ist, today_ist)).fetchall()
+        
+        # Categorize alerts by severity
+        critical_alerts = [dict(row) for row in alerts if row['alert_level'] == 'critical']
+        urgent_alerts = [dict(row) for row in alerts if row['alert_level'] == 'urgent']
+        low_alerts = [dict(row) for row in alerts if row['alert_level'] == 'low']
+        warning_alerts = [dict(row) for row in alerts if row['alert_level'] == 'warning']
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "alerts": {
+                "critical": critical_alerts,
+                "urgent": urgent_alerts,
+                "low": low_alerts,
+                "warning": warning_alerts
+            },
+            "summary": {
+                "total_alerts": len(alerts),
+                "critical_count": len(critical_alerts),
+                "urgent_count": len(urgent_alerts),
+                "low_count": len(low_alerts),
+                "warning_count": len(warning_alerts)
+            },
+            "date_generated": today_ist,
+            "timezone": "Asia/Kolkata"
+        })
+        
+    except Exception as e:
+        print(f"❌ [INVENTORY ALERTS] Error: {str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 # Hourly Sales Tracking APIs
 @app.route('/api/sales/hourly', methods=['GET'])
@@ -3116,220 +3595,247 @@ def get_sales_analytics():
 # Sales Module - Detailed Sales Data APIs
 @app.route('/api/sales', methods=['GET', 'POST'])
 def sales_api():
-    """Sales API - GET for listing, POST for creating bills"""
+    """Sales API - GET for listing with date filters, POST for creating bills"""
     
     if request.method == 'GET':
-        # Get sales entries with pagination
-        page = int(request.args.get('page', 1))
-        per_page = int(request.args.get('per_page', 10))
-        offset = (page - 1) * per_page
+        # GET: Return sales data with proper date filtering
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Get IST timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(ist)
+        
+        # Get filter parameters
+        date_filter = request.args.get('filter', 'today')  # today, yesterday, week, month, custom
+        from_date = request.args.get('from_date')
+        to_date = request.args.get('to_date')
+        limit = int(request.args.get('limit', 100))
         
         conn = get_db_connection()
         
-        # Get total count
-        total_count = conn.execute('SELECT COUNT(*) as count FROM sales').fetchone()['count']
+        # Build date filter based on IST
+        if date_filter == 'today':
+            filter_date = now_ist.strftime('%Y-%m-%d')
+            date_condition = "DATE(s.created_at) = ?"
+            params = [filter_date]
+        elif date_filter == 'yesterday':
+            filter_date = (now_ist - timedelta(days=1)).strftime('%Y-%m-%d')
+            date_condition = "DATE(s.created_at) = ?"
+            params = [filter_date]
+        elif date_filter == 'week':
+            week_start = (now_ist - timedelta(days=now_ist.weekday())).strftime('%Y-%m-%d')
+            date_condition = "DATE(s.created_at) >= ?"
+            params = [week_start]
+        elif date_filter == 'month':
+            month_start = now_ist.replace(day=1).strftime('%Y-%m-%d')
+            date_condition = "DATE(s.created_at) >= ?"
+            params = [month_start]
+        elif date_filter == 'custom' and from_date and to_date:
+            date_condition = "DATE(s.created_at) BETWEEN ? AND ?"
+            params = [from_date, to_date]
+        else:
+            # Default to today if invalid filter
+            filter_date = now_ist.strftime('%Y-%m-%d')
+            date_condition = "DATE(s.created_at) = ?"
+            params = [filter_date]
         
-        # Get paginated sales
-        sales = conn.execute('''
+        # Get sales data with all necessary joins
+        sales = conn.execute(f'''
             SELECT 
                 s.*,
-                COALESCE(s.total_price, s.unit_price * s.quantity) as total_amount
+                b.bill_number,
+                b.total_amount as bill_total,
+                b.tax_amount as bill_tax,
+                b.status as bill_status,
+                c.name as customer_name,
+                c.phone as customer_phone,
+                p.name as product_name,
+                p.category as product_category,
+                p.cost as product_cost,
+                (s.total_price - (p.cost * s.quantity)) as profit
             FROM sales s
+            LEFT JOIN bills b ON s.bill_id = b.id
+            LEFT JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN products p ON s.product_id = p.id
+            WHERE {date_condition}
             ORDER BY s.created_at DESC
-            LIMIT ? OFFSET ?
-        ''', (per_page, offset)).fetchall()
+            LIMIT ?
+        ''', params + [limit]).fetchall()
+        
+        # Get summary statistics
+        summary = conn.execute(f'''
+            SELECT 
+                COUNT(DISTINCT s.bill_id) as total_bills,
+                COUNT(*) as total_items,
+                COALESCE(SUM(s.total_price), 0) as total_revenue,
+                COALESCE(SUM(s.quantity), 0) as total_quantity,
+                COALESCE(AVG(s.unit_price), 0) as avg_unit_price,
+                COALESCE(SUM(s.total_price - (p.cost * s.quantity)), 0) as total_profit
+            FROM sales s
+            LEFT JOIN products p ON s.product_id = p.id
+            WHERE {date_condition}
+        ''', params).fetchone()
         
         conn.close()
         
-        total_pages = (total_count + per_page - 1) // per_page  # Ceiling division
-        
         return jsonify({
-            'sales': [dict(row) for row in sales],
-            'pagination': {
-                'page': page,
-                'per_page': per_page,
-                'total_count': total_count,
-                'total_pages': total_pages,
-                'has_next': page < total_pages,
-                'has_prev': page > 1
-            }
+            "success": True,
+            "sales": [dict(row) for row in sales],
+            "summary": dict(summary) if summary else {},
+            "filter_applied": date_filter,
+            "date_range": {
+                "from": params[0] if len(params) >= 1 else None,
+                "to": params[1] if len(params) >= 2 else None
+            },
+            "timezone": "Asia/Kolkata",
+            "total_records": len(sales)
         })
     
     elif request.method == 'POST':
-        # Create new bill from billing module
+        # POST: Create a new bill with proper validation and stock management
         try:
-            data = request.get_json()
+            data = request.json
+            print("📥 [SALES API] Received bill data:", data)
             
             # Validate required fields
             if not data.get('items') or len(data['items']) == 0:
-                return jsonify({'error': 'No items in bill'}), 400
+                return jsonify({"success": False, "error": "No items in bill"}), 400
             
+            if not data.get('total_amount') or data['total_amount'] <= 0:
+                return jsonify({"success": False, "error": "Invalid total amount"}), 400
+            
+            # Check stock availability before creating bill
             conn = get_db_connection()
-            cursor = conn.cursor()
             
-            # Validate stock availability for all items BEFORE creating bill
-            out_of_stock_items = []
             for item in data['items']:
-                product_stock = cursor.execute(
-                    'SELECT stock, name FROM products WHERE id = ?',
-                    (item['id'],)
-                ).fetchone()
+                product = conn.execute('''
+                    SELECT stock, name FROM products WHERE id = ?
+                ''', (item['product_id'],)).fetchone()
                 
-                if not product_stock:
-                    out_of_stock_items.append(f"{item['name']} (Product not found)")
-                elif product_stock['stock'] < item['quantity']:
-                    out_of_stock_items.append(
-                        f"{product_stock['name']} (Available: {product_stock['stock']}, Required: {item['quantity']})"
-                    )
+                if not product:
+                    conn.close()
+                    return jsonify({
+                        "success": False, 
+                        "error": f"Product not found: {item.get('product_name', 'Unknown')}"
+                    }), 400
+                
+                if product['stock'] < item['quantity']:
+                    conn.close()
+                    return jsonify({
+                        "success": False,
+                        "error": f"Insufficient stock for {product['name']}. Available: {product['stock']}, Required: {item['quantity']}"
+                    }), 400
             
-            # If any item is out of stock, return error
-            if out_of_stock_items:
-                conn.close()
-                return jsonify({
-                    'error': 'Insufficient stock for some items',
-                    'out_of_stock_items': out_of_stock_items
-                }), 400
-            
-            # Generate bill ID and number
+            # Generate bill details
             bill_id = generate_id()
-            timestamp = datetime.now()
-            bill_number = f'BILL-{timestamp.strftime("%Y%m%d%H%M%S")}'
+            bill_number = f"BILL-{datetime.now().strftime('%Y%m%d')}-{bill_id[:8]}"
             
-            # Get totals from request
-            subtotal = float(data.get('subtotal', 0))
-            cgst = float(data.get('cgst', 0))
-            sgst = float(data.get('sgst', 0))
-            total = float(data.get('total', 0))
+            # Start transaction
+            conn.execute('BEGIN TRANSACTION')
             
-            # Get customer details (optional)
-            customer_name = data.get('customer_name', 'Walk-in Customer')
-            customer_phone = data.get('customer_phone', None)
-            payment_method = data.get('payment_method', 'cash')
-            
-            # Check if customer exists or create new one
-            customer_id = None
-            if customer_phone and customer_phone.strip():
-                # Check if customer exists
-                existing_customer = cursor.execute(
-                    'SELECT id FROM customers WHERE phone = ?',
-                    (customer_phone,)
-                ).fetchone()
+            try:
+                # Create bill record
+                conn.execute('''
+                    INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, tax_amount, discount_amount, total_amount, status)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    bill_id, bill_number, data.get('customer_id'), 
+                    data.get('business_type', 'retail'),
+                    data.get('subtotal', 0), data.get('tax_amount', 0), 
+                    data.get('discount_amount', 0), data['total_amount'], 'completed'
+                ))
                 
-                if existing_customer:
-                    customer_id = existing_customer[0]
-                    # Update customer's total purchases
-                    cursor.execute('''
-                        UPDATE customers 
-                        SET total_purchases = total_purchases + ?
-                        WHERE id = ?
-                    ''', (total, customer_id))
-                else:
-                    # Create new customer
-                    customer_id = generate_id()
-                    cursor.execute('''
-                        INSERT INTO customers (id, name, phone, total_purchases, created_at)
-                        VALUES (?, ?, ?, ?, ?)
+                # Get customer name if exists
+                customer_name = None
+                if data.get('customer_id'):
+                    customer = conn.execute('SELECT name FROM customers WHERE id = ?', (data['customer_id'],)).fetchone()
+                    customer_name = customer['name'] if customer else None
+                
+                # Process each item
+                for item in data['items']:
+                    # Create bill item
+                    item_id = generate_id()
+                    conn.execute('''
+                        INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, unit_price, total_price, tax_rate)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
-                        customer_id,
-                        customer_name,
-                        customer_phone,
-                        total,
-                        timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                        item_id, bill_id, item['product_id'], item['product_name'],
+                        item['quantity'], item['unit_price'], item['total_price'], 
+                        item.get('tax_rate', 18)
                     ))
-            
-            # Create bill record
-            cursor.execute('''
-                INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, 
-                                 tax_amount, discount_amount, total_amount, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                bill_id,
-                bill_number,
-                customer_id,
-                'retail',
-                subtotal,
-                cgst + sgst,
-                0,
-                total,
-                'completed',
-                timestamp.strftime('%Y-%m-%d %H:%M:%S')  # Convert to string
-            ))
-            
-            # Add bill items and create sales records
-            for item in data['items']:
-                item_id = generate_id()
+                    
+                    # Update product stock (CRITICAL: Automatic stock reduction)
+                    conn.execute('''
+                        UPDATE products SET stock = stock - ? WHERE id = ?
+                    ''', (item['quantity'], item['product_id']))
+                    
+                    # Get product details for sales entry
+                    product = conn.execute('''
+                        SELECT category, cost FROM products WHERE id = ?
+                    ''', (item['product_id'],)).fetchone()
+                    
+                    # Create sales entry (CRITICAL: One bill item = one sales record)
+                    sale_id = generate_id()
+                    ist = pytz.timezone('Asia/Kolkata')
+                    now_ist = datetime.now(ist)
+                    sale_date = now_ist.strftime('%Y-%m-%d')
+                    sale_time = now_ist.strftime('%H:%M:%S')
+                    
+                    # Calculate proportional tax and discount for this item
+                    subtotal = data.get('subtotal', data['total_amount'])
+                    item_tax = (item['total_price'] / subtotal) * data.get('tax_amount', 0) if subtotal > 0 else 0
+                    item_discount = (item['total_price'] / subtotal) * data.get('discount_amount', 0) if subtotal > 0 else 0
+                    
+                    conn.execute('''
+                        INSERT INTO sales (
+                            id, bill_id, bill_number, customer_id, customer_name,
+                            product_id, product_name, category, quantity, unit_price,
+                            total_price, tax_amount, discount_amount, payment_method,
+                            sale_date, sale_time
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
+                        item['product_id'], item['product_name'], 
+                        product['category'] if product else 'General',
+                        item['quantity'], item['unit_price'], item['total_price'],
+                        item_tax, item_discount, data.get('payment_method', 'cash'),
+                        sale_date, sale_time
+                    ))
                 
-                # Insert bill item
-                cursor.execute('''
-                    INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, 
-                                          unit_price, total_price)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    item_id,
-                    bill_id,
-                    item['id'],
-                    item['name'],
-                    item['quantity'],
-                    item['price'],
-                    item['price'] * item['quantity']
-                ))
+                # Add payment record
+                if data.get('payment_method'):
+                    payment_id = generate_id()
+                    conn.execute('''
+                        INSERT INTO payments (id, bill_id, method, amount)
+                        VALUES (?, ?, ?, ?)
+                    ''', (payment_id, bill_id, data['payment_method'], data['total_amount']))
                 
-                # Get product category
-                product_data = cursor.execute(
-                    'SELECT category FROM products WHERE id = ?', 
-                    (item['id'],)
-                ).fetchone()
-                category = product_data[0] if product_data else 'General'
+                # Commit transaction
+                conn.commit()
+                conn.close()
                 
-                # Create sales record
-                sale_id = generate_id()
-                cursor.execute('''
-                    INSERT INTO sales (id, bill_id, bill_number, customer_id, customer_name,
-                                     product_id, product_name, category, quantity, unit_price, 
-                                     total_price, tax_amount, discount_amount, payment_method,
-                                     sale_date, sale_time, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    sale_id,
-                    bill_id,
-                    bill_number,
-                    customer_id,  # Use actual customer_id
-                    customer_name,  # Use actual customer_name
-                    item['id'],
-                    item['name'],
-                    category,
-                    item['quantity'],
-                    item['price'],
-                    item['price'] * item['quantity'],
-                    (item['price'] * item['quantity']) * 0.18,  # 18% GST
-                    0,  # discount_amount
-                    payment_method,  # Use actual payment_method
-                    timestamp.strftime('%Y-%m-%d'),  # sale_date as string
-                    timestamp.strftime('%H:%M:%S'),  # sale_time as string
-                    timestamp.strftime('%Y-%m-%d %H:%M:%S')  # created_at as string
-                ))
+                print(f"✅ [SALES API] Bill created successfully: {bill_number}")
                 
-                # Update product stock
-                cursor.execute('''
-                    UPDATE products 
-                    SET stock = stock - ? 
-                    WHERE id = ?
-                ''', (item['quantity'], item['id']))
-            
-            conn.commit()
-            conn.close()
-            
-            return jsonify({
-                'success': True,
-                'bill_id': bill_id,
-                'bill_number': bill_number,
-                'total': total,
-                'message': 'Bill created successfully'
-            })
-            
+                return jsonify({
+                    "success": True,
+                    "message": "Bill created successfully",
+                    "bill_id": bill_id,
+                    "bill_number": bill_number,
+                    "total_amount": data['total_amount'],
+                    "items_count": len(data['items'])
+                }), 201
+                
+            except Exception as e:
+                conn.rollback()
+                conn.close()
+                print(f"❌ [SALES API] Transaction failed: {str(e)}")
+                return jsonify({"success": False, "error": f"Transaction failed: {str(e)}"}), 500
+                
         except Exception as e:
-            print(f"Error creating bill: {e}")
-            return jsonify({'error': str(e)}), 500
+            print(f"❌ [SALES API] Error creating bill: {str(e)}")
+            return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/api/sales/all', methods=['GET'])
 def get_all_sales():
