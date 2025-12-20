@@ -671,19 +671,50 @@
                 // Get customer details (optional)
                 const customerName = document.getElementById('customerName').value.trim();
                 const customerPhone = document.getElementById('customerPhone').value.trim();
+                
+                let customerId = null;
+                
+                // Create customer if name provided
+                if (customerName && customerName !== 'Walk-in Customer') {
+                    try {
+                        const customerData = {
+                            name: customerName,
+                            phone: customerPhone || null,
+                            email: null
+                        };
+                        
+                        const customerResponse = await fetch('/api/customers', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(customerData)
+                        });
+                        
+                        if (customerResponse.ok) {
+                            const customerResult = await customerResponse.json();
+                            customerId = customerResult.customer_id;
+                        }
+                    } catch (customerError) {
+                        console.log('Customer creation failed, continuing without customer');
+                    }
+                }
 
                 const billData = {
-                    items: cart,
+                    customer_id: customerId,
+                    business_type: 'retail',
                     subtotal: subtotal,
-                    cgst: cgst,
-                    sgst: sgst,
-                    total: grandTotal,
+                    tax_amount: cgst + sgst,
+                    total_amount: grandTotal,
                     payment_method: paymentMode,
-                    customer_name: customerName || 'Walk-in Customer',
-                    customer_phone: customerPhone || null
+                    items: cart.map(item => ({
+                        product_id: item.id,
+                        product_name: item.name,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        total_price: item.price * item.quantity
+                    }))
                 };
 
-                const response = await fetch('/api/sales', {
+                const response = await fetch('/api/bills', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
