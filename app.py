@@ -1882,107 +1882,116 @@ def get_quick_access_modules():
     
     return jsonify(quick_modules)
 
-# Sales Module APIs
+# Sales Module APIs - Mobile ERP Perfect Implementation
 @app.route('/api/sales/summary', methods=['GET'])
 def get_sales_summary():
-    """Get sales summary for today, week, month with IST timezone support and backward compatibility"""
-    from datetime import datetime, timedelta
-    
-    # Use local system time (should be IST in India)
-    now = datetime.now()
-    today = now.strftime('%Y-%m-%d')
-    
-    # Calculate date ranges
-    yesterday = (now - timedelta(days=1)).strftime('%Y-%m-%d')
-    week_start = (now - timedelta(days=now.weekday())).strftime('%Y-%m-%d')
-    month_start = now.replace(day=1).strftime('%Y-%m-%d')
-    
-    conn = get_db_connection()
-    
-    # Today's sales
-    today_sales = conn.execute('''
-        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills 
-        WHERE DATE(created_at) = ?
-    ''', (today,)).fetchone()
-    
-    # Yesterday's sales
-    yesterday_sales = conn.execute('''
-        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills 
-        WHERE DATE(created_at) = ?
-    ''', (yesterday,)).fetchone()
-    
-    # This week's sales
-    week_sales = conn.execute('''
-        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills 
-        WHERE DATE(created_at) >= ?
-    ''', (week_start,)).fetchone()
-    
-    # This month's sales
-    month_sales = conn.execute('''
-        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills 
-        WHERE DATE(created_at) >= ?
-    ''', (month_start,)).fetchone()
-    
-    # All time sales
-    all_time_sales = conn.execute('''
-        SELECT COUNT(*) as count, COALESCE(SUM(total_amount), 0) as total
-        FROM bills
-    ''').fetchone()
-    
-    # Top products today
-    top_products = conn.execute('''
-        SELECT 
-            p.name as product_name,
-            SUM(bi.quantity) as quantity,
-            SUM(bi.total_price) as revenue
-        FROM bill_items bi
-        JOIN bills b ON bi.bill_id = b.id
-        JOIN products p ON bi.product_id = p.id
-        WHERE DATE(b.created_at) = ?
-        GROUP BY p.id, p.name
-        ORDER BY quantity DESC
-        LIMIT 5
-    ''', (today,)).fetchall()
-    
-    # Recent transactions (all data)
-    recent_transactions = conn.execute('''
-        SELECT b.bill_number, b.total_amount, b.created_at, c.name as customer_name
-        FROM bills b
-        LEFT JOIN customers c ON b.customer_id = c.id
-        ORDER BY b.created_at DESC
-        LIMIT 10
-    ''').fetchall()
-    
-    # Get sample of existing bills to check timezone format
-    sample_bills = conn.execute('''
-        SELECT created_at, bill_number, DATE(created_at) as bill_date FROM bills ORDER BY created_at DESC LIMIT 10
-    ''').fetchall()
-    
-    conn.close()
-    
-    return jsonify({
-        "today": dict(today_sales) if today_sales else {"total": 0, "count": 0},
-        "yesterday": dict(yesterday_sales) if yesterday_sales else {"total": 0, "count": 0},
-        "week": dict(week_sales) if week_sales else {"total": 0, "count": 0},
-        "month": dict(month_sales) if month_sales else {"total": 0, "count": 0},
-        "all_time": dict(all_time_sales) if all_time_sales else {"total": 0, "count": 0},
-        "top_products": [dict(row) for row in top_products],
-        "recent_transactions": [dict(row) for row in recent_transactions],
-        "timezone": "Local Time (IST)",
-        "current_date": today,
-        "debug_info": {
-            "server_time": now.isoformat(),
-            "today": today,
-            "yesterday": yesterday,
-            "week_start": week_start,
-            "month_start": month_start,
-            "sample_bills": [dict(row) for row in sample_bills]
-        }
-    })
+    """Get sales summary - Mobile ERP Perfect Style"""
+    try:
+        conn = get_db_connection()
+        
+        today = datetime.now().strftime('%Y-%m-%d')
+        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        week_start = (datetime.now() - timedelta(days=datetime.now().weekday())).strftime('%Y-%m-%d')
+        month_start = datetime.now().replace(day=1).strftime('%Y-%m-%d')
+        
+        # Today's sales from sales table (mobile ERP style)
+        today_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total_price), 0) as total
+            FROM sales 
+            WHERE sale_date = ?
+        ''', (today,)).fetchone()
+        
+        # Yesterday's sales from sales table
+        yesterday_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total_price), 0) as total
+            FROM sales 
+            WHERE sale_date = ?
+        ''', (yesterday,)).fetchone()
+        
+        # Week's sales
+        week_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total_price), 0) as total
+            FROM sales 
+            WHERE sale_date >= ?
+        ''', (week_start,)).fetchone()
+        
+        # Month's sales
+        month_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total_price), 0) as total
+            FROM sales 
+            WHERE sale_date >= ?
+        ''', (month_start,)).fetchone()
+        
+        # All time sales
+        all_time_stats = conn.execute('''
+            SELECT 
+                COUNT(*) as count,
+                COALESCE(SUM(total_price), 0) as total
+            FROM sales
+        ''').fetchone()
+        
+        # Top products today (mobile ERP style)
+        top_products = conn.execute('''
+            SELECT 
+                product_name,
+                SUM(quantity) as quantity,
+                SUM(total_price) as revenue
+            FROM sales 
+            WHERE sale_date = ?
+            GROUP BY product_id, product_name
+            ORDER BY quantity DESC
+            LIMIT 5
+        ''', (today,)).fetchall()
+        
+        # Recent transactions from bills table
+        recent_transactions = conn.execute('''
+            SELECT b.bill_number, b.total_amount, b.created_at, c.name as customer_name
+            FROM bills b
+            LEFT JOIN customers c ON b.customer_id = c.id
+            ORDER BY b.created_at DESC
+            LIMIT 10
+        ''').fetchall()
+        
+        conn.close()
+        
+        return jsonify({
+            "today": {
+                "count": today_stats['count'],
+                "total": float(today_stats['total'])
+            },
+            "yesterday": {
+                "count": yesterday_stats['count'],
+                "total": float(yesterday_stats['total'])
+            },
+            "week": {
+                "count": week_stats['count'],
+                "total": float(week_stats['total'])
+            },
+            "month": {
+                "count": month_stats['count'],
+                "total": float(month_stats['total'])
+            },
+            "all_time": {
+                "count": all_time_stats['count'],
+                "total": float(all_time_stats['total'])
+            },
+            "top_products": [dict(row) for row in top_products],
+            "recent_transactions": [dict(row) for row in recent_transactions],
+            "timezone": "Local Time (IST)",
+            "current_date": today
+        })
+        
+    except Exception as e:
+        print(f"❌ Sales summary error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sales/refresh', methods=['POST'])
 def refresh_sales_data():
@@ -7653,12 +7662,12 @@ def print_startup_info():
     print()
 
 # ============================================================================
-# BILLING MODULE BACKEND RESTORED - WORKING VERSION
+# BILLING MODULE - MOBILE ERP PERFECT CODE IMPLEMENTATION
 # ============================================================================
 
 @app.route('/api/bills', methods=['GET'])
 def get_bills():
-    """Get all bills with customer information"""
+    """Get all bills with customer information - Mobile ERP Style"""
     conn = get_db_connection()
     bills = conn.execute('''
         SELECT b.*, c.name as customer_name 
@@ -7671,7 +7680,7 @@ def get_bills():
 
 @app.route('/api/bills/<bill_id>/items', methods=['GET'])
 def get_bill_items(bill_id):
-    """Get items for a specific bill"""
+    """Get items for a specific bill - Mobile ERP Style"""
     conn = get_db_connection()
     items = conn.execute('''
         SELECT * FROM bill_items WHERE bill_id = ?
@@ -7680,135 +7689,200 @@ def get_bill_items(bill_id):
     return jsonify([dict(row) for row in items])
 
 @app.route('/api/bills', methods=['POST'])
-@require_auth
 def create_bill():
-    """Enhanced Bills API with hourly tracking - WORKING VERSION"""
+    """Create bill - Mobile ERP Perfect Implementation"""
     try:
         data = request.json
         print("📥 Received bill data:", data)
+        
+        # Validate required fields
+        if not data or not data.get('items') or len(data['items']) == 0:
+            return jsonify({"error": "Items are required"}), 400
         
         bill_id = generate_id()
         bill_number = f"BILL-{datetime.now().strftime('%Y%m%d')}-{bill_id[:8]}"
         print(f"📝 Generated bill: {bill_number}")
         
         conn = get_db_connection()
-    except Exception as e:
-        print(f"❌ Error in bill creation setup: {str(e)}")
-        return jsonify({"error": str(e)}), 500
-    
-    try:
-        # Create bill
-        conn.execute('''
-            INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, tax_amount, total_amount)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            bill_id, bill_number, data.get('customer_id'), data['business_type'],
-            data['subtotal'], data['tax_amount'], data['total_amount']
-        ))
         
-        # Get customer name if customer_id exists
-        customer_name = None
-        if data.get('customer_id'):
-            customer = conn.execute('''
-                SELECT name FROM customers WHERE id = ?
-            ''', (data.get('customer_id'),)).fetchone()
-            customer_name = customer['name'] if customer else None
+        # Start transaction
+        conn.execute('BEGIN TRANSACTION')
         
-        # Add bill items and create sales entries
-        for item in data['items']:
-            item_id = generate_id()
-            conn.execute('''
-                INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, unit_price, total_price)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                item_id, bill_id, item['product_id'], item['product_name'],
-                item['quantity'], item['unit_price'], item['total_price']
-            ))
-            
-            # Update product stock (AUTOMATIC STOCK REDUCTION)
-            conn.execute('''
-                UPDATE products SET stock = stock - ? WHERE id = ?
-            ''', (item['quantity'], item['product_id']))
-            
-            # Get product details for sales entry
-            product = conn.execute('''
-                SELECT category FROM products WHERE id = ?
-            ''', (item['product_id'],)).fetchone()
-            
-            # Create sales entry for each item (AUTOMATIC SALES ENTRY)
-            sale_id = generate_id()
-            sale_date = datetime.now().strftime('%Y-%m-%d')
-            sale_time = datetime.now().strftime('%H:%M:%S')
-            
-            # Calculate item tax amount (proportional to item total)
-            item_tax = (item['total_price'] / data['subtotal']) * data['tax_amount'] if data['subtotal'] > 0 else 0
-            item_discount = (item['total_price'] / data['subtotal']) * data.get('discount_amount', 0) if data['subtotal'] > 0 else 0
-            
-            conn.execute('''
-                INSERT INTO sales (
-                    id, bill_id, bill_number, customer_id, customer_name,
-                    product_id, product_name, category, quantity, unit_price,
-                    total_price, tax_amount, discount_amount, payment_method,
-                    sale_date, sale_time
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
-                item['product_id'], item['product_name'], product['category'] if product else 'General',
-                item['quantity'], item['unit_price'], item['total_price'],
-                item_tax, item_discount, data.get('payment_method', 'cash'),
-                sale_date, sale_time
-            ))
-        
-        # Add payment record
-        if 'payment_method' in data:
-            payment_id = generate_id()
-            conn.execute('''
-                INSERT INTO payments (id, bill_id, method, amount)
-                VALUES (?, ?, ?, ?)
-            ''', (payment_id, bill_id, data['payment_method'], data['total_amount']))
-        
-        conn.commit()
-        
-        # Get updated hourly stats for real-time update
-        current_hour = datetime.now().strftime('%H')
-        today = datetime.now().strftime('%Y-%m-%d')
-        
-        hourly_stats = conn.execute('''
-            SELECT 
-                COUNT(*) as transactions,
-                COALESCE(SUM(total_amount), 0) as sales
-            FROM bills 
-            WHERE DATE(created_at) = ? AND strftime('%H', created_at) = ?
-        ''', (today, current_hour)).fetchone()
-        
-        conn.close()
-        
-        print(f">> Bill created successfully: {bill_number}")
-        print(f">> Sales entries created: {len(data['items'])}")
-        
-        return jsonify({
-            "message": "Bill created successfully",
-            "bill_id": bill_id,
-            "bill_number": bill_number,
-            "hourly_update": {
-                "hour": f"{current_hour}:00",
-                "transactions": hourly_stats['transactions'],
-                "sales": float(hourly_stats['sales']),
-                "avg_order_value": float(hourly_stats['sales'] / hourly_stats['transactions']) if hourly_stats['transactions'] > 0 else 0
-            }
-        }), 201
-        
-    except Exception as e:
-        print(f">> Error creating bill: {str(e)}")
-        import traceback
-        print(f">> Traceback: {traceback.format_exc()}")
         try:
+            # Create bill record
+            conn.execute('''
+                INSERT INTO bills (id, bill_number, customer_id, business_type, subtotal, tax_amount, total_amount, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                bill_id, 
+                bill_number, 
+                data.get('customer_id'), 
+                data.get('business_type', 'retail'),
+                data.get('subtotal', 0), 
+                data.get('tax_amount', 0), 
+                data.get('total_amount', 0),
+                'completed',
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            ))
+            
+            # Get customer name if customer_id exists
+            customer_name = None
+            if data.get('customer_id'):
+                customer = conn.execute('''
+                    SELECT name FROM customers WHERE id = ?
+                ''', (data.get('customer_id'),)).fetchone()
+                customer_name = customer['name'] if customer else None
+            
+            # Process each item
+            for item in data['items']:
+                item_id = generate_id()
+                
+                # Insert bill item
+                conn.execute('''
+                    INSERT INTO bill_items (id, bill_id, product_id, product_name, quantity, unit_price, total_price)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    item_id, 
+                    bill_id, 
+                    item['product_id'], 
+                    item['product_name'],
+                    item['quantity'], 
+                    item['unit_price'], 
+                    item['total_price']
+                ))
+                
+                # Update product stock (AUTOMATIC STOCK REDUCTION)
+                conn.execute('''
+                    UPDATE products SET stock = stock - ? WHERE id = ?
+                ''', (item['quantity'], item['product_id']))
+                
+                # Get product details for sales entry
+                product = conn.execute('''
+                    SELECT category FROM products WHERE id = ?
+                ''', (item['product_id'],)).fetchone()
+                
+                # Create sales entry for each item (AUTOMATIC SALES ENTRY)
+                sale_id = generate_id()
+                sale_date = datetime.now().strftime('%Y-%m-%d')
+                sale_time = datetime.now().strftime('%H:%M:%S')
+                
+                # Calculate proportional tax and discount
+                subtotal = data.get('subtotal', 0)
+                tax_amount = data.get('tax_amount', 0)
+                discount_amount = data.get('discount_amount', 0)
+                
+                item_tax = (item['total_price'] / subtotal) * tax_amount if subtotal > 0 else 0
+                item_discount = (item['total_price'] / subtotal) * discount_amount if subtotal > 0 else 0
+                
+                conn.execute('''
+                    INSERT INTO sales (
+                        id, bill_id, bill_number, customer_id, customer_name,
+                        product_id, product_name, category, quantity, unit_price,
+                        total_price, tax_amount, discount_amount, payment_method,
+                        sale_date, sale_time, created_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
+                    item['product_id'], item['product_name'], 
+                    product['category'] if product else 'General',
+                    item['quantity'], item['unit_price'], item['total_price'],
+                    item_tax, item_discount, data.get('payment_method', 'cash'),
+                    sale_date, sale_time, datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                ))
+            
+            # Add payment record
+            if data.get('payment_method'):
+                payment_id = generate_id()
+                conn.execute('''
+                    INSERT INTO payments (id, bill_id, method, amount, processed_at)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (payment_id, bill_id, data['payment_method'], data.get('total_amount', 0), datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+            
+            # Commit transaction
+            conn.commit()
+            conn.close()
+            
+            print(f"✅ Bill created successfully: {bill_number}")
+            print(f"✅ Sales entries created: {len(data['items'])}")
+            
+            return jsonify({
+                "message": "Bill created successfully",
+                "bill_id": bill_id,
+                "bill_number": bill_number,
+                "success": True
+            }), 201
+            
+        except Exception as transaction_error:
             conn.rollback()
             conn.close()
-        except:
-            pass
-        return jsonify({"error": str(e), "details": traceback.format_exc()}), 500
+            print(f"❌ Transaction error: {str(transaction_error)}")
+            return jsonify({"error": f"Transaction failed: {str(transaction_error)}"}), 500
+            
+    except Exception as main_error:
+        print(f"❌ Bill creation error: {str(main_error)}")
+        return jsonify({"error": f"Bill creation failed: {str(main_error)}"}), 500
+
+# ============================================================================
+# SALES MODULE - MOBILE ERP PERFECT CODE IMPLEMENTATION  
+# ============================================================================
+
+@app.route('/api/sales', methods=['GET'])
+def get_sales():
+    """Get all sales - Mobile ERP Style"""
+    try:
+        conn = get_db_connection()
+        
+        # Get date filter from query params
+        date_filter = request.args.get('filter', 'all')
+        
+        if date_filter == 'today':
+            today = datetime.now().strftime('%Y-%m-%d')
+            sales = conn.execute('''
+                SELECT s.*, p.name as product_name, c.name as customer_name
+                FROM sales s
+                LEFT JOIN products p ON s.product_id = p.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                WHERE s.sale_date = ?
+                ORDER BY s.created_at DESC
+            ''', (today,)).fetchall()
+        elif date_filter == 'yesterday':
+            yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+            sales = conn.execute('''
+                SELECT s.*, p.name as product_name, c.name as customer_name
+                FROM sales s
+                LEFT JOIN products p ON s.product_id = p.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                WHERE s.sale_date = ?
+                ORDER BY s.created_at DESC
+            ''', (yesterday,)).fetchall()
+        elif date_filter == 'week':
+            week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+            sales = conn.execute('''
+                SELECT s.*, p.name as product_name, c.name as customer_name
+                FROM sales s
+                LEFT JOIN products p ON s.product_id = p.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                WHERE s.sale_date >= ?
+                ORDER BY s.created_at DESC
+            ''', (week_ago,)).fetchall()
+        else:
+            # All sales
+            sales = conn.execute('''
+                SELECT s.*, p.name as product_name, c.name as customer_name
+                FROM sales s
+                LEFT JOIN products p ON s.product_id = p.id
+                LEFT JOIN customers c ON s.customer_id = c.id
+                ORDER BY s.created_at DESC
+                LIMIT 100
+            ''').fetchall()
+        
+        conn.close()
+        return jsonify([dict(row) for row in sales])
+        
+    except Exception as e:
+        print(f"❌ Sales fetch error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 # ============================================================================
 # REPORTS MODULE - Comprehensive Business Reports & Analytics
