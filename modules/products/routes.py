@@ -114,10 +114,19 @@ def barcode_to_cart(barcode):
         }), 500
 
 @products_bp.route('/api/products', methods=['POST'])
-@require_auth
 def add_product():
+    """Add new product - Mobile ERP compatible - NO AUTH REQUIRED"""
     try:
         data = request.json
+        print(f"[PRODUCT ADD API] Received data: {data}")
+        
+        # Validate JSON data
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "No data provided"
+            }), 400
+        
         result = products_service.add_product(data)
         
         if result['success']:
@@ -127,22 +136,25 @@ def add_product():
             return jsonify(result), status_code
         
     except ValueError as e:
+        print(f"[PRODUCT ADD API] ValueError: {e}")
         return jsonify({
             "success": False,
             "error": f"Invalid data format: {str(e)}"
         }), 400
     except Exception as e:
+        print(f"[PRODUCT ADD API] Exception: {e}")
         return jsonify({
             "success": False,
-            "error": f"Failed to add product: {str(e)}"
+            "error": f"Server error: {str(e)}"
         }), 500
 
 @products_bp.route('/api/products/<product_id>', methods=['PUT'])
-@require_auth
 def update_product(product_id):
-    """Update an existing product"""
+    """Update an existing product - Mobile ERP compatible"""
     try:
         data = request.json
+        print(f"[PRODUCT UPDATE API] Updating product {product_id} with data: {data}")
+        
         result = products_service.update_product(product_id, data)
         
         if result['success']:
@@ -152,22 +164,25 @@ def update_product(product_id):
             return jsonify(result), status_code
         
     except ValueError as e:
+        print(f"[PRODUCT UPDATE API] ValueError: {e}")
         return jsonify({
             "success": False,
             "error": f"Invalid data format: {str(e)}"
         }), 400
         
     except Exception as e:
+        print(f"[PRODUCT UPDATE API] Exception: {e}")
         return jsonify({
             "success": False,
             "error": f"Failed to update product: {str(e)}"
         }), 500
 
 @products_bp.route('/api/products/<product_id>', methods=['DELETE'])
-@require_auth
 def delete_product(product_id):
-    """Delete product completely from database"""
+    """Delete product completely from database - Mobile ERP compatible"""
     try:
+        print(f"[PRODUCT DELETE API] Deleting product: {product_id}")
+        
         result = products_service.delete_product(product_id)
         
         if result['success']:
@@ -176,6 +191,7 @@ def delete_product(product_id):
             return jsonify(result), 404
         
     except Exception as e:
+        print(f"[PRODUCT DELETE API] Exception: {e}")
         return jsonify({
             "success": False,
             "error": f"Failed to delete product: {str(e)}"

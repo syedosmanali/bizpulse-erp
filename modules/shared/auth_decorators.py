@@ -13,6 +13,13 @@ def require_auth(f):
     def decorated_function(*args, **kwargs):
         # Check if user is logged in via session
         if 'user_id' not in session:
+            # For API calls, return JSON error instead of redirect
+            if request.path.startswith('/api/'):
+                from flask import jsonify
+                return jsonify({
+                    "success": False,
+                    "error": "Authentication required"
+                }), 401
             return redirect(url_for('main.login'))
         
         # Set current user ID from session (don't override with dummy value)

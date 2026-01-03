@@ -22,6 +22,7 @@ from modules.main.routes import main_bp
 from modules.retail.routes import retail_bp
 from modules.hotel.routes import hotel_bp
 from modules.billing.routes import billing_bp
+from modules.sales.routes import sales_bp
 
 # Create Flask app
 app = Flask(__name__, template_folder='frontend/screens/templates', static_folder='frontend/assets/static')
@@ -96,6 +97,7 @@ app.register_blueprint(main_bp)
 app.register_blueprint(retail_bp)
 app.register_blueprint(hotel_bp)
 app.register_blueprint(billing_bp)
+app.register_blueprint(sales_bp)
 
 # Initialize database
 def initialize_database():

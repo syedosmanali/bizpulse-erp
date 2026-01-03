@@ -1,0 +1,151 @@
+"""
+Sales routes - Handle all sales API endpoints
+"""
+
+from flask import Blueprint, request, jsonify
+from .service import SalesService
+from datetime import datetime, timedelta
+
+sales_bp = Blueprint('sales', __name__)
+sales_service = SalesService()
+
+@sales_bp.route('/api/sales', methods=['GET'])
+def get_sales():
+    """Get all sales with optional date filtering"""
+    try:
+        date_filter = request.args.get('date_filter')  # today, yesterday, week, month, or specific date
+        
+        sales = sales_service.get_all_sales(date_filter)
+        
+        return jsonify({
+            "success": True,
+            "sales": sales,
+            "total_count": len(sales),
+            "date_filter": date_filter
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get sales: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/summary', methods=['GET'])
+def get_sales_summary():
+    """Get sales summary with totals"""
+    try:
+        date_filter = request.args.get('date_filter')  # today, yesterday, week, month
+        
+        summary = sales_service.get_sales_summary(date_filter)
+        
+        return jsonify({
+            "success": True,
+            "summary": summary,
+            "date_filter": date_filter
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get sales summary: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/top-products', methods=['GET'])
+def get_top_products():
+    """Get top selling products"""
+    try:
+        limit = int(request.args.get('limit', 10))
+        date_filter = request.args.get('date_filter')
+        
+        products = sales_service.get_top_products(limit, date_filter)
+        
+        return jsonify({
+            "success": True,
+            "top_products": products,
+            "limit": limit,
+            "date_filter": date_filter
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get top products: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/chart', methods=['GET'])
+def get_sales_chart():
+    """Get daily sales data for chart"""
+    try:
+        days = int(request.args.get('days', 7))
+        
+        chart_data = sales_service.get_daily_sales_chart(days)
+        
+        return jsonify({
+            "success": True,
+            "chart_data": chart_data,
+            "days": days
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get chart data: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/health', methods=['GET'])
+def check_sales_health():
+    """Check if sales data is being stored properly"""
+    try:
+        health = sales_service.check_database_health()
+        
+        return jsonify({
+            "success": True,
+            "health": health,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to check health: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/today', methods=['GET'])
+def get_today_sales():
+    """Get today's sales - Quick endpoint"""
+    try:
+        sales = sales_service.get_all_sales('today')
+        summary = sales_service.get_sales_summary('today')
+        
+        return jsonify({
+            "success": True,
+            "today_sales": sales,
+            "today_summary": summary,
+            "date": datetime.now().strftime('%Y-%m-%d')
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get today's sales: {str(e)}"
+        }), 500
+
+@sales_bp.route('/api/sales/yesterday', methods=['GET'])
+def get_yesterday_sales():
+    """Get yesterday's sales - Quick endpoint"""
+    try:
+        sales = sales_service.get_all_sales('yesterday')
+        summary = sales_service.get_sales_summary('yesterday')
+        
+        return jsonify({
+            "success": True,
+            "yesterday_sales": sales,
+            "yesterday_summary": summary,
+            "date": (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Failed to get yesterday's sales: {str(e)}"
+        }), 500
