@@ -52,138 +52,144 @@ class SalesService:
         return [dict(row) for row in sales]
     
     def get_all_sales(self, date_filter=None):
-        """Get all sales with optional date filtering"""
+        """Get all sales/bills with optional date filtering - returns bill-level data"""
         conn = get_db_connection()
         
+        # Query bills table for accurate bill-level data
         base_query = """
-            SELECT s.*,
-                   COALESCE(s.product_name, p.name) as product_name,
-                   COALESCE(s.customer_name, c.name, 'Walk-in Customer') as customer_name
-            FROM sales s
-            LEFT JOIN products p ON s.product_id = p.id
-            LEFT JOIN customers c ON s.customer_id = c.id
+            SELECT 
+                b.id,
+                b.id as bill_id,
+                b.bill_number,
+                b.customer_id,
+                COALESCE(b.customer_name, c.name, 'Walk-in Customer') as customer_name,
+                b.total_amount,
+                b.total_amount as total_price,
+                b.subtotal,
+                b.tax_amount,
+                b.discount_amount,
+                b.payment_method,
+                b.payment_status,
+                DATE(b.created_at) as sale_date,
+                TIME(b.created_at) as sale_time,
+                b.created_at,
+                b.business_type,
+                b.status,
+                (SELECT GROUP_CONCAT(bi.product_name, ', ') FROM bill_items bi WHERE bi.bill_id = b.id) as products,
+                (SELECT SUM(bi.quantity) FROM bill_items bi WHERE bi.bill_id = b.id) as quantity,
+                (SELECT COUNT(*) FROM bill_items bi WHERE bi.bill_id = b.id) as items_count
+            FROM bills b
+            LEFT JOIN customers c ON b.customer_id = c.id
         """
         
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
                 sales = conn.execute(base_query + """
-                    WHERE DATE(s.sale_date) = ?
-                    ORDER BY s.created_at DESC
+                    WHERE DATE(b.created_at) = ?
+                    ORDER BY b.created_at DESC
                 """, (today,)).fetchall()
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
                 sales = conn.execute(base_query + """
-                    WHERE DATE(s.sale_date) = ?
-                    ORDER BY s.created_at DESC
+                    WHERE DATE(b.created_at) = ?
+                    ORDER BY b.created_at DESC
                 """, (yesterday,)).fetchall()
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
                 sales = conn.execute(base_query + """
-                    WHERE DATE(s.sale_date) >= ?
-                    ORDER BY s.created_at DESC
+                    WHERE DATE(b.created_at) >= ?
+                    ORDER BY b.created_at DESC
                 """, (week_ago,)).fetchall()
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
                 sales = conn.execute(base_query + """
-                    WHERE DATE(s.sale_date) >= ?
-                    ORDER BY s.created_at DESC
+                    WHERE DATE(b.created_at) >= ?
+                    ORDER BY b.created_at DESC
                 """, (month_ago,)).fetchall()
             else:
                 # Custom date
                 sales = conn.execute(base_query + """
-                    WHERE DATE(s.sale_date) = ?
-                    ORDER BY s.created_at DESC
+                    WHERE DATE(b.created_at) = ?
+                    ORDER BY b.created_at DESC
                 """, (date_filter,)).fetchall()
         else:
-            # All sales - no limit for full data
+            # All sales
             sales = conn.execute(base_query + """
-                ORDER BY s.created_at DESC
+                ORDER BY b.created_at DESC
                 LIMIT 500
             """).fetchall()
         
         conn.close()
-        return [dict(row) for row in sales]
+        
+        # Convert to list of dicts with proper field names
+        result = []
+        for row in sales:
+            sale = dict(row)
+            # Add product_name field for compatibility
+            sale['product_name'] = sale.get('products', 'Multiple Items')
+            result.append(sale)
+        
+        return result
     
     def get_sales_summary(self, date_filter=None):
-        """Get sales summary with totals"""
+        """Get sales summary with totals - counts unique bills, not individual items"""
         conn = get_db_connection()
+        
+        # Build date condition
+        date_condition = ""
+        params = []
         
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
-                summary = conn.execute("""
-                    SELECT 
-                        COUNT(*) as total_sales,
-                        SUM(total_price) as total_revenue,
-                        SUM(quantity) as total_items,
-                        AVG(total_price) as avg_sale_value
-                    FROM sales 
-                    WHERE DATE(sale_date) = ?
-                """, (today,)).fetchone()
+                date_condition = "WHERE DATE(created_at) = ?"
+                params = [today]
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-                summary = conn.execute("""
-                    SELECT 
-                        COUNT(*) as total_sales,
-                        SUM(total_price) as total_revenue,
-                        SUM(quantity) as total_items,
-                        AVG(total_price) as avg_sale_value
-                    FROM sales 
-                    WHERE DATE(sale_date) = ?
-                """, (yesterday,)).fetchone()
+                date_condition = "WHERE DATE(created_at) = ?"
+                params = [yesterday]
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                summary = conn.execute("""
-                    SELECT 
-                        COUNT(*) as total_sales,
-                        SUM(total_price) as total_revenue,
-                        SUM(quantity) as total_items,
-                        AVG(total_price) as avg_sale_value
-                    FROM sales 
-                    WHERE DATE(sale_date) >= ?
-                """, (week_ago,)).fetchone()
+                date_condition = "WHERE DATE(created_at) >= ?"
+                params = [week_ago]
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-                summary = conn.execute("""
-                    SELECT 
-                        COUNT(*) as total_sales,
-                        SUM(total_price) as total_revenue,
-                        SUM(quantity) as total_items,
-                        AVG(total_price) as avg_sale_value
-                    FROM sales 
-                    WHERE DATE(sale_date) >= ?
-                """, (month_ago,)).fetchone()
+                date_condition = "WHERE DATE(created_at) >= ?"
+                params = [month_ago]
             else:
                 # Custom date
-                summary = conn.execute("""
-                    SELECT 
-                        COUNT(*) as total_sales,
-                        SUM(total_price) as total_revenue,
-                        SUM(quantity) as total_items,
-                        AVG(total_price) as avg_sale_value
-                    FROM sales 
-                    WHERE DATE(sale_date) = ?
-                """, (date_filter,)).fetchone()
-        else:
-            # All time
-            summary = conn.execute("""
-                SELECT 
-                    COUNT(*) as total_sales,
-                    SUM(total_price) as total_revenue,
-                    SUM(quantity) as total_items,
-                    AVG(total_price) as avg_sale_value
-                FROM sales
-            """).fetchone()
+                date_condition = "WHERE DATE(created_at) = ?"
+                params = [date_filter]
+        
+        # Get summary from BILLS table for accurate totals
+        query = f"""
+            SELECT 
+                COUNT(*) as total_sales,
+                COALESCE(SUM(total_amount), 0) as total_revenue,
+                COALESCE(AVG(total_amount), 0) as avg_sale_value
+            FROM bills 
+            {date_condition}
+        """
+        
+        summary = conn.execute(query, params).fetchone()
+        
+        # Get total items from sales table
+        items_query = f"""
+            SELECT COALESCE(SUM(quantity), 0) as total_items
+            FROM sales 
+            {date_condition.replace('created_at', 'sale_date')}
+        """
+        items_result = conn.execute(items_query, params).fetchone()
         
         conn.close()
         
         if summary:
             return {
                 "total_sales": summary['total_sales'] or 0,
-                "total_revenue": float(summary['total_revenue'] or 0),
-                "total_items": summary['total_items'] or 0,
-                "avg_sale_value": float(summary['avg_sale_value'] or 0)
+                "total_revenue": round(float(summary['total_revenue'] or 0), 2),
+                "total_items": items_result['total_items'] if items_result else 0,
+                "avg_sale_value": round(float(summary['avg_sale_value'] or 0), 2)
             }
         else:
             return {
