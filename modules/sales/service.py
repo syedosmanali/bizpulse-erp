@@ -70,6 +70,9 @@ class SalesService:
                 b.discount_amount,
                 b.payment_method,
                 b.payment_status,
+                b.is_credit,
+                b.credit_balance,
+                b.credit_paid_amount,
                 DATE(b.created_at) as sale_date,
                 TIME(b.created_at) as sale_time,
                 b.created_at,
@@ -77,7 +80,12 @@ class SalesService:
                 b.status,
                 (SELECT GROUP_CONCAT(bi.product_name, ', ') FROM bill_items bi WHERE bi.bill_id = b.id) as products,
                 (SELECT SUM(bi.quantity) FROM bill_items bi WHERE bi.bill_id = b.id) as quantity,
-                (SELECT COUNT(*) FROM bill_items bi WHERE bi.bill_id = b.id) as items_count
+                (SELECT COUNT(*) FROM bill_items bi WHERE bi.bill_id = b.id) as items_count,
+                CASE 
+                    WHEN b.is_credit = 1 AND b.credit_balance > 0 THEN 'credit'
+                    WHEN b.payment_method = 'partial' THEN 'partial'
+                    ELSE 'paid'
+                END as transaction_status
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
         """
@@ -128,6 +136,15 @@ class SalesService:
             sale = dict(row)
             # Add product_name field for compatibility
             sale['product_name'] = sale.get('products', 'Multiple Items')
+            
+            # Add CSS class for credit transactions (red color)
+            if sale.get('transaction_status') == 'credit':
+                sale['css_class'] = 'credit-transaction'
+                sale['is_credit_transaction'] = True
+            else:
+                sale['css_class'] = ''
+                sale['is_credit_transaction'] = False
+                
             result.append(sale)
         
         return result
@@ -167,7 +184,8 @@ class SalesService:
             SELECT 
                 COUNT(*) as total_sales,
                 COALESCE(SUM(total_amount), 0) as total_revenue,
-                COALESCE(AVG(total_amount), 0) as avg_sale_value
+                COALESCE(AVG(total_amount), 0) as avg_sale_value,
+                COALESCE(SUM(CASE WHEN is_credit = 1 THEN credit_balance ELSE 0 END), 0) as total_receivables
             FROM bills 
             {date_condition}
         """
@@ -189,14 +207,16 @@ class SalesService:
                 "total_sales": summary['total_sales'] or 0,
                 "total_revenue": round(float(summary['total_revenue'] or 0), 2),
                 "total_items": items_result['total_items'] if items_result else 0,
-                "avg_sale_value": round(float(summary['avg_sale_value'] or 0), 2)
+                "avg_sale_value": round(float(summary['avg_sale_value'] or 0), 2),
+                "total_receivables": round(float(summary['total_receivables'] or 0), 2)
             }
         else:
             return {
                 "total_sales": 0,
                 "total_revenue": 0.0,
                 "total_items": 0,
-                "avg_sale_value": 0.0
+                "avg_sale_value": 0.0,
+                "total_receivables": 0.0
             }
     
     def get_top_products(self, limit=10, date_filter=None):

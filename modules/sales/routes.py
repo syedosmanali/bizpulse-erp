@@ -79,8 +79,8 @@ def get_all_sales():
                 "total_items": summary.get('total_items', 0),
                 "avg_sale_value": summary.get('avg_sale_value', 0),
                 "net_profit": summary.get('total_revenue', 0) * 0.2,  # Estimated 20% profit
-                "receivable": 0,
-                "receivable_profit": 0
+                "receivable": summary.get('total_receivables', 0),
+                "receivable_profit": summary.get('total_receivables', 0)
             },
             "pagination": {
                 "current_page": page,
