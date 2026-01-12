@@ -66,13 +66,14 @@ class RetailModels:
         conn = get_db_connection()
         try:
             if user_id:
-                total_products = conn.execute('SELECT COUNT(*) as count FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchone()['count']
-                low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock > 0 AND stock <= min_stock AND is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchone()['count']
-                out_of_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock = 0 AND is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchone()['count']
+                # STRICT ISOLATION: Only count user's own products
+                total_products = conn.execute('SELECT COUNT(*) as count FROM products WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchone()['count']
+                low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock > 0 AND stock <= min_stock AND is_active = 1 AND user_id = ?', (user_id,)).fetchone()['count']
+                out_of_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock = 0 AND is_active = 1 AND user_id = ?', (user_id,)).fetchone()['count']
             else:
-                total_products = conn.execute('SELECT COUNT(*) as count FROM products WHERE is_active = 1').fetchone()['count']
-                low_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock > 0 AND stock <= min_stock AND is_active = 1').fetchone()['count']
-                out_of_stock = conn.execute('SELECT COUNT(*) as count FROM products WHERE stock = 0 AND is_active = 1').fetchone()['count']
+                total_products = 0
+                low_stock = 0
+                out_of_stock = 0
             
             return {
                 'total_products': total_products,
@@ -88,9 +89,11 @@ class RetailModels:
         conn = get_db_connection()
         try:
             if user_id:
-                count = conn.execute('SELECT COUNT(*) as count FROM customers WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchone()['count']
+                # STRICT ISOLATION: Only count user's own customers
+                count = conn.execute('SELECT COUNT(*) as count FROM customers WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchone()['count']
             else:
-                count = conn.execute('SELECT COUNT(*) as count FROM customers WHERE is_active = 1').fetchone()['count']
+                # No user_id: count nothing
+                count = 0
             return count
         finally:
             conn.close()

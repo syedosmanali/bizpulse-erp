@@ -17,11 +17,11 @@ class RetailService:
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
         week_start = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
         
-        # Build user filter condition
+        # Build user filter condition - STRICT ISOLATION
         user_filter = ""
         user_params = []
         if user_id:
-            user_filter = "AND (business_owner_id = ? OR business_owner_id IS NULL)"
+            user_filter = "AND business_owner_id = ?"
             user_params = [user_id]
         
         # Today's Sales (ALL bills including credit/partial)
@@ -251,30 +251,30 @@ class RetailService:
         
         # Total Products
         if user_id:
+            # STRICT ISOLATION: Only count user's own products
             total_products = cursor.execute('''
-                SELECT COUNT(*) as count FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                SELECT COUNT(*) as count FROM products WHERE is_active = 1 AND user_id = ?
             ''', (user_id,)).fetchone()['count']
             
-            # Low Stock Products (excluding out of stock)
+            # Low Stock Products - STRICT ISOLATION
             low_stock = cursor.execute('''
                 SELECT COUNT(*) as count FROM products 
-                WHERE stock > 0 AND stock <= min_stock AND is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                WHERE stock > 0 AND stock <= min_stock AND is_active = 1 AND user_id = ?
             ''', (user_id,)).fetchone()['count']
             
-            # Out of Stock Products
+            # Out of Stock Products - STRICT ISOLATION
             out_of_stock = cursor.execute('''
                 SELECT COUNT(*) as count FROM products 
-                WHERE stock = 0 AND is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                WHERE stock = 0 AND is_active = 1 AND user_id = ?
             ''', (user_id,)).fetchone()['count']
             
-            # Total Customers
+            # Total Customers - STRICT ISOLATION
             total_customers = cursor.execute('''
-                SELECT COUNT(*) as count FROM customers WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                SELECT COUNT(*) as count FROM customers WHERE is_active = 1 AND user_id = ?
             ''', (user_id,)).fetchone()['count']
         else:
-            total_products = cursor.execute('''
-                SELECT COUNT(*) as count FROM products WHERE is_active = 1
-            ''').fetchone()['count']
+            # No user_id: count nothing
+            total_products = 0
             
             # Low Stock Products (excluding out of stock)
             low_stock = cursor.execute('''
@@ -288,10 +288,8 @@ class RetailService:
                 WHERE stock = 0 AND is_active = 1
             ''').fetchone()['count']
             
-            # Total Customers
-            total_customers = cursor.execute('''
-                SELECT COUNT(*) as count FROM customers WHERE is_active = 1
-            ''').fetchone()['count']
+            # Total Customers - No user_id
+            total_customers = 0
         
         # Recent Sales (Last 10)
         recent_sales = cursor.execute(f'''
@@ -423,7 +421,10 @@ class RetailService:
         
         activities = []
         
-        # Build query with user filtering
+        # Build query with user filtering and today's date filter to match sales module
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
         query = '''
             SELECT 
                 b.id,
@@ -434,12 +435,12 @@ class RetailService:
                 COALESCE(b.customer_name, c.name, 'Walk-in Customer') as customer_name
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
-            WHERE b.status = 'completed'
+            WHERE DATE(b.created_at) = ?
         '''
         
-        params = []
+        params = [today]
         if user_id:
-            query += ' AND (b.business_owner_id = ? OR b.business_owner_id IS NULL)'
+            query += ' AND b.business_owner_id = ?'
             params.append(user_id)
         
         query += ' ORDER BY b.created_at DESC LIMIT 8'

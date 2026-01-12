@@ -10,20 +10,19 @@ from modules.dashboard.models import ActivityTracker, log_sale_activity, log_ord
 class BillingService:
     
     def get_all_bills(self, user_id=None):
-        """Get all bills with customer information - Mobile ERP Style - Filtered by user"""
+        """Get all bills with customer information - STRICT DATA ISOLATION"""
         conn = get_db_connection()
         
         if user_id:
+            # STRICT FILTER: Only show bills belonging to this user
             bills = conn.execute("""SELECT b.*, c.name as customer_name 
                 FROM bills b 
                 LEFT JOIN customers c ON b.customer_id = c.id 
-                WHERE b.business_owner_id = ? OR b.business_owner_id IS NULL
+                WHERE b.business_owner_id = ?
                 ORDER BY b.created_at DESC""", (user_id,)).fetchall()
         else:
-            bills = conn.execute("""SELECT b.*, c.name as customer_name 
-                FROM bills b 
-                LEFT JOIN customers c ON b.customer_id = c.id 
-                ORDER BY b.created_at DESC""").fetchall()
+            # No user_id: show nothing
+            bills = []
         
         conn.close()
         return [dict(row) for row in bills]

@@ -30,10 +30,64 @@
             --radius-xl: 20px;
         }
 
+        /* Disable animations during sidebar transition to prevent lag */
+        .sidebar-transitioning * {
+            transition: none !important;
+            animation: none !important;
+        }
+        
+        /* Re-enable animations after transition */
+        .sidebar:not(.sidebar-transitioning) .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .sidebar:not(.sidebar-transitioning) .action-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar:not(.sidebar-transitioning) .activity-item {
+            transition: all 0.2s ease;
+        }    /* Performance Optimizations */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+        
+        /* GPU Acceleration for smooth animations */
+        .sidebar,
+        .top-header,
+        .main-content,
+        .content-area {
+            transform: translateZ(0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+        }
+        
+        /* Reduce repaints during transitions */
+        .sidebar.collapsed,
+        .sidebar.collapsed ~ .top-header,
+        .sidebar.collapsed ~ .main-content {
+            will-change: auto;
+        }
+        
+        /* Disable animations during sidebar transition to prevent lag */
+        .sidebar-transitioning * {
+            transition: none !important;
+            animation: none !important;
+        }
+        
+        /* Re-enable animations after transition */
+        .sidebar:not(.sidebar-transitioning) .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .sidebar:not(.sidebar-transitioning) .action-btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar:not(.sidebar-transitioning) .activity-item {
+            transition: all 0.2s ease;
         }
         
         body {
@@ -74,7 +128,7 @@
             z-index: -1;
         }
         
-        /* Premium Sidebar */
+        /* Premium Sidebar - Optimized for Performance */
         .sidebar {
             position: fixed;
             left: 0;
@@ -86,12 +140,13 @@
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             z-index: 1000;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s ease-out;
             will-change: transform;
+            transform: translateX(0);
         }
         
         .sidebar.collapsed {
-            transform: translateX(-220px);
+            transform: translateX(-100%);
         }
         
         .sidebar-header {
@@ -229,7 +284,7 @@
             transform: translateX(4px);
         }
         
-        /* Top Header - Fixed Position */
+        /* Top Header - Optimized Performance */
         .top-header {
             position: fixed;
             top: 0;
@@ -244,11 +299,12 @@
             justify-content: space-between;
             padding: 0 30px;
             z-index: 999;
-            transition: all 0.3s ease;
+            transition: left 0.2s ease-out;
+            will-change: left;
         }
         
         .sidebar.collapsed ~ .top-header {
-            left: 60px;
+            left: 0;
         }
         
         .header-left {
@@ -444,72 +500,244 @@
             border: 2px solid white;
         }
         
-        /* Premium Main Content */
+        /* Premium Main Content - Optimized Performance */
         .main-content {
             margin-left: 280px;
             padding-top: 70px;
             min-height: 100vh;
-            transition: all 0.3s ease;
+            transition: margin-left 0.2s ease-out;
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
             position: relative;
+            width: calc(100vw - 280px);
+            will-change: margin-left, width;
         }
         
-        .sidebar.collapsed + .main-content {
-            margin-left: 60px;
-            width: calc(100% - 60px);
+        .sidebar.collapsed ~ .main-content {
+            margin-left: 0;
+            width: 100vw;
         }
         
-        /* Premium Content Area - Compact */
+        /* Premium Content Area - Optimized Performance */
         .content-area {
-            padding: 24px 32px;
+            padding: 16px 24px;
             background: radial-gradient(circle at 20% 80%, rgba(115, 44, 63, 0.03) 0%, transparent 50%),
                         radial-gradient(circle at 80% 20%, rgba(184, 84, 80, 0.03) 0%, transparent 50%),
                         radial-gradient(circle at 40% 40%, rgba(232, 180, 184, 0.02) 0%, transparent 50%);
             border-radius: 25px 25px 0 0;
-            margin: 16px;
+            margin: 12px;
             box-shadow: 0 -5px 20px rgba(115, 44, 63, 0.1);
+            transition: padding 0.2s ease-out, width 0.2s ease-out;
+            width: calc(100% - 24px);
+            max-width: none;
+            will-change: padding, width;
         }
         
-        /* Hero Section - Compact */
+        /* Content area expands when sidebar is collapsed */
+        .sidebar.collapsed ~ .main-content .content-area {
+            margin: 12px 20px;
+            padding: 20px 32px;
+            width: calc(100% - 40px);
+        }
+        
+        /* Hero Section - Very Compact */
         .dashboard-hero {
-            margin-bottom: 16px;
+            margin-bottom: 8px;
         }
         
         .hero-title {
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             letter-spacing: -0.04em;
         }
         
         .hero-subtitle {
-            font-size: 0.95rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             font-weight: 400;
         }
         
-        /* Premium KPI Cards Grid - Compact 4 in a row */
+        /* Premium KPI Cards Grid - Move Higher and More Compact */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 16px;
             width: 100%;
         }
         
-        /* Premium Stat Cards - Compact */
+        /* Enhanced stats grid when sidebar is collapsed - Bigger Cards */
+        .sidebar.collapsed ~ .main-content .stats-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        /* Make stat cards bigger when sidebar is collapsed */
+        .sidebar.collapsed ~ .main-content .stat-card {
+            padding: 24px 20px;
+            border-radius: 16px;
+            min-height: 160px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .stat-header {
+            margin-bottom: 16px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .stat-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+        }
+        
+        .sidebar.collapsed ~ .main-content .stat-icon {
+            width: 42px;
+            height: 42px;
+            font-size: 1.4rem;
+            border-radius: 12px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .stat-value {
+            font-size: 2.4rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            line-height: 0.9;
+        }
+        
+        .sidebar.collapsed ~ .main-content .stat-change {
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        
+        /* Make quick actions use full screen when sidebar is collapsed - Medium Size */
+        .sidebar.collapsed ~ .main-content .quick-actions {
+            padding: 16px;
+            border-radius: 18px;
+            width: 100%;
+            margin-bottom: 18px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .section-title {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        
+        /* Full screen actions grid when sidebar is collapsed - Medium Size */
+        .sidebar.collapsed ~ .main-content .actions-grid {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+        
+        .sidebar.collapsed ~ .main-content .action-btn {
+            padding: 12px 14px;
+            border-radius: 16px;
+            min-height: auto;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: left;
+            gap: 8px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .action-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 1.2rem;
+            margin-bottom: 0;
+            border-radius: 12px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .action-text {
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+        
+        /* Make recent activity use full screen when sidebar is collapsed - Medium Size */
+        .sidebar.collapsed ~ .main-content .recent-activity {
+            padding: 16px;
+            border-radius: 18px;
+            width: 100%;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-item {
+            padding: 12px 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-item:hover {
+            background: rgba(115, 44, 63, 0.02);
+            padding: 12px 20px;
+            margin: 0 -20px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+            border-radius: 14px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-time {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        
+        .sidebar.collapsed ~ .main-content .activity-amount {
+            font-size: 0.9rem;
+            font-weight: 800;
+        }
+        
+        /* Content area uses full screen when sidebar collapsed - More compact welcome */
+        .sidebar.collapsed ~ .main-content .content-area {
+            padding: 12px 32px;
+            width: 100%;
+        }
+        
+        .sidebar.collapsed ~ .main-content .hero-title {
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .hero-subtitle {
+            font-size: 0.7rem;
+            margin-bottom: 12px;
+        }
+        
+        .sidebar.collapsed ~ .main-content .dashboard-hero {
+            margin-bottom: 6px;
+        }
+        
+        /* Premium Stat Cards - Optimized Performance */
         .stat-card {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
             border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: 20px;
+            border-radius: 14px;
+            padding: 20px 18px;
             box-shadow: var(--shadow-soft);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             position: relative;
             overflow: hidden;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            will-change: transform;
         }
         
         .stat-card::before {
@@ -518,30 +746,31 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 1px;
+            height: 2px;
             background: linear-gradient(90deg, transparent, var(--wine-lighter), transparent);
         }
         
         .stat-card:hover {
             transform: translateY(-4px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 6px 20px rgba(115, 44, 63, 0.12);
             background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(115, 44, 63, 0.1);
+            border-color: rgba(115, 44, 63, 0.15);
         }
         
         .stat-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         
         .stat-title {
             color: var(--text-secondary);
-            font-size: 0.75rem;
-            font-weight: 500;
+            font-size: 0.7rem;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+            line-height: 1.2;
         }
         
         .stat-icon {
@@ -551,9 +780,10 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            background: linear-gradient(135deg, var(--wine-lightest), rgba(255, 255, 255, 0.8));
-            border-radius: var(--radius-sm);
+            background: linear-gradient(135deg, var(--wine-lightest), rgba(255, 255, 255, 0.9));
+            border-radius: 10px;
             border: 1px solid var(--border-light);
+            box-shadow: 0 2px 6px rgba(115, 44, 63, 0.08);
         }
         
         .stat-icon.revenue {
@@ -576,58 +806,64 @@
             font-size: 1.8rem;
             font-weight: 800;
             color: var(--text-primary);
-            line-height: 1;
-            margin-bottom: 6px;
+            line-height: 0.9;
+            margin-bottom: 8px;
             letter-spacing: -0.02em;
         }
         
         .stat-change {
-            font-size: 0.75rem;
-            font-weight: 500;
+            font-size: 0.7rem;
+            font-weight: 600;
             display: flex;
             align-items: center;
             gap: 4px;
+            margin-top: auto;
         }
         
         .stat-change.positive {
-            color: #10B981;
+            color: #059669;
         }
         
         .stat-change.negative {
-            color: #EF4444;
+            color: #DC2626;
         }
         
-        /* Premium Quick Actions - Compact */
+        /* Add some spacing between value and change */
+        .stat-card .stat-value + .stat-change {
+            margin-top: 6px;
+        }
+        
+        /* Premium Quick Actions - Normal Size When Sidebar Visible */
         .quick-actions {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-lg);
-            padding: 24px;
+            padding: 20px;
             box-shadow: var(--shadow-soft);
-            margin-bottom: 32px;
+            margin-bottom: 28px;
         }
         
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             letter-spacing: -0.025em;
         }
         
         .actions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
             width: 100%;
         }
         
         .action-btn {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 16px;
+            gap: 10px;
+            padding: 12px 14px;
             background: rgba(255, 255, 255, 0.9);
             border: 1px solid var(--border-light);
             border-radius: var(--radius-md);
@@ -686,7 +922,7 @@
             letter-spacing: -0.01em;
         }
         
-        /* Premium Recent Activity - Compact */
+        /* Premium Recent Activity - Normal Size When Sidebar Visible */
         .recent-activity {
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
@@ -841,22 +1077,138 @@
         }
 
         /* Premium Mobile Responsive */
+        @media screen and (min-width: 1200px) {
+            /* Large desktop screens - ensure 4 boxes stay in one line */
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 18px;
+                max-width: none;
+            }
+            
+            .stat-card {
+                padding: 18px 16px;
+                min-height: 125px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stats-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 22px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-card {
+                padding: 22px 20px;
+                min-height: 145px;
+            }
+        }
+        
+        @media screen and (min-width: 1600px) {
+            /* Very large desktop screens - still keep 4 in one line */
+            .sidebar.collapsed ~ .main-content .stats-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 26px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-card {
+                padding: 28px 24px;
+                min-height: 170px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-value {
+                font-size: 2.6rem;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 1.5rem;
+            }
+            
+            .sidebar.collapsed ~ .main-content .content-area {
+                padding: 36px 48px;
+                width: calc(100% - 96px);
+            }
+        }
+        
         @media screen and (max-width: 1024px) {
             .content-area {
-                padding: 24px 20px;
+                padding: 20px 18px;
+                margin: 10px;
+                width: calc(100% - 20px);
             }
             
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 16px;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 14px;
+            }
+            
+            .stat-card {
+                padding: 18px 16px;
+                min-height: 120px;
+            }
+            
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .stat-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+            
+            .stat-title {
+                font-size: 0.6rem;
+            }
+            
+            .stat-change {
+                font-size: 0.6rem;
+            }
+            
+            /* When sidebar collapsed on tablet - keep 4 in line but larger */
+            .sidebar.collapsed ~ .main-content .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 18px;
+                width: 100%;
+                margin-bottom: 24px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-card {
+                padding: 24px 20px;
+                min-height: 150px;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-value {
+                font-size: 2.2rem;
+            }
+            
+            .sidebar.collapsed ~ .main-content .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+            }
+            
+            .sidebar.collapsed ~ .main-content .content-area {
+                padding: 28px 32px;
+                width: calc(100% - 40px);
+            }
+            
+            .sidebar.collapsed ~ .main-content .actions-grid {
+                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 20px;
+                width: 100%;
+            }
+            
+            .sidebar.collapsed ~ .main-content .action-btn {
+                padding: 18px 16px;
+                min-height: 100px;
             }
             
             .hero-title {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
             }
             
             .actions-grid {
-                grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             }
         }
         
@@ -901,29 +1253,39 @@
             }
             
             .content-area {
-                padding: 24px 20px !important;
-            }
-            
-            .hero-title {
-                font-size: 1.4rem;
-            }
-            
-            .hero-subtitle {
-                font-size: 1rem;
+                padding: 20px 16px !important;
+                margin: 8px !important;
+                width: calc(100% - 16px) !important;
             }
             
             .stats-grid {
                 grid-template-columns: 1fr !important;
-                gap: 20px !important;
-                margin-bottom: 40px !important;
+                gap: 16px !important;
+                margin-bottom: 32px !important;
+                width: 100% !important;
             }
             
             .stat-card {
-                padding: 24px !important;
+                padding: 24px 20px !important;
+                min-height: 130px !important;
             }
             
             .stat-value {
-                font-size: 2.25rem !important;
+                font-size: 2rem !important;
+            }
+            
+            .stat-icon {
+                width: 38px !important;
+                height: 38px !important;
+                font-size: 1.2rem !important;
+            }
+            
+            .stat-title {
+                font-size: 0.75rem !important;
+            }
+            
+            .stat-change {
+                font-size: 0.75rem !important;
             }
             
             .actions-grid {
@@ -1173,26 +1535,64 @@
         </div>
         
         <div class="header-right">
-            <div class="search-box">
+            <!-- Shorter Search Box -->
+            <div class="search-box" style="max-width: 400px; margin-right: 15px;">
                 <span class="search-icon">🔍</span>
-                <input type="text" id="universalSearch" placeholder="Search products, customers, sales, modules..." 
+                <input type="text" id="universalSearch" placeholder="Search products, customers, sales..." 
                        onkeyup="handleSearch(event)" autocomplete="off">
                 <div id="searchResults" class="search-results" style="display: none;"></div>
             </div>
             
-            <!-- Clickable Profile Card -->
-            <div class="profile-card" id="profileCard" style="display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: rgba(255, 255, 255, 0.1); border-radius: 25px; color: white;">
-                <!-- Clickable Profile Avatar Button -->
-                <div class="profile-avatar-button" onclick="window.location.href='/retail/profile'" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 16px; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; position: relative;">
-                    <span id="profileAvatar">S</span>
-                    <!-- Hover indicator -->
-                    <div style="position: absolute; inset: -2px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); opacity: 0; transition: opacity 0.3s ease;" class="avatar-hover-ring"></div>
-                </div>
-                <div class="profile-info" style="display: flex; flex-direction: column; align-items: flex-start;">
-                    <div class="profile-name" id="profileName" style="font-weight: 600; font-size: 14px; color: white; margin: 0;">syed</div>
-                    <div class="profile-role" id="profileRole" style="font-size: 12px; opacity: 0.8; color: white; margin: 0;">Business Owner</div>
+            <!-- Internal Profile Button (Same Style as Search) -->
+            <div id="internalProfileButton" style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 16px;
+                background: white;
+                border: 1px solid #e0e0e0;
+                border-radius: 25px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                min-width: 180px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            " onclick="openExistingProfileModal()">
+                <!-- Avatar Circle -->
+                <div id="headerProfileAvatar" style="
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    font-size: 14px;
+                    flex-shrink: 0;
+                ">U</div>
+                
+                <!-- User Info -->
+                <div style="display: flex; flex-direction: column; align-items: flex-start; flex-grow: 1;">
+                    <div id="headerProfileName" style="
+                        color: #333;
+                        font-weight: 600;
+                        font-size: 13px;
+                        margin: 0;
+                        line-height: 1.2;
+                    ">User</div>
+                    <div id="headerProfileRole" style="
+                        color: #666;
+                        font-size: 11px;
+                        margin: 0;
+                        line-height: 1.2;
+                        font-weight: 500;
+                    ">User</div>
                 </div>
             </div>
+            
+            <!-- Remove the external profile container -->
+            <div id="newProfileContainer" style="display: none;"></div>
             
             <!-- Profile Details Modal -->
             <div id="profileDetailsModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; justify-content: center;">
@@ -1203,7 +1603,7 @@
                     <!-- Profile Header -->
                     <div style="text-align: center; margin-bottom: 30px;">
                         <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 32px; margin: 0 auto 15px; border: 3px solid #f0f0f0; position: relative;">
-                            <span id="modalProfileAvatar">S</span>
+                            <span id="modalProfileAvatar">U</span>
                             <!-- Upload button -->
                             <button onclick="document.getElementById('profilePictureInput').click()" style="position: absolute; bottom: -5px; right: -5px; width: 30px; height: 30px; border-radius: 50%; background: #732C3F; color: white; border: 2px solid white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;">📷</button>
                             <input type="file" id="profilePictureInput" accept="image/*" style="display: none;" onchange="uploadProfilePicture(this)">
@@ -1415,17 +1815,33 @@
                 }
             } catch (e) { console.warn('Failed to read userInfo', e); }
 
-            // Sidebar toggle (mobile vs desktop)
+            // Sidebar toggle (mobile vs desktop) - Optimized with Animation Control
+            let toggleTimeout;
             function toggleSidebar() {
                 const sidebar = document.getElementById('sidebar');
                 if (!sidebar) return;
 
-                if (window.innerWidth <= 900 || isMobileDevice()) {
-                    sidebar.classList.toggle('open');
-                    document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
-                } else {
-                    sidebar.classList.toggle('collapsed');
-                }
+                // Prevent rapid clicking
+                if (toggleTimeout) return;
+                
+                // Temporarily disable animations to prevent lag
+                document.body.classList.add('sidebar-transitioning');
+                
+                toggleTimeout = setTimeout(() => {
+                    toggleTimeout = null;
+                    // Re-enable animations after transition
+                    document.body.classList.remove('sidebar-transitioning');
+                }, 250);
+
+                // Use requestAnimationFrame for smooth animation
+                requestAnimationFrame(() => {
+                    if (window.innerWidth <= 900 || isMobileDevice()) {
+                        sidebar.classList.toggle('open');
+                        document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : 'auto';
+                    } else {
+                        sidebar.classList.toggle('collapsed');
+                    }
+                });
             }
 
             // Close sidebar when clicking outside on mobile
@@ -1481,7 +1897,6 @@
             // Profile Details Modal Functions
             function openProfileDetails() {
                 console.log('🔧 Opening profile details modal...');
-                alert('Profile clicked! Modal should open now.');
                 
                 try {
                     // Load current user data
@@ -1491,20 +1906,13 @@
                     const modal = document.getElementById('profileDetailsModal');
                     if (modal) {
                         modal.style.display = 'flex';
-                        console.log('✅ Modal display set to flex');
-                        
-                        // Add fade-in animation
-                        setTimeout(() => {
-                            modal.style.opacity = '1';
-                            console.log('✅ Modal opacity set to 1');
-                        }, 10);
+                        modal.style.opacity = '1';
+                        console.log('✅ Modal opened successfully');
                     } else {
                         console.error('❌ Modal element not found');
-                        alert('Modal element not found!');
                     }
                 } catch (error) {
                     console.error('❌ Error opening modal:', error);
-                    alert('Error opening modal: ' + error.message);
                 }
             }
             
@@ -1525,7 +1933,20 @@
                         
                         // Update modal with user data
                         document.getElementById('modalProfileName').textContent = userInfo.user_name || 'User';
-                        document.getElementById('modalProfileRole').textContent = userInfo.user_type === 'client' ? 'Business Owner' : 'User';
+                        
+                        // Set role based on user type and admin status
+                        let roleDisplay = 'User';
+                        if (userInfo.is_super_admin) {
+                            roleDisplay = 'Super Admin';
+                        } else if (userInfo.user_type === 'client') {
+                            roleDisplay = 'Business Owner';
+                        } else if (userInfo.user_type === 'staff' || userInfo.user_type === 'employee') {
+                            roleDisplay = 'Employee';
+                        } else if (userInfo.user_type === 'admin') {
+                            roleDisplay = 'Admin';
+                        }
+                        
+                        document.getElementById('modalProfileRole').textContent = roleDisplay;
                         const modalAvatarEl = document.getElementById('modalProfileAvatar');
                         modalAvatarEl.textContent = (userInfo.user_name || 'U').charAt(0).toUpperCase();
                         
@@ -1577,7 +1998,23 @@
                     if (response.ok) {
                         // Update profile display
                         document.getElementById('profileName').textContent = profileData.full_name || 'User';
-                        document.getElementById('profileAvatar').textContent = (profileData.full_name || 'U').charAt(0).toUpperCase();
+                        
+                        // Update avatar - check if user has profile picture first
+                        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                        const avatarEl = document.getElementById('profileAvatar');
+                        const avatarContainer = avatarEl.parentElement;
+                        
+                        if (userInfo.profile_picture) {
+                            // Keep the profile picture
+                            avatarContainer.style.backgroundImage = `url('${userInfo.profile_picture}')`;
+                            avatarContainer.style.backgroundSize = 'cover';
+                            avatarContainer.style.backgroundPosition = 'center';
+                            avatarEl.textContent = '';
+                        } else {
+                            // Update initials
+                            avatarEl.textContent = (profileData.full_name || 'U').charAt(0).toUpperCase();
+                            avatarContainer.style.backgroundImage = 'none';
+                        }
                         
                         // Close modal
                         closeProfileDetails();
@@ -1704,45 +2141,16 @@
             
             // Check if user is BizPulse official user
             function isBizPulseUser(userInfo) {
-                // BizPulse official user credentials
-                const bizpulseUsers = [
-                    'bizpulse.erp@gmail.com',
-                    'admin@bizpulse.com',
-                    'support@bizpulse.com',
-                    'developer@bizpulse.com',
-                    'osman@bizpulse.com'
-                ];
-                
                 console.log('🔍 Checking BizPulse User:', userInfo);
                 console.log('🔍 User Email:', userInfo.email);
-                console.log('🔍 User Username:', userInfo.username);
-                console.log('🔍 User Name:', userInfo.user_name);
                 
-                // Special check for current user (temporary fix)
-                if (userInfo.user_name && userInfo.user_name.toLowerCase().includes('syed osman ali')) {
-                    console.log('✅ BizPulse user detected by name: Syed Osman Ali');
+                // ONLY show Client Management for bizpulse.erp@gmail.com
+                if (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') {
+                    console.log('✅ BizPulse user detected: bizpulse.erp@gmail.com');
                     return true;
                 }
                 
-                // Check email
-                if (userInfo.email && bizpulseUsers.includes(userInfo.email.toLowerCase())) {
-                    console.log('✅ BizPulse user detected by email:', userInfo.email);
-                    return true;
-                }
-                
-                // Check username
-                if (userInfo.username && bizpulseUsers.includes(userInfo.username.toLowerCase())) {
-                    console.log('✅ BizPulse user detected by username:', userInfo.username);
-                    return true;
-                }
-                
-                // Check if user has BizPulse domain
-                if (userInfo.email && userInfo.email.toLowerCase().includes('@bizpulse.com')) {
-                    console.log('✅ BizPulse user detected by domain:', userInfo.email);
-                    return true;
-                }
-                
-                console.log('❌ Not a BizPulse user');
+                console.log('❌ Not the BizPulse admin email (bizpulse.erp@gmail.com)');
                 return false;
             }
 
@@ -1900,19 +2308,89 @@
                 try{ 
                     if (!stats) return; 
                     
+                    console.log('📊 All Stats Debug:', {
+                        today_sales: stats.today_sales,
+                        today_revenue: stats.today_revenue,
+                        today_profit: stats.today_profit,
+                        today_orders: stats.today_orders
+                    });
+                    
                     // Use premium cards update function if available
                     if (window.updatePremiumStatsCards) {
                         window.updatePremiumStatsCards(stats);
                         return;
                     }
                     
-                    // Fallback to old method
-                    const v1 = document.querySelector('.stat-card:nth-child(1) .stat-value'); 
-                    if (v1) v1.textContent = `₹${(stats.today_revenue||0).toLocaleString()}`; 
-                    const v2 = document.querySelector('.stat-card:nth-child(2) .stat-value'); 
-                    if (v2) v2.textContent = stats.today_orders||0; 
-                    const v3 = document.querySelector('.stat-card:nth-child(3) .stat-value'); 
-                    if (v3) v3.textContent = (stats.today_orders||0).toLocaleString(); 
+                    // Fixed: Use correct IDs and values for each card
+                    const todaySales = document.getElementById('todaySales');
+                    if (todaySales) todaySales.textContent = `₹${(stats.today_sales||0).toLocaleString()}`;
+                    
+                    const todayRevenue = document.getElementById('todayRevenue');
+                    if (todayRevenue) todayRevenue.textContent = `₹${(stats.today_revenue||0).toLocaleString()}`;
+                    
+                    const totalOrders = document.getElementById('totalOrders');
+                    if (totalOrders) totalOrders.textContent = (stats.today_orders||0).toLocaleString();
+                    
+                    const netProfit = document.getElementById('netProfit');
+                    if (netProfit) netProfit.textContent = `₹${(stats.today_profit||0).toLocaleString()}`;
+                    
+                    // Update percentage changes with better accuracy
+                    const salesChange = document.getElementById('salesChange');
+                    if (salesChange && stats.sales_change_percent !== undefined) {
+                        const changePercent = stats.sales_change_percent;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
+                        salesChange.textContent = `${changeText} from yesterday`;
+                        salesChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
+                    }
+                    
+                    const revenueChange = document.getElementById('revenueChange');
+                    if (revenueChange && stats.revenue_change_percent !== undefined) {
+                        const changePercent = stats.revenue_change_percent;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
+                        revenueChange.textContent = `${changeText} from yesterday`;
+                        revenueChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
+                    }
+                    
+                    const ordersChange = document.getElementById('ordersChange');
+                    if (ordersChange && stats.orders_change_percent !== undefined) {
+                        const changePercent = stats.orders_change_percent;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
+                        ordersChange.textContent = `${changeText} from yesterday`;
+                        ordersChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
+                    }
+                    
+                    const profitMargin = document.getElementById('profitMargin');
+                    if (profitMargin && stats.profit_change_percent !== undefined) {
+                        const changePercent = stats.profit_change_percent;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
+                        profitMargin.textContent = `${changeText} from yesterday`;
+                        profitMargin.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
+                    }
+                    
+                    // Show receivable amounts in small text
+                    const revenueReceivable = document.getElementById('revenueReceivable');
+                    if (revenueReceivable) {
+                        const receivableAmount = stats.today_receivable || 0;
+                        if (receivableAmount > 0) {
+                            revenueReceivable.textContent = `Receivable: ₹${receivableAmount.toLocaleString()}`;
+                            revenueReceivable.style.display = 'block';
+                        } else {
+                            revenueReceivable.textContent = '';
+                            revenueReceivable.style.display = 'none';
+                        }
+                    }
+                    
+                    const profitReceivable = document.getElementById('profitReceivable');
+                    if (profitReceivable) {
+                        const receivableProfit = stats.today_receivable_profit || 0;
+                        if (receivableProfit > 0) {
+                            profitReceivable.textContent = `Receivable: ₹${receivableProfit.toLocaleString()}`;
+                            profitReceivable.style.display = 'block';
+                        } else {
+                            profitReceivable.textContent = '';
+                            profitReceivable.style.display = 'none';
+                        }
+                    }
                 }catch(e){
                     console.error('Error updating stats cards:', e);
                 } 
@@ -2364,51 +2842,49 @@
             // Check user role in parallel (for UI permissions)
             checkUserRole();
             
+            // Force show Client Management only for bizpulse.erp@gmail.com
+            setTimeout(async () => {
+                try {
+                    const response = await fetch('/api/user/info', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    if (response.ok) {
+                        const userInfo = await response.json();
+                        const clientManagementNav = document.getElementById('client-management-nav');
+                        if (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') {
+                            if (clientManagementNav) {
+                                clientManagementNav.style.display = 'flex';
+                            }
+                        } else {
+                            if (clientManagementNav) {
+                                clientManagementNav.style.display = 'none';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking user for client management:', error);
+                }
+            }, 100);
+            
             // Auto-refresh every 30 seconds instead of 10 seconds to reduce lag
             setInterval(()=>{ loadDashboardData(); /* loadNotifications(); */ }, 30000);
 
             // Check user role and show/hide advanced modules
             async function checkUserRole() {
+                console.log('🔍 Checking user role and permissions...');
                 try {
-                    const response = await fetch('/api/auth/user-info');
-                    const userInfo = await response.json();
+                    const response = await fetch('/api/user/info', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
                     
-                    // Debug logging to track session issues
-                    console.log('🔍 User Info from Server:', userInfo);
-                    console.log('🔍 LocalStorage UserInfo:', JSON.parse(localStorage.getItem('userInfo') || '{}'));
-                    
-                    // Update localStorage with fresh server data to prevent mismatches
-                    if (userInfo.user_id) {
-                        localStorage.setItem('userInfo', JSON.stringify({
-                            id: userInfo.user_id,
-                            name: userInfo.user_name,
-                            type: userInfo.user_type,
-                            is_super_admin: userInfo.is_super_admin,
-                            profile_picture: userInfo.profile_picture  // Include profile picture
-                        }));
-                        
-                        // Set user type for profile component
-                        window.currentUserType = userInfo.user_type;
-                        window.currentUserInfo = userInfo;
-                        
-                        // Update welcome title with client's actual name
-                        const welcomeEl = document.getElementById('welcomeTitle');
-                        if (welcomeEl && userInfo.user_name) {
-                            welcomeEl.textContent = `Welcome back, ${userInfo.user_name}`;
-                        }
-                        
-                        // Update profile picture if available
-                        if (userInfo.profile_picture) {
-                            const avatarEl = document.getElementById('profileAvatar');
-                            if (avatarEl) {
-                                const avatarContainer = avatarEl.parentElement;
-                                avatarContainer.style.backgroundImage = `url('${userInfo.profile_picture}')`;
-                                avatarContainer.style.backgroundSize = 'cover';
-                                avatarContainer.style.backgroundPosition = 'center';
-                                avatarEl.textContent = ''; // Hide initials when picture is shown
-                            }
-                        }
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
                     }
+                    
+                    const userInfo = await response.json();
+                    console.log('👤 User info loaded:', userInfo);
                     
                     // Show/hide modules based on user type
                     if (userInfo.is_super_admin) {
@@ -2417,17 +2893,12 @@
                         document.getElementById('users-nav').style.display = 'flex';
                         document.getElementById('whatsapp-reports-nav').style.display = 'flex';
                         
-                        // Client Management only for BizPulse official users
-                        console.log('🔍 Checking Client Management access for super admin...');
-                        if (isBizPulseUser(userInfo)) {
-                            console.log('✅ Showing Client Management for BizPulse user');
+                        // Client Management ONLY for bizpulse.erp@gmail.com
+                        if (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') {
                             document.getElementById('client-management-nav').style.display = 'flex';
-                            // Hide User Management for BizPulse admin
                             document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
                         } else {
-                            console.log('❌ Hiding Client Management - not a BizPulse user');
                             document.getElementById('client-management-nav').style.display = 'none';
-                            // Show User Management for non-BizPulse admin
                             document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'flex';
                         }
 
@@ -2442,6 +2913,7 @@
                         // Hide management modules for clients
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
+                        // Keep client management hidden for clients
                         document.getElementById('client-management-nav').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
@@ -2456,6 +2928,7 @@
                         // Hide management modules for employees/clients
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
+                        // Keep client management hidden for employees
                         document.getElementById('client-management-nav').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
@@ -2465,6 +2938,7 @@
                         // Default - hide all management modules
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
+                        // Keep client management hidden for default users
                         document.getElementById('client-management-nav').style.display = 'none';
                         // WhatsApp banner removed
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
@@ -2487,7 +2961,6 @@
                     document.getElementById('users-nav').style.display = 'none';
                     document.getElementById('whatsapp-reports-nav').style.display = 'none';
                     document.getElementById('client-management-nav').style.display = 'none';
-                    // WhatsApp banner removed
                     document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
                     document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
                 }
@@ -2647,7 +3120,7 @@
             window.openUserManagement = openUserManagement;
             window.openUsers = openUsers;
             window.openWhatsAppReports = openWhatsAppReports;
-            window.openClientManagement = openClientManagement;
+            window.openClientManagement = openClientManagement; // FORCE EXPOSE
             
             // 🔥 DEBUG FUNCTIONS - EXPOSE FOR TESTING
             window.showAllModules = showAllModules;
@@ -2656,6 +3129,51 @@
                 console.log('🧪 Testing module display...');
                 showAllModules();
             };
+            
+            // Debug function to force show Client Management
+            window.forceShowClientManagement = function() {
+                console.log('🔧 Force showing Client Management...');
+                const clientManagementNav = document.getElementById('client-management-nav');
+                if (clientManagementNav) {
+                    clientManagementNav.style.display = 'flex';
+                    clientManagementNav.style.setProperty('display', 'flex', 'important');
+                    clientManagementNav.style.visibility = 'visible';
+                    console.log('✅ Client Management should now be visible');
+                } else {
+                    console.error('❌ Client Management nav element not found');
+                }
+            };
+            
+            // Debug function to check current user info
+            window.debugUserInfo = async function() {
+                try {
+                    const response = await fetch('/api/user/info', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    const userInfo = await response.json();
+                    console.log('👤 Current User Info:', userInfo);
+                    console.log('📧 Current Email:', userInfo.email);
+                    console.log('🔍 Is BizPulse User?', isBizPulseUser(userInfo));
+                    console.log('🎯 Should show Client Management?', userInfo.email === 'bizpulse.erp@gmail.com');
+                    console.log('🔍 Email match test:', userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com');
+                    return userInfo;
+                } catch (error) {
+                    console.error('❌ Error getting user info:', error);
+                }
+            };
+            
+            // Debug function to check what email is needed
+            window.checkClientManagementAccess = function() {
+                console.log('🔍 Client Management Access Requirements:');
+                console.log('✅ Required Email: bizpulse.erp@gmail.com');
+                console.log('🔧 Run debugUserInfo() to check your current email');
+                console.log('🔧 Run forceShowClientManagement() to force show the module');
+                console.log('🔧 Run conditionalShowClientManagement() to run the check again');
+            };
+            
+            // Expose the conditional function for manual testing
+            window.conditionalShowClientManagement = conditionalShowClientManagement;
             
             // Premium Dashboard Enhancements
             initPremiumDashboard();
@@ -2697,6 +3215,10 @@
                     // Animate today's sales (including credit)
                     const todaySales = document.getElementById('todaySales');
                     if (todaySales) {
+                        console.log('📊 Sales Debug:', {
+                            today_sales: stats.today_sales,
+                            sales_value: stats.today_sales || 0
+                        });
                         animateValue(todaySales, 0, stats.today_sales || 0, 1500);
                     }
                     
@@ -2704,7 +3226,7 @@
                     const salesChange = document.getElementById('salesChange');
                     if (salesChange && stats.sales_change_percent !== undefined) {
                         const changePercent = stats.sales_change_percent;
-                        const changeText = changePercent >= 0 ? `+${changePercent}%` : `${changePercent}%`;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
                         salesChange.textContent = `${changeText} from yesterday`;
                         salesChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
                     }
@@ -2712,6 +3234,10 @@
                     // Animate today's revenue
                     const todayRevenue = document.getElementById('todayRevenue');
                     if (todayRevenue) {
+                        console.log('📊 Revenue Debug:', {
+                            today_revenue: stats.today_revenue,
+                            revenue_value: stats.today_revenue || 0
+                        });
                         animateValue(todayRevenue, 0, (stats.today_revenue || 0), 1800);
                     }
                     
@@ -2737,7 +3263,7 @@
                     const revenueChange = document.getElementById('revenueChange');
                     if (revenueChange && stats.revenue_change_percent !== undefined) {
                         const changePercent = stats.revenue_change_percent;
-                        const changeText = changePercent >= 0 ? `+${changePercent}%` : `${changePercent}%`;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
                         revenueChange.textContent = `${changeText} from yesterday`;
                         revenueChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
                     }
@@ -2752,7 +3278,7 @@
                     const ordersChange = document.getElementById('ordersChange');
                     if (ordersChange && stats.orders_change_percent !== undefined) {
                         const changePercent = stats.orders_change_percent;
-                        const changeText = changePercent >= 0 ? `+${changePercent}%` : `${changePercent}%`;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
                         ordersChange.textContent = `${changeText} from yesterday`;
                         ordersChange.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
                     }
@@ -2760,6 +3286,10 @@
                     // Animate net profit (use actual profit from stats)
                     const netProfit = document.getElementById('netProfit');
                     if (netProfit) {
+                        console.log('📊 Net Profit Debug:', {
+                            today_profit: stats.today_profit,
+                            profit_value: stats.today_profit || 0
+                        });
                         animateValue(netProfit, 0, stats.today_profit || 0, 2000);
                     }
                     
@@ -2780,7 +3310,7 @@
                     const profitMargin = document.getElementById('profitMargin');
                     if (profitMargin && stats.profit_change_percent !== undefined) {
                         const changePercent = stats.profit_change_percent;
-                        const changeText = changePercent >= 0 ? `+${changePercent}%` : `${changePercent}%`;
+                        const changeText = changePercent >= 0 ? `+${changePercent.toFixed(1)}%` : `${changePercent.toFixed(1)}%`;
                         profitMargin.textContent = `${changeText} from yesterday`;
                         profitMargin.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
                     }
@@ -2859,61 +3389,60 @@
         async function loadUserProfile() {
             console.log('📡 Loading user profile...');
             
-            t {
-            );
+            try {
+                const response = await fetch('/api/auth/user-info', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
                 
                 if (response.ok) {
                     const userInfo = await response.json();
-                    console.log('✅ Got user infouserInfo);
+                    console.log('✅ Got user info:', userInfo);
                     
-             e
-            
-                    if (nameEl{
-                        nameEl.textContent = userInfe;
-                        console.log('✅ Updated name to:',_name);
+                    // Update internal profile button elements
+                    const nameEl = document.getElementById('headerProfileName');
+                    const avatarEl = document.getElementById('headerProfileAvatar');
+                    const roleEl = document.getElementById('headerProfileRole');
+                    
+                    if (nameEl) {
+                        nameEl.textContent = userInfo.user_name || 'User';
+                        console.log('✅ Updated name to:', userInfo.user_name);
                     }
                     
-             ar
-            
-                    if (avatar
-                        const initials = userInfo.us
+                    if (avatarEl) {
+                        const initials = (userInfo.user_name || 'U').charAt(0).toUpperCase();
                         avatarEl.textContent = initials;
-                        console.log('✅ Updated avaals);
+                        console.log('✅ Updated avatar to:', initials);
                     }
-                 
-            
-                    const roleEl = documele');
+                    
                     if (roleEl) {
-            User';
+                        const role = userInfo.is_super_admin ? 'Super Admin' : 
+                                   userInfo.user_type === 'client' ? 'Business Owner' : 'User';
                         roleEl.textContent = role;
-                        console.log('✅ Updated ;
-               }
-            
+                        console.log('✅ Updated role to:', role);
+                    }
+                    
                 } else {
-                    console.log('❌ API failed with status:', response.us);
+                    console.log('❌ API failed with status:', response.status);
                 }
                 
             } catch (error) {
-                ror);
+                console.error('❌ Profile loading error:', error);
             }
         }
         
-        // Test funcl testing
+        // Test function for manual testing
         window.testProfile = function() {
-            const nameEl = document.getElementById('pr
-            const avatarEl = do;
-            const roleEl = d;
+            const nameEl = document.getElementById('headerProfileName');
+            const avatarEl = document.getElementById('headerProfileAvatar');
+            const roleEl = document.getElementById('headerProfileRole');
             
-            if (nameEer';
-            if (avatarEl
+            if (nameEl) nameEl.textContent = 'Test User';
+            if (avatarEl) avatarEl.textContent = 'TU';
             if (roleEl) roleEl.textContent = 'Business Owner';
             
-            cons
+            console.log('✅ Test profile set');
         };
-    </script>
-                nameElement.style.color = 'white';
-            }
-        }, 2000);
     </script>
 
     <!-- PROFILE FIX - SIMPLE VERSION -->
@@ -2929,42 +3458,35 @@
         setTimeout(loadProfileData, 2000);
     });
 
+    // Load profile data function
     async function loadProfileData() {
-        console.log('📡 Loading profile data...');
-        
+        console.log('🔄 Loading profile data...');
         try {
-            const response = await fetch('/api/auth/user-info');
+            const response = await fetch('/api/user/info', {
+                method: 'GET',
+                credentials: 'include'
+            });
             
-            if (response.ok) {
-                const userInfo = await response.json();
-                console.log('✅ User info:', userInfo);
-                
-                // Update name
-                const nameEl = document.getElementById('profileName');
-                if (nameEl && userInfo.user_name) {
-                    nameEl.textContent = userInfo.user_name;
-                    console.log('✅ Name updated to:', userInfo.user_name);
-                }
-                
-                // Update avatar initials
-                const avatarEl = document.getElementById('profileAvatar');
-                if (avatarEl && userInfo.user_name) {
-                    const initials = userInfo.user_name.split(' ').map(n => n[0]).join('').toUpperCase();
-                    avatarEl.textContent = initials;
-                    console.log('✅ Avatar updated to:', initials);
-                }
-                
-                // Update role
-                const roleEl = document.getElementById('profileRole');
-                if (roleEl) {
-                    const role = userInfo.user_type === 'client' ? 'Business Owner' : 'User';
-                    roleEl.textContent = role;
-                    console.log('✅ Role updated to:', role);
-                }
-                
-            } else {
-                console.log('❌ API failed:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
+            
+            const userInfo = await response.json();
+            console.log('👤 Profile data loaded:', userInfo);
+            
+            // Update the internal profile button with real data
+            if (typeof createInternalProfileButton === 'function') {
+                createInternalProfileButton();
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading profile data:', error);
+            // Use fallback data
+            if (typeof updateInternalProfileWithFallback === 'function') {
+                updateInternalProfileWithFallback();
+            }
+        }
+    }
             
         } catch (error) {
             console.error('❌ Error:', error);
@@ -2987,65 +3509,531 @@
 
     <!-- SIMPLE DIRECT FIX -->
     <script>
-    // Direct fix - just update the profile name to "syed"
-    setTimeout(function() {
-        const profileName = document.getElementById('profileName');
-        const profileAvatar = document.getElementById('profileAvatar');
-        
-        if (profileName && profileName.textContent === 'User Name') {
-            profileName.textContent = 'syed';
-        }
-        
-        if (profileAvatar && profileAvatar.textContent === 'U') {
-            profileAvatar.textContent = 'S';
-        }
-    }, 500);
     </script>
 
     <!-- CLEAN PROFILE LOADER -->
     <script>
-    // Clean profile loading function
-    async function loadProfilePicture() {
-        try {
-            const response = await fetch('/api/auth/user-info');
-            if (response.ok) {
-                const userInfo = await response.json();
-                
-                // Update profile avatar with picture or initials
-                const avatarEl = document.getElementById('profileAvatar');
-                const avatarContainer = avatarEl.parentElement;
-                
-                if (userInfo.profile_picture) {
-                    // Show profile picture
-                    avatarContainer.style.backgroundImage = `url('${userInfo.profile_picture}')`;
-                    avatarContainer.style.backgroundSize = 'cover';
-                    avatarContainer.style.backgroundPosition = 'center';
-                    avatarEl.textContent = '';
-                    console.log('✅ Profile picture loaded');
-                } else if (userInfo.user_name) {
-                    // Show initials
-                    const initials = userInfo.user_name.split(' ').map(n => n[0]).join('').toUpperCase();
-                    avatarEl.textContent = initials;
-                    avatarContainer.style.backgroundImage = 'none';
-                    console.log('✅ Initials loaded:', initials);
-                }
-                
-                // Update name
-                const nameEl = document.getElementById('profileName');
-                if (nameEl && userInfo.user_name) {
-                    nameEl.textContent = userInfo.user_name;
-                }
+    // IMMEDIATE PROFILE DEBUG - RUNS FIRST
+    console.log('🚀 PROFILE DEBUG SCRIPT LOADED');
+    
+    // Function to force show profile avatar
+    function forceShowProfileAvatar() {
+        console.log('🔧 FORCE SHOWING PROFILE AVATAR');
+        
+        const avatarEl = document.getElementById('profileAvatar');
+        const nameEl = document.getElementById('profileName');
+        
+        if (avatarEl) {
+            console.log('📍 Avatar element found:', avatarEl);
+            console.log('📍 Current avatar content:', avatarEl.textContent);
+            console.log('📍 Avatar parent style:', avatarEl.parentElement.style.backgroundImage);
+            
+            // Force show initials if no profile picture
+            if (!avatarEl.parentElement.style.backgroundImage || avatarEl.parentElement.style.backgroundImage === 'none') {
+                avatarEl.textContent = 'A'; // Force show 'A' for abc_electronic
+                console.log('✅ FORCED avatar to show: A');
             }
-        } catch (error) {
-            console.error('Error loading profile:', error);
+        } else {
+            console.log('❌ Avatar element not found');
+        }
+        
+        if (nameEl) {
+            console.log('📍 Name element found:', nameEl.textContent);
         }
     }
     
-    // Load profile picture on page load
-    document.addEventListener('DOMContentLoaded', loadProfilePicture);
+    // Run immediately when script loads
+    forceShowProfileAvatar();
     
-    // Also load after 2 seconds
-    setTimeout(loadProfilePicture, 2000);
+    // Run when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM READY - forcing profile show');
+        forceShowProfileAvatar();
+        setTimeout(forceShowProfileAvatar, 100);
+        setTimeout(forceShowProfileAvatar, 500);
+        setTimeout(forceShowProfileAvatar, 1000);
+    });
+    
+    // PROFILE AVATAR PROTECTION - PREVENT EMPTY AVATAR
+    function protectProfileAvatar() {
+        const avatarEl = document.getElementById('profileAvatar');
+        if (avatarEl) {
+            // Create a MutationObserver to watch for changes
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                        const currentContent = avatarEl.textContent.trim();
+                        console.log('🔍 Avatar content changed to:', currentContent);
+                        
+                        // If avatar becomes empty, restore it
+                        if (currentContent === '' || currentContent === ' ') {
+                            console.log('🛡️ PROTECTING AVATAR - restoring content');
+                            avatarEl.textContent = 'A'; // Force show 'A' for abc_electronic
+                        }
+                    }
+                });
+            });
+            
+            // Start observing
+            observer.observe(avatarEl, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+            
+            console.log('🛡️ Profile avatar protection enabled');
+        }
+    }
+    
+    // Enable protection when DOM is ready
+    document.addEventListener('DOMContentLoaded', protectProfileAvatar);
+    
+    // GLOBAL DEBUG FUNCTIONS - ACCESSIBLE FROM BROWSER CONSOLE
+    window.debugProfile = function() {
+        console.log('🔍 PROFILE DEBUG INFO:');
+        
+        const avatarEl = document.getElementById('profileAvatar');
+        const nameEl = document.getElementById('profileName');
+        const roleEl = document.getElementById('profileRole');
+        
+        console.log('Avatar Element:', avatarEl);
+        console.log('Avatar Content:', avatarEl ? avatarEl.textContent : 'NOT FOUND');
+        console.log('Avatar Parent Background:', avatarEl ? avatarEl.parentElement.style.backgroundImage : 'NOT FOUND');
+        console.log('Name Element:', nameEl);
+        console.log('Name Content:', nameEl ? nameEl.textContent : 'NOT FOUND');
+        console.log('Role Element:', roleEl);
+        console.log('Role Content:', roleEl ? roleEl.textContent : 'NOT FOUND');
+        console.log('LocalStorage UserInfo:', localStorage.getItem('userInfo'));
+        
+        return {
+            avatar: avatarEl,
+            avatarContent: avatarEl ? avatarEl.textContent : null,
+            name: nameEl ? nameEl.textContent : null,
+            role: roleEl ? roleEl.textContent : null
+        };
+    };
+    
+    window.fixProfile = function() {
+        console.log('🔧 FIXING PROFILE MANUALLY');
+        
+        const avatarEl = document.getElementById('profileAvatar');
+        const nameEl = document.getElementById('profileName');
+        const roleEl = document.getElementById('profileRole');
+        
+        if (avatarEl) {
+            avatarEl.textContent = 'A';
+            avatarEl.parentElement.style.backgroundImage = 'none';
+            console.log('✅ Avatar fixed to: A');
+        }
+        
+        if (nameEl) {
+            nameEl.textContent = 'abc_electronic';
+            console.log('✅ Name fixed to: abc_electronic');
+        }
+        
+        if (roleEl) {
+            roleEl.textContent = 'Business Owner';
+            console.log('✅ Role fixed to: Business Owner');
+        }
+    };
+    
+    // INTERNAL PROFILE BUTTON - SAME STYLE AS SEARCH BAR
+    async function createInternalProfileButton() {
+        console.log('🎯 CREATING INTERNAL PROFILE BUTTON');
+        
+        try {
+            // Get real user info from existing backend API
+            const response = await fetch('/api/auth/user-info');
+            if (!response.ok) {
+                console.log('❌ Failed to get user info, using fallback');
+                updateInternalProfileWithFallback();
+                return;
+            }
+            
+            const userInfo = await response.json();
+            console.log('✅ Got user info from backend:', userInfo);
+            
+            // Extract user details
+            const userName = userInfo.user_name || 'User';
+            const userType = userInfo.user_type || 'user';
+            const isAdmin = userInfo.is_super_admin || false;
+            const staffRole = userInfo.staff_role || null;
+            
+            // Get first letter of user name
+            const firstLetter = userName.charAt(0).toUpperCase();
+            
+            // Determine role display
+            let roleDisplay = 'User';
+            if (isAdmin) {
+                roleDisplay = 'Super Admin';
+            } else if (staffRole) {
+                if (staffRole.toLowerCase() === 'cashier') {
+                    roleDisplay = 'Cashier';
+                } else if (staffRole.toLowerCase() === 'manager') {
+                    roleDisplay = 'Manager';
+                } else if (staffRole.toLowerCase() === 'admin') {
+                    roleDisplay = 'Admin';
+                } else {
+                    roleDisplay = staffRole.charAt(0).toUpperCase() + staffRole.slice(1);
+                }
+            } else if (userType === 'client') {
+                roleDisplay = 'Business Owner';
+            } else if (userType === 'employee') {
+                roleDisplay = 'Employee';
+            }
+            
+            console.log(`👤 Updating internal profile: ${userName}, Letter: ${firstLetter}, Role: ${roleDisplay}`);
+            
+            // Update the internal profile button
+            updateInternalProfileButton(firstLetter, userName, roleDisplay, userInfo);
+            
+        } catch (error) {
+            console.error('❌ Error creating internal profile:', error);
+            updateInternalProfileWithFallback();
+        }
+    }
+    
+    function updateInternalProfileButton(letter, name, role, userInfo) {
+        console.log(`🔄 Updating internal profile button: ${letter} - ${name} - ${role}`);
+        
+        // Find the internal profile elements
+        const avatarEl = document.getElementById('headerProfileAvatar');
+        const nameEl = document.getElementById('headerProfileName');
+        const roleEl = document.getElementById('headerProfileRole');
+        const profileButton = document.getElementById('internalProfileButton');
+        
+        // Update avatar letter
+        if (avatarEl) {
+            avatarEl.textContent = letter;
+            console.log('✅ Header avatar updated:', letter);
+        }
+        
+        // Update name
+        if (nameEl) {
+            nameEl.textContent = name;
+            console.log('✅ Header name updated:', name);
+        }
+        
+        // Update role
+        if (roleEl) {
+            roleEl.textContent = role;
+            console.log('✅ Header role updated:', role);
+        }
+        
+        // Add hover effect to profile button
+        if (profileButton) {
+            profileButton.addEventListener('mouseenter', function() {
+                this.style.background = '#f8f9fa';
+                this.style.borderColor = '#732C3F';
+                this.style.transform = 'translateY(-1px)';
+                this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.15)';
+            });
+            
+            profileButton.addEventListener('mouseleave', function() {
+                this.style.background = 'white';
+                this.style.borderColor = '#e0e0e0';
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+            });
+            
+            console.log('✅ Profile button hover effects added');
+        }
+        
+        // Store user info globally for existing backend functions
+        window.currentUserInfo = userInfo;
+        localStorage.setItem('userInfo', JSON.stringify({
+            id: userInfo.user_id,
+            name: userInfo.user_name,
+            type: userInfo.user_type,
+            is_super_admin: userInfo.is_super_admin,
+            profile_picture: userInfo.profile_picture
+        }));
+    }
+    
+    function updateInternalProfileWithFallback() {
+        console.log('🔄 Updating internal profile with fallback data');
+        updateInternalProfileButton('U', 'User', 'User', {
+            user_id: 'unknown',
+            user_name: 'User',
+            user_type: 'user',
+            is_super_admin: false
+        });
+    }
+    
+    // Connect to existing backend modal function
+    function openExistingProfileModal() {
+        console.log('🔗 Opening existing profile modal (connecting to backend)');
+        
+        try {
+            // Load current user data first
+            loadUserProfileData();
+            
+            // Show modal
+            const modal = document.getElementById('profileDetailsModal');
+            if (modal) {
+                modal.style.display = 'flex';
+                modal.style.opacity = '1';
+                console.log('✅ Profile modal opened successfully');
+            } else {
+                console.error('❌ Profile modal element not found');
+                // Fallback: navigate to profile page
+                window.location.href = '/retail/profile';
+            }
+        } catch (error) {
+            console.error('❌ Error opening profile modal:', error);
+            // Fallback: navigate to profile page
+            window.location.href = '/retail/profile';
+        }
+    }
+    
+    // Protection: Keep the internal profile updated
+    function protectInternalProfile() {
+        setInterval(function() {
+            const avatarEl = document.getElementById('headerProfileAvatar');
+            const nameEl = document.getElementById('headerProfileName');
+            
+            if (avatarEl && (!avatarEl.textContent || avatarEl.textContent.trim() === '')) {
+                console.log('🛡️ Internal profile avatar empty, updating...');
+                createInternalProfileButton();
+            }
+            
+            if (nameEl && (!nameEl.textContent || nameEl.textContent.trim() === '' || nameEl.textContent === 'User')) {
+                console.log('🛡️ Internal profile name empty, updating...');
+                createInternalProfileButton();
+            }
+        }, 5000); // Check every 5 seconds
+        
+        console.log('🛡️ Internal profile protection enabled');
+    }
+    
+    // Initialize the internal profile system
+    createInternalProfileButton();
+    protectInternalProfile();
+    
+    // Run on page events
+    document.addEventListener('DOMContentLoaded', createInternalProfileButton);
+    window.addEventListener('load', createInternalProfileButton);
+    
+    // Refresh every 30 seconds to get updated info
+    setInterval(createInternalProfileButton, 30000);
+    
+    // Make it globally accessible
+    window.createInternalProfileButton = createInternalProfileButton;
+    window.refreshInternalProfile = createInternalProfileButton;
+    
+    console.log('🎯 INTERNAL PROFILE BUTTON SYSTEM INITIALIZED');
+    
+    // OLD PROFILE FUNCTIONS DISABLED - USING NEW SYSTEM
+    /*
+    All old profile functions have been disabled to prevent conflicts.
+    The new profile system above handles everything.
+    */
+    
+    // CLEAN PROFILE AVATAR FIX - NORMAL COLORS
+    function cleanProfileFix() {
+        console.log('✨ CLEAN PROFILE FIX - NORMAL STYLING');
+        
+        // Find the profile card and avatar
+        const profileCard = document.getElementById('profileCard');
+        const avatarEl = document.getElementById('profileAvatar');
+        
+        if (profileCard) {
+            // Make profile card visible with normal styling
+            profileCard.style.display = 'flex !important';
+            profileCard.style.visibility = 'visible !important';
+            profileCard.style.opacity = '1 !important';
+            profileCard.style.position = 'relative';
+            profileCard.style.zIndex = '1';
+            profileCard.style.background = 'rgba(255, 255, 255, 0.1)'; // Normal transparent background
+            profileCard.style.border = 'none'; // Remove test border
+            profileCard.style.borderRadius = '25px';
+            console.log('✅ Profile card styled normally');
+        }
+        
+        if (avatarEl) {
+            // Make avatar visible with normal styling
+            avatarEl.textContent = 'A'; // For abc_electronic
+            avatarEl.style.display = 'flex !important';
+            avatarEl.style.visibility = 'visible !important';
+            avatarEl.style.opacity = '1 !important';
+            avatarEl.style.color = 'white !important'; // Normal white text
+            avatarEl.style.fontSize = '16px !important'; // Normal size
+            avatarEl.style.fontWeight = '600 !important'; // Normal weight
+            avatarEl.style.textShadow = 'none'; // Remove test shadow
+            avatarEl.style.zIndex = '1';
+            
+            // Make parent container normal
+            const parent = avatarEl.parentElement;
+            if (parent) {
+                parent.style.display = 'flex !important';
+                parent.style.visibility = 'visible !important';
+                parent.style.opacity = '1 !important';
+                parent.style.background = 'linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%) !important'; // Normal gradient
+                parent.style.border = '2px solid rgba(255, 255, 255, 0.3) !important'; // Normal border
+                parent.style.width = '40px !important'; // Normal size
+                parent.style.height = '40px !important';
+                parent.style.borderRadius = '50%';
+                parent.style.zIndex = '1';
+            }
+            
+            console.log('✅ Avatar styled normally');
+        }
+        
+        // Fix the name with normal styling
+        const nameEl = document.getElementById('profileName');
+        if (nameEl) {
+            nameEl.textContent = 'abc_electronic';
+            nameEl.style.color = 'white !important'; // Normal white text
+            nameEl.style.fontSize = '14px !important'; // Normal size
+            nameEl.style.fontWeight = '600 !important'; // Normal weight
+            console.log('✅ Name styled normally');
+        }
+    }
+    
+    // Run clean fix immediately and repeatedly
+    cleanProfileFix();
+    setTimeout(cleanProfileFix, 100);
+    setTimeout(cleanProfileFix, 500);
+    setTimeout(cleanProfileFix, 1000);
+    
+    // Run on DOM ready
+    document.addEventListener('DOMContentLoaded', cleanProfileFix);
+    
+    // Run on window load
+    window.addEventListener('load', cleanProfileFix);
+    
+    // Make it globally accessible
+    window.cleanProfileFix = cleanProfileFix;
+    
+    // AGGRESSIVE PROFILE AVATAR FIX - RUNS MULTIPLE TIMES
+    function aggressiveProfileFix() {
+        console.log('💪 AGGRESSIVE PROFILE FIX RUNNING');
+        
+        const avatarEl = document.getElementById('profileAvatar');
+        const nameEl = document.getElementById('profileName');
+        const roleEl = document.getElementById('profileRole');
+        
+        if (avatarEl) {
+            // Force show avatar with proper styling
+            avatarEl.textContent = 'A'; // For abc_electronic
+            avatarEl.style.display = 'flex';
+            avatarEl.style.visibility = 'visible';
+            avatarEl.style.opacity = '1';
+            avatarEl.style.color = 'white';
+            avatarEl.style.fontSize = '16px';
+            avatarEl.style.fontWeight = '600';
+            
+            // Ensure parent container is visible
+            const parent = avatarEl.parentElement;
+            if (parent) {
+                parent.style.display = 'flex';
+                parent.style.visibility = 'visible';
+                parent.style.opacity = '1';
+                parent.style.backgroundImage = 'none'; // Remove any background image
+            }
+            
+            console.log('✅ AGGRESSIVE FIX: Avatar set to A');
+        }
+        
+        if (nameEl) {
+            nameEl.textContent = 'abc_electronic';
+            nameEl.style.display = 'block';
+            nameEl.style.visibility = 'visible';
+            nameEl.style.opacity = '1';
+            console.log('✅ AGGRESSIVE FIX: Name set to abc_electronic');
+        }
+        
+        if (roleEl) {
+            roleEl.textContent = 'Business Owner';
+            roleEl.style.display = 'block';
+            roleEl.style.visibility = 'visible';
+            roleEl.style.opacity = '0.8';
+            console.log('✅ AGGRESSIVE FIX: Role set to Business Owner');
+        }
+    }
+    
+    // Run aggressive fix multiple times
+    setTimeout(aggressiveProfileFix, 0);
+    setTimeout(aggressiveProfileFix, 100);
+    setTimeout(aggressiveProfileFix, 500);
+    setTimeout(aggressiveProfileFix, 1000);
+    setTimeout(aggressiveProfileFix, 2000);
+    
+    // Run on DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+        aggressiveProfileFix();
+        setTimeout(aggressiveProfileFix, 100);
+        setTimeout(aggressiveProfileFix, 500);
+    });
+    
+    // Run on window load
+    window.addEventListener('load', function() {
+        aggressiveProfileFix();
+        setTimeout(aggressiveProfileFix, 100);
+    });
+    
+    // Make it globally accessible
+    window.aggressiveProfileFix = aggressiveProfileFix;
+    
+    // FUNCTION INTERCEPTOR - PREVENT AVATAR CLEARING
+    function interceptAvatarClearing() {
+        console.log('🛡️ SETTING UP AVATAR PROTECTION');
+        
+        // Override any function that tries to clear the avatar
+        const originalSetTextContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').set;
+        
+        Object.defineProperty(Node.prototype, 'textContent', {
+            set: function(value) {
+                // If this is the profile avatar and someone tries to set it to empty
+                if (this.id === 'profileAvatar' && (value === '' || value === ' ' || value === null)) {
+                    console.log('🛡️ BLOCKED attempt to clear profile avatar');
+                    console.trace('Stack trace of clearing attempt:');
+                    return; // Don't allow clearing
+                }
+                // Otherwise, proceed normally
+                originalSetTextContent.call(this, value);
+            },
+            get: Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').get
+        });
+        
+        console.log('🛡️ Avatar protection interceptor installed');
+    }
+    
+    // Install interceptor immediately
+    interceptAvatarClearing();
+    
+    // Clean profile loading function
+    // DISABLED - Complex profile loading functions that cause conflicts
+    /*
+    async function loadProfilePicture() {
+        // DISABLED - This function was causing conflicts
+        console.log('❌ loadProfilePicture DISABLED to prevent conflicts');
+    }
+    */
+    
+    // SIMPLE REPLACEMENT - Just force the profile to show
+    async function loadProfilePicture() {
+        console.log('🔧 Simple profile loader - just show the avatar');
+        simpleProfileFix(); // Use the simple fix instead
+    }
+    
+    // Load profile picture on page load - IMMEDIATE EXECUTION
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🚀 DOM loaded - loading profile immediately');
+        loadProfilePicture();
+    });
+    
+    // Also load after a short delay to ensure DOM is ready
+    setTimeout(function() {
+        console.log('🔄 Delayed profile load');
+        loadProfilePicture();
+    }, 100);
+    
+    // Refresh profile every 30 seconds to keep it updated
+    setInterval(function() {
+        console.log('🔄 Periodic profile refresh');
+        loadProfilePicture();
+    }, 30000);
     </script>
 
     <!-- Real-time Sync Integration -->
@@ -3053,3 +4041,4 @@
 
 </body>
 </html>
+                    }

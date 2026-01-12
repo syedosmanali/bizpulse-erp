@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verify Time Fix</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: #732C3F; color: white; }
+        .wrong { background: #ffebee; color: #c62828; }
+        .correct { background: #e8f5e8; color: #2e7d32; }
+        h1 { color: #732C3F; }
+    </style>
+</head>
+<body>
+    <h1>Bill Timestamp Fix Verification</h1>
+    
+    <h2>Test Data:</h2>
+    <table>
+        <tr>
+            <th>Bill Number</th>
+            <th>Database Timestamp</th>
+            <th>Old Display (WRONG)</th>
+            <th>New Display (CORRECT)</th>
+        </tr>
+        <tr>
+            <td>BILL-20260112-9370d0e7</td>
+            <td>2026-01-12 00:59:59</td>
+            <td class="wrong" id="old1">Loading...</td>
+            <td class="correct" id="new1">Loading...</td>
+        </tr>
+        <tr>
+            <td>BILL-20260112-8083ce17</td>
+            <td>2026-01-12 00:48:34</td>
+            <td class="wrong" id="old2">Loading...</td>
+            <td class="correct" id="new2">Loading...</td>
+        </tr>
+        <tr>
+            <td>BILL-20260112-b63c9632</td>
+            <td>2026-01-12 00:45:00</td>
+            <td class="wrong" id="old3">Loading...</td>
+            <td class="correct" id="new3">Loading...</td>
+        </tr>
+        <tr>
+            <td>BILL-20260111-64bf4a05</td>
+            <td>2026-01-11 23:37:37</td>
+            <td class="wrong" id="old4">Loading...</td>
+            <td class="correct" id="new4">Loading...</td>
+        </tr>
+    </table>
+
+    <script>
+        // OLD METHOD (WRONG) - Treats as UTC
+        function formatTimeOld(timeStr) {
+            const date = new Date(timeStr);
+            return date.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // NEW METHOD (CORRECT) - Treats as local time
+        function formatTimeNew(timeStr) {
+            const parts = timeStr.split(' ');
+            if (parts.length < 2) return timeStr;
+            
+            const dateParts = parts[0].split('-');
+            const timeParts = parts[1].split(':');
+            
+            const year = parseInt(dateParts[0]);
+            const month = parseInt(dateParts[1]) - 1;
+            const day = parseInt(dateParts[2]);
+            const hour = parseInt(timeParts[0]);
+            const minute = parseInt(timeParts[1]);
+            const second = parseInt(timeParts[2] || 0);
+            
+            const date = new Date(year, month, day, hour, minute, second);
+            return date.toLocaleTimeString('en-IN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Test timestamps
+        const timestamps = [
+            '2026-01-12 00:59:59',
+            '2026-01-12 00:48:34',
+            '2026-01-12 00:45:00',
+            '2026-01-11 23:37:37'
+        ];
+
+        // Display results
+        timestamps.forEach((ts, i) => {
+            const num = i + 1;
+            document.getElementById('old' + num).textContent = formatTimeOld(ts);
+            document.getElementById('new' + num).textContent = formatTimeNew(ts);
+        });
+    </script>
+</body>
+</html>

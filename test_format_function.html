@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Format Function</title></head>
+<body>
+<h1>Test Format Function</h1>
+<div id="results"></div>
+
+<script>
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        console.log('Input:', dateStr);
+        
+        // Parse the timestamp as local time, not UTC
+        const parts = dateStr.split(' ');
+        const dateParts = parts[0].split('-');
+        
+        const year = parseInt(dateParts[0]);
+        const month = parseInt(dateParts[1]) - 1; // Month is 0-indexed
+        const day = parseInt(dateParts[2]);
+        
+        let hour = 0, minute = 0, second = 0;
+        if (parts.length > 1) {
+            const timeParts = parts[1].split(':');
+            hour = parseInt(timeParts[0]) || 0;
+            minute = parseInt(timeParts[1]) || 0;
+            second = parseInt(timeParts[2]) || 0;
+        }
+        
+        console.log('Parsed:', {year, month, day, hour, minute, second});
+        
+        // Create date with explicit local time components
+        const date = new Date(year, month, day, hour, minute, second);
+        console.log('Date object:', date);
+        
+        const dateFormatted = date.toLocaleDateString('en-IN', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+        const timeFormatted = date.toLocaleTimeString('en-IN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        console.log('Formatted:', {dateFormatted, timeFormatted});
+        
+        return `${dateFormatted}<br><small style="color: #6b7280; font-size: 0.75rem;">${timeFormatted}</small>`;
+    } catch (e) {
+        console.error('Error:', e);
+        return dateStr;
+    }
+}
+
+// Test with actual database timestamps
+const testTimestamps = [
+    '2026-01-12 10:40:20',
+    '2026-01-12 01:18:44',
+    '2026-01-12 01:08:10',
+    '2026-01-12 00:59:59',
+    '2026-01-12 00:48:34'
+];
+
+let html = '<table border="1" style="border-collapse: collapse;"><tr><th>Input</th><th>Output</th></tr>';
+testTimestamps.forEach(ts => {
+    const result = formatDate(ts);
+    html += `<tr><td>${ts}</td><td>${result}</td></tr>`;
+});
+html += '</table>';
+
+document.getElementById('results').innerHTML = html;
+</script>
+</body>
+</html>

@@ -9,23 +9,18 @@ from modules.shared.database import get_db_connection, generate_id
 class CustomersService:
     
     def get_all_customers(self, user_id=None):
-        """Get all active customers filtered by user_id"""
+        """Get all active customers - STRICT MULTI-TENANT ISOLATION"""
         conn = get_db_connection()
         
         if user_id:
-            # Filter by user_id for multi-tenant support
+            # STRICT FILTER: Only show customers belonging to this user
             customers = conn.execute('''
                 SELECT * FROM customers 
-                WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                WHERE is_active = 1 AND user_id = ?
                 ORDER BY created_at DESC
             ''', (user_id,)).fetchall()
         else:
-            # Fallback to all customers if no user_id provided
-            customers = conn.execute('''
-                SELECT * FROM customers 
-                WHERE is_active = 1 
-                ORDER BY created_at DESC
-            ''').fetchall()
+            customers = []
         
         conn.close()
         
@@ -57,9 +52,10 @@ class CustomersService:
         phone = data.get('phone', '').strip()
         
         if phone and user_id:
+            # STRICT ISOLATION: Check only within user's own customers
             existing_customer = conn.execute('''
                 SELECT id, name FROM customers 
-                WHERE name = ? AND phone = ? AND is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                WHERE name = ? AND phone = ? AND is_active = 1 AND user_id = ?
             ''', (name, phone, user_id)).fetchone()
             
             if existing_customer:
@@ -73,21 +69,8 @@ class CustomersService:
                     }
                 }
         elif phone:
-            existing_customer = conn.execute('''
-                SELECT id, name FROM customers 
-                WHERE name = ? AND phone = ? AND is_active = 1
-            ''', (name, phone)).fetchone()
-            
-            if existing_customer:
-                conn.close()
-                return {
-                    "success": False,
-                    "error": f"Customer '{name}' with phone '{phone}' already exists",
-                    "existing_customer": {
-                        "id": existing_customer['id'],
-                        "name": existing_customer['name']
-                    }
-                }
+            # No user_id: don't check duplicates
+            pass
         
         # Generate customer ID
         customer_id = generate_id()
@@ -285,25 +268,19 @@ class CustomersService:
         }
     
     def search_customers(self, query, user_id=None):
-        """Search customers by name or phone filtered by user_id"""
+        """Search customers - STRICT MULTI-TENANT ISOLATION"""
         conn = get_db_connection()
         
         if user_id:
-            # Search by name or phone for specific user
+            # STRICT FILTER: Search only within user's own customers
             customers = conn.execute('''
                 SELECT * FROM customers 
-                WHERE (name LIKE ? OR phone LIKE ?) AND is_active = 1 AND (user_id = ? OR user_id IS NULL)
+                WHERE (name LIKE ? OR phone LIKE ?) AND is_active = 1 AND user_id = ?
                 ORDER BY name
                 LIMIT 20
             ''', (f'%{query}%', f'%{query}%', user_id)).fetchall()
         else:
-            # Search by name or phone (all users)
-            customers = conn.execute('''
-                SELECT * FROM customers 
-                WHERE (name LIKE ? OR phone LIKE ?) AND is_active = 1
-                ORDER BY name
-                LIMIT 20
-            ''', (f'%{query}%', f'%{query}%')).fetchall()
+            customers = []
         
         conn.close()
         

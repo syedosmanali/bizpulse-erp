@@ -50,9 +50,9 @@ class InvoiceService:
             conditions = []
             params = []
             
-            # 🔥 Add user filtering first
+            # 🔥 STRICT DATA ISOLATION - Only show user's own invoices
             if user_id:
-                conditions.append("(b.business_owner_id = ? OR b.business_owner_id IS NULL)")
+                conditions.append("b.business_owner_id = ?")
                 params.append(user_id)
             
             if filters:
@@ -198,9 +198,9 @@ class InvoiceService:
             
             params = [invoice_id]
             
-            # 🔥 Add user filtering
+            # 🔥 STRICT DATA ISOLATION - Only show user's own invoices
             if user_id:
-                query += " AND (b.business_owner_id = ? OR b.business_owner_id IS NULL)"
+                query += " AND b.business_owner_id = ?"
                 params.append(user_id)
             
             bill = conn.execute(query, params).fetchone()

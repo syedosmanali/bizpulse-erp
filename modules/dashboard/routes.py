@@ -151,11 +151,19 @@ def get_recent_sales():
         limit = int(request.args.get('limit', 5))
         client_id = request.args.get('client_id')
         
+        # Get user_id from session for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        
         from modules.shared.database import get_db_connection
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
+        # Build query with user filtering and today's date filter for data isolation
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        query = '''
             SELECT 
                 b.id as bill_id,
                 b.bill_number,
@@ -165,10 +173,19 @@ def get_recent_sales():
                 b.payment_method
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
-            WHERE b.status = 'completed'
-            ORDER BY b.created_at DESC
-            LIMIT ?
-        ''', (limit,))
+            WHERE DATE(b.created_at) = ?
+        '''
+        params = [today]
+        
+        # Add user filtering for data isolation
+        if user_id:
+            query += ' AND b.business_owner_id = ?'
+            params.append(user_id)
+            
+        query += ' ORDER BY b.created_at DESC LIMIT ?'
+        params.append(limit)
+        
+        cursor.execute(query, params)
         
         sales = cursor.fetchall()
         conn.close()
@@ -344,11 +361,19 @@ def get_recent_orders():
         limit = int(request.args.get('limit', 5))
         client_id = request.args.get('client_id')
         
+        # Get user_id from session for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        
         from modules.shared.database import get_db_connection
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('''
+        # Build query with user filtering and today's date filter
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        query = '''
             SELECT 
                 b.id as bill_id,
                 b.bill_number,
@@ -359,11 +384,23 @@ def get_recent_orders():
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
             LEFT JOIN bill_items bi ON b.id = bi.bill_id
-            WHERE b.status = 'completed' AND b.total_amount > 1000
+            WHERE DATE(b.created_at) = ? AND b.total_amount > 1000
+        '''
+        params = [today]
+        
+        # Add user filtering for data isolation
+        if user_id:
+            query += ' AND b.business_owner_id = ?'
+            params.append(user_id)
+            
+        query += '''
             GROUP BY b.id, b.bill_number, b.total_amount, b.created_at, b.customer_name, c.name
             ORDER BY b.created_at DESC
             LIMIT ?
-        ''', (limit,))
+        '''
+        params.append(limit)
+        
+        cursor.execute(query, params)
         
         orders = cursor.fetchall()
         conn.close()
@@ -713,17 +750,28 @@ def universal_search():
             })
         
         # 3. Search Sales/Bills (by bill number, customer name, amount)
-        cursor.execute('''
+        # Build query with user filtering
+        bills_query = '''
             SELECT 
                 b.id, b.bill_number, b.total_amount, b.created_at,
                 COALESCE(b.customer_name, c.name, 'Walk-in Customer') as customer_name
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
-            WHERE b.status = 'completed'
-            AND (b.bill_number LIKE ? OR b.customer_name LIKE ? OR c.name LIKE ?)
-            ORDER BY b.created_at DESC
-            LIMIT ?
-        ''', (f'%{query}%', f'%{query}%', f'%{query}%', limit))
+            WHERE (b.bill_number LIKE ? OR b.customer_name LIKE ? OR c.name LIKE ?)
+        '''
+        bills_params = [f'%{query}%', f'%{query}%', f'%{query}%']
+        
+        # Add user filtering for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        if user_id:
+            bills_query += ' AND b.business_owner_id = ?'
+            bills_params.append(user_id)
+            
+        bills_query += ' ORDER BY b.created_at DESC LIMIT ?'
+        bills_params.append(limit)
+        
+        cursor.execute(bills_query, bills_params)
         
         sales = cursor.fetchall()
         for sale in sales:

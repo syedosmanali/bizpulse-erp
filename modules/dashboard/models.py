@@ -111,7 +111,15 @@ class ActivityTracker:
     @staticmethod
     def _get_recent_sales_section(cursor):
         """Get recent sales section data"""
-        cursor.execute('''
+        # Get user_id from session for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        
+        # Build query with user filtering and today's date filter
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        query = '''
             SELECT 
                 b.id as bill_id,
                 b.bill_number,
@@ -123,11 +131,22 @@ class ActivityTracker:
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
             LEFT JOIN bill_items bi ON b.id = bi.bill_id
-            WHERE b.status = 'completed'
+            WHERE DATE(b.created_at) = ?
+        '''
+        params = [today]
+        
+        # Add user filtering for data isolation
+        if user_id:
+            query += ' AND b.business_owner_id = ?'
+            params.append(user_id)
+            
+        query += '''
             GROUP BY b.id, b.bill_number, b.total_amount, b.created_at, b.payment_method, b.customer_name, c.name
             ORDER BY b.created_at DESC
             LIMIT 5
-        ''')
+        '''
+        
+        cursor.execute(query, params)
         
         sales = cursor.fetchall()
         sales_data = []
@@ -291,7 +310,15 @@ class ActivityTracker:
     @staticmethod
     def _get_last_bulk_order_section(cursor):
         """Get last bulk order section data"""
-        cursor.execute('''
+        # Get user_id from session for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        
+        # Build query with user filtering and today's date filter
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        query = '''
             SELECT 
                 b.id as bill_id,
                 b.bill_number,
@@ -304,11 +331,22 @@ class ActivityTracker:
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
             LEFT JOIN bill_items bi ON b.id = bi.bill_id
-            WHERE b.status = 'completed' AND b.total_amount > 10000
+            WHERE DATE(b.created_at) = ? AND b.total_amount > 10000
+        '''
+        params = [today]
+        
+        # Add user filtering for data isolation
+        if user_id:
+            query += ' AND b.business_owner_id = ?'
+            params.append(user_id)
+            
+        query += '''
             GROUP BY b.id, b.bill_number, b.total_amount, b.created_at, b.payment_method, b.customer_name, c.name
             ORDER BY b.created_at DESC
             LIMIT 1
-        ''')
+        '''
+        
+        cursor.execute(query, params)
         
         order = cursor.fetchone()
         
@@ -550,13 +588,24 @@ class DashboardStats:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get user_id from session for data isolation
+        from flask import session
+        user_id = session.get('user_id')
+        
         # Calculate date range
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
         
+        # Build base query with user filtering
+        user_filter = ""
+        user_params = []
+        if user_id:
+            user_filter = " AND business_owner_id = ?"
+            user_params = [user_id]
+        
         # Total sales today (ALL bills including credit)
         # Revenue today (only PAID amounts)
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(total_amount), 0) as today_sales,
                 COALESCE(SUM(CASE 
@@ -566,13 +615,13 @@ class DashboardStats:
                 END), 0) as today_revenue,
                 COUNT(*) as today_orders
             FROM bills 
-            WHERE DATE(created_at) = DATE('now')
-        ''')
+            WHERE DATE(created_at) = DATE('now'){user_filter}
+        ''', user_params)
         today_stats = cursor.fetchone()
         
         # Total sales this month (ALL bills including credit)
         # Revenue this month (only PAID amounts)
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(total_amount), 0) as month_sales,
                 COALESCE(SUM(CASE 
@@ -582,16 +631,16 @@ class DashboardStats:
                 END), 0) as month_revenue,
                 COUNT(*) as month_orders
             FROM bills 
-            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
-        ''')
+            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now'){user_filter}
+        ''', user_params)
         month_stats = cursor.fetchone()
         
         # Recent orders
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT COUNT(*) as pending_orders
             FROM bills 
-            WHERE payment_status = 'pending'
-        ''')
+            WHERE payment_status = 'pending'{user_filter}
+        ''', user_params)
         pending_orders = cursor.fetchone()
         
         # Low stock products

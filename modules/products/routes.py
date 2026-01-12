@@ -22,19 +22,20 @@ def get_user_id_from_session():
         return session.get('user_id')    # For clients/users, use user_id
 
 @products_bp.route('/api/products', methods=['GET'])
+@require_auth
 def get_products():
-    """Get products filtered by user_id for Desktop-Mobile sync"""
+    """Get products - STRICT MULTI-TENANT ISOLATION - Only user's own products"""
     conn = products_service.get_db_connection()
     
-    # 🔥 Get user_id for filtering
+    # 🔥 STRICT ISOLATION: Get user_id from session
     user_id = get_user_id_from_session()
     
     if user_id:
-        # Filter by user_id for multi-tenant support
-        products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchall()
+        # STRICT FILTER: Only show products belonging to this user (NO SHARED)
+        products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchall()
     else:
-        # Fallback: show all products if no user_id (backward compatibility)
-        products = conn.execute('SELECT * FROM products WHERE is_active = 1').fetchall()
+        # No user_id: show nothing
+        products = []
     
     conn.close()
     return jsonify([dict(row) for row in products])
@@ -136,6 +137,7 @@ def barcode_to_cart(barcode):
         }), 500
 
 @products_bp.route('/api/products', methods=['POST'])
+@require_auth
 def add_product():
     """Add new product - Mobile ERP compatible - With user_id for sync"""
     try:
@@ -176,7 +178,80 @@ def add_product():
             "error": f"Server error: {str(e)}"
         }), 500
 
+@products_bp.route('/api/products/<product_id>/stock', methods=['PUT'])
+@require_auth
+def update_product_stock(product_id):
+    """Update product stock only - Simple and focused"""
+    try:
+        data = request.json
+        print(f"[STOCK UPDATE] Updating stock for product {product_id}: {data}")
+        
+        if not data or 'stock' not in data:
+            return jsonify({
+                "success": False,
+                "error": "Stock value is required"
+            }), 400
+        
+        new_stock = int(data['stock'])
+        if new_stock < 0:
+            return jsonify({
+                "success": False,
+                "error": "Stock cannot be negative"
+            }), 400
+        
+        # 🔥 STRICT MULTI-TENANT ISOLATION - Only update user's own products
+        user_id = get_user_id_from_session()
+        if not user_id:
+            return jsonify({
+                "success": False,
+                "error": "User not authenticated"
+            }), 401
+        
+        conn = products_service.get_db_connection()
+        
+        # Check if product exists AND belongs to current user
+        product = conn.execute("SELECT * FROM products WHERE id = ? AND is_active = 1 AND user_id = ?", 
+                              (product_id, user_id)).fetchone()
+        if not product:
+            conn.close()
+            return jsonify({
+                "success": False,
+                "error": "Product not found or access denied"
+            }), 404
+        
+        # Update only the stock
+        conn.execute("UPDATE products SET stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?", 
+                    (new_stock, product_id, user_id))
+        conn.commit()
+        conn.close()
+        
+        print(f"[STOCK UPDATE] Successfully updated stock for {product['name']}: {product['stock']} → {new_stock}")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Stock updated to {new_stock}",
+            "product": {
+                "id": product_id,
+                "name": product['name'],
+                "old_stock": product['stock'],
+                "new_stock": new_stock
+            }
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "error": "Invalid stock value"
+        }), 400
+    except Exception as e:
+        print(f"[STOCK UPDATE] Error: {e}")
+        return jsonify({
+            "success": False,
+            "error": f"Failed to update stock: {str(e)}"
+        }), 500
+
 @products_bp.route('/api/products/<product_id>', methods=['PUT'])
+@require_auth
 def update_product(product_id):
     """Update an existing product - Mobile ERP compatible"""
     try:
@@ -206,6 +281,7 @@ def update_product(product_id):
         }), 500
 
 @products_bp.route('/api/products/<product_id>', methods=['DELETE'])
+@require_auth
 def delete_product(product_id):
     """Delete product completely from database - Mobile ERP compatible"""
     try:
@@ -294,12 +370,12 @@ def get_product_alerts():
             'expired': []
         }
         
-        # Build query based on user_id
+        # Build query - STRICT MULTI-TENANT ISOLATION
         if user_id:
-            base_query = 'SELECT * FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)'
+            base_query = 'SELECT * FROM products WHERE is_active = 1 AND user_id = ?'
             products = conn.execute(base_query, (user_id,)).fetchall()
         else:
-            products = conn.execute('SELECT * FROM products WHERE is_active = 1').fetchall()
+            products = []
         
         for product in products:
             product_dict = dict(product)

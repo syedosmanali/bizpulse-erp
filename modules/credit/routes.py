@@ -362,9 +362,9 @@ def get_today_summary():
         
         params = [today]
         
-        # Add user filter if needed
+        # Add user filter - STRICT ISOLATION
         if user_id:
-            query += " AND (bill_id IN (SELECT id FROM bills WHERE business_owner_id = ? OR business_owner_id IS NULL))"
+            query += " AND (bill_id IN (SELECT id FROM bills WHERE business_owner_id = ?))"
             params.append(user_id)
         
         cursor = conn.execute(query, params)

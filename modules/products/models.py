@@ -13,9 +13,10 @@ class ProductsModels:
         conn = get_db_connection()
         try:
             if user_id:
-                products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchall()
+                # STRICT ISOLATION: Only show user's own products
+                products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchall()
             else:
-                products = conn.execute('SELECT * FROM products WHERE is_active = 1').fetchall()
+                products = []
             return [dict(row) for row in products]
         finally:
             conn.close()
@@ -46,9 +47,10 @@ class ProductsModels:
         conn = get_db_connection()
         try:
             if user_id:
-                products = conn.execute("SELECT id, name, barcode_data FROM products WHERE barcode_data IS NOT NULL AND barcode_data != '' AND is_active = 1 AND (user_id = ? OR user_id IS NULL)", (user_id,)).fetchall()
+                # STRICT ISOLATION: Only show user's own products with barcodes
+                products = conn.execute("SELECT id, name, barcode_data FROM products WHERE barcode_data IS NOT NULL AND barcode_data != '' AND is_active = 1 AND user_id = ?", (user_id,)).fetchall()
             else:
-                products = conn.execute("SELECT id, name, barcode_data FROM products WHERE barcode_data IS NOT NULL AND barcode_data != '' AND is_active = 1").fetchall()
+                products = []
             return [dict(row) for row in products]
         finally:
             conn.close()

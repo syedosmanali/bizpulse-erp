@@ -429,3 +429,165 @@ def login_as_client():
     except Exception as e:
         logger.error(f"Error logging in as client: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ============================================================================
+# CLIENT PROFILE APIs
+# ============================================================================
+
+@auth_bp.route('/api/client/profile', methods=['GET'])
+def get_client_profile():
+    """Get client profile information"""
+    try:
+        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        
+        if not user_id or user_type != 'client':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        
+        from modules.shared.database import get_db_connection
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            SELECT contact_name, company_name, contact_email, phone_number, 
+                   profile_picture, city, state, country, business_type
+            FROM clients
+            WHERE id = ?
+        ''', (user_id,))
+        
+        client = cursor.fetchone()
+        conn.close()
+        
+        if client:
+            return jsonify({
+                'success': True,
+                'full_name': client[0] or client[1],  # contact_name or company_name
+                'company_name': client[1],
+                'email': client[2],
+                'phone': client[3],
+                'profile_picture': client[4],
+                'city': client[5],
+                'state': client[6],
+                'country': client[7],
+                'business_type': client[8]
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Profile not found'}), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting client profile: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@auth_bp.route('/api/client/profile', methods=['PUT'])
+def update_client_profile():
+    """Update client profile information"""
+    try:
+        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        
+        if not user_id or user_type != 'client':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        
+        data = request.get_json()
+        
+        from modules.shared.database import get_db_connection
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Update client profile
+        cursor.execute('''
+            UPDATE clients 
+            SET contact_name = ?, contact_email = ?, phone_number = ?, company_name = ?
+            WHERE id = ?
+        ''', (
+            data.get('full_name'),
+            data.get('email'),
+            data.get('phone'),
+            data.get('company_name'),
+            user_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        # Update session data
+        session['user_name'] = data.get('full_name') or data.get('company_name')
+        session['email'] = data.get('email')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile updated successfully'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating client profile: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@auth_bp.route('/api/client/profile/picture', methods=['POST'])
+def upload_profile_picture():
+    """Upload client profile picture"""
+    try:
+        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        
+        if not user_id or user_type != 'client':
+            return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+        
+        if 'profile_picture' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'}), 400
+        
+        file = request.files['profile_picture']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'}), 400
+        
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+        if not ('.' in file.filename and file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({'success': False, 'message': 'Invalid file type. Only PNG, JPG, JPEG, GIF allowed'}), 400
+        
+        # Save file
+        import os
+        from werkzeug.utils import secure_filename
+        
+        # Create uploads directory if it doesn't exist
+        upload_folder = os.path.join('static', 'uploads', 'profiles')
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        # Generate unique filename
+        import uuid
+        file_extension = file.filename.rsplit('.', 1)[1].lower()
+        filename = f"{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+        file_path = os.path.join(upload_folder, filename)
+        
+        file.save(file_path)
+        
+        # Update database
+        profile_picture_url = f"/static/uploads/profiles/{filename}"
+        
+        from modules.shared.database import get_db_connection
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            UPDATE clients 
+            SET profile_picture = ?
+            WHERE id = ?
+        ''', (profile_picture_url, user_id))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Profile picture uploaded successfully',
+            'profile_picture_url': profile_picture_url
+        })
+        
+    except Exception as e:
+        logger.error(f"Error uploading profile picture: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500

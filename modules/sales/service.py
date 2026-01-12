@@ -25,9 +25,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # Add user_id filter
+        # STRICT DATA ISOLATION - Only show user's own sales
         if user_id:
-            where_clauses.append("(s.business_owner_id = ? OR s.business_owner_id IS NULL)")
+            where_clauses.append("s.business_owner_id = ?")
             params.append(user_id)
         
         # Add date filters
@@ -97,9 +97,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # Add user_id filter
+        # STRICT DATA ISOLATION - Only show user's own bills
         if user_id:
-            where_clauses.append("(b.business_owner_id = ? OR b.business_owner_id IS NULL)")
+            where_clauses.append("b.business_owner_id = ?")
             params.append(user_id)
         
         if date_filter:
@@ -207,9 +207,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # Add user_id filter
+        # STRICT DATA ISOLATION - Only show user's own sales
         if user_id:
-            where_clauses.append("(business_owner_id = ? OR business_owner_id IS NULL)")
+            where_clauses.append("business_owner_id = ?")
             params.append(user_id)
         
         if date_filter:

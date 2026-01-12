@@ -1297,6 +1297,22 @@
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Products page loaded, initializing...');
+            
+            // Check if required elements exist
+            const requiredElements = [
+                'productsTableBody', 'productModal', 'stockModal', 'productForm',
+                'alertSuccess', 'alertError', 'searchInput', 'categoryFilter'
+            ];
+            
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+            if (missingElements.length > 0) {
+                console.error('❌ Missing required elements:', missingElements);
+                showError('Page initialization failed: Missing elements');
+                return;
+            }
+            
+            console.log('✅ All elements found, loading products...');
             loadProducts();
             setupEventListeners();
         });
@@ -1514,12 +1530,7 @@
         async function loadProducts() {
             showLoading(true);
             try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch('/api/products', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                const response = await fetch('/api/products');
                 
                 if (response.ok) {
                     products = await response.json();
@@ -1746,116 +1757,234 @@
         
         // Edit product
         function editProduct(productId) {
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
+            console.log('🔧 Edit product clicked:', productId);
             
-            editingProductId = productId;
-            document.getElementById('modalTitle').textContent = 'Edit Product';
-            document.getElementById('productId').value = product.id;
-            document.getElementById('productCode').value = product.code;
-            document.getElementById('productCode').readOnly = false; // Allow editing code when editing product
-            document.getElementById('productName').value = product.name;
-            document.getElementById('productCategory').value = product.category;
-            document.getElementById('productUnit').value = product.unit;
-            document.getElementById('productCost').value = product.cost;
-            document.getElementById('productPrice').value = product.price;
-            document.getElementById('productStock').value = product.stock;
-            document.getElementById('productMinStock').value = product.min_stock;
-            document.getElementById('productDescription').value = product.description || '';
-            document.getElementById('productBarcode').value = product.barcode || '';
-            document.getElementById('productSupplier').value = product.supplier || '';
-            
-            // Handle existing image
-            const imagePreview = document.getElementById('imagePreview');
-            const previewImg = document.getElementById('previewImg');
-            previewImg.removeAttribute('data-remove-image'); // Clear remove flag
-            if (product.image_url) {
-                previewImg.src = product.image_url;
-                imagePreview.style.display = 'block';
-            } else {
-                imagePreview.style.display = 'none';
+            if (!productId) {
+                showError('Invalid product ID');
+                return;
             }
             
-            document.getElementById('productModal').style.display = 'block';
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                showError('Product not found');
+                console.error('❌ Product not found:', productId, 'Available products:', products);
+                return;
+            }
+            
+            try {
+                editingProductId = productId;
+                document.getElementById('modalTitle').textContent = 'Edit Product';
+                document.getElementById('productId').value = product.id;
+                document.getElementById('productCode').value = product.code;
+                document.getElementById('productCode').readOnly = false; // Allow editing code when editing product
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productCategory').value = product.category;
+                document.getElementById('productUnit').value = product.unit;
+                document.getElementById('productCost').value = product.cost;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productStock').value = product.stock;
+                document.getElementById('productMinStock').value = product.min_stock;
+                document.getElementById('productDescription').value = product.description || '';
+                document.getElementById('productBarcode').value = product.barcode || '';
+                document.getElementById('productSupplier').value = product.supplier || '';
+                
+                // Handle existing image
+                const imagePreview = document.getElementById('imagePreview');
+                const previewImg = document.getElementById('previewImg');
+                previewImg.removeAttribute('data-remove-image'); // Clear remove flag
+                if (product.image_url) {
+                    previewImg.src = product.image_url;
+                    imagePreview.style.display = 'block';
+                } else {
+                    imagePreview.style.display = 'none';
+                }
+                
+                console.log('✅ Opening edit modal for product:', product.name);
+                document.getElementById('productModal').style.display = 'block';
+            } catch (error) {
+                console.error('❌ Error opening edit modal:', error);
+                showError('Failed to open edit form: ' + error.message);
+            }
         }
         
         // Save product
         async function saveProduct() {
-            const formData = {
-                code: document.getElementById('productCode').value,
-                name: document.getElementById('productName').value,
-                category: document.getElementById('productCategory').value,
-                unit: document.getElementById('productUnit').value,
-                cost: parseFloat(document.getElementById('productCost').value),
-                price: parseFloat(document.getElementById('productPrice').value),
-                stock: parseInt(document.getElementById('productStock').value) || 0,
-                min_stock: parseInt(document.getElementById('productMinStock').value) || 0,
-                description: document.getElementById('productDescription').value,
-                barcode: document.getElementById('productBarcode').value,
-                supplier: document.getElementById('productSupplier').value
-            };
-            
-            if (!formData.code || !formData.name || !formData.cost || !formData.price) {
-                showError('Please fill all required fields');
-                return;
-            }
-            
-            if (formData.cost >= formData.price) {
-                if (!confirm('Cost price is equal to or higher than selling price. This will result in no profit or loss. Continue?')) {
-                    return;
-                }
-            }
+            console.log('💾 Save product clicked');
             
             try {
+                // Get all form values with validation
+                const formElements = {
+                    code: document.getElementById('productCode'),
+                    name: document.getElementById('productName'),
+                    category: document.getElementById('productCategory'),
+                    unit: document.getElementById('productUnit'),
+                    cost: document.getElementById('productCost'),
+                    price: document.getElementById('productPrice'),
+                    stock: document.getElementById('productStock'),
+                    min_stock: document.getElementById('productMinStock'),
+                    description: document.getElementById('productDescription'),
+                    barcode: document.getElementById('productBarcode'),
+                    supplier: document.getElementById('productSupplier')
+                };
+                
+                // Check if all elements exist
+                const missingElements = Object.keys(formElements).filter(key => !formElements[key]);
+                if (missingElements.length > 0) {
+                    console.error('❌ Missing form elements:', missingElements);
+                    showError('Form elements missing: ' + missingElements.join(', '));
+                    return;
+                }
+                
+                const formData = {
+                    code: formElements.code.value.trim(),
+                    name: formElements.name.value.trim(),
+                    category: formElements.category.value,
+                    unit: formElements.unit.value,
+                    cost: parseFloat(formElements.cost.value),
+                    price: parseFloat(formElements.price.value),
+                    stock: parseInt(formElements.stock.value) || 0,
+                    min_stock: parseInt(formElements.min_stock.value) || 0,
+                    description: formElements.description.value.trim(),
+                    barcode: formElements.barcode.value.trim(),
+                    supplier: formElements.supplier.value.trim()
+                };
+                
+                console.log('📊 Form data collected:', formData);
+                
+                // Enhanced validation
+                if (!formData.code) {
+                    showError('Product code is required');
+                    formElements.code.focus();
+                    return;
+                }
+                
+                if (!formData.name) {
+                    showError('Product name is required');
+                    formElements.name.focus();
+                    return;
+                }
+                
+                if (isNaN(formData.cost) || formData.cost <= 0) {
+                    showError('Cost price must be a valid positive number');
+                    formElements.cost.focus();
+                    return;
+                }
+                
+                if (isNaN(formData.price) || formData.price <= 0) {
+                    showError('Selling price must be a valid positive number');
+                    formElements.price.focus();
+                    return;
+                }
+                
+                if (formData.cost >= formData.price) {
+                    if (!confirm('Cost price is equal to or higher than selling price. This will result in no profit or loss. Continue?')) {
+                        return;
+                    }
+                }
+                
                 // Handle image selection/upload
                 const imageFile = document.getElementById('productImage').files[0];
-                const removeImage = document.getElementById('previewImg').getAttribute('data-remove-image') === 'true';
+                const previewImg = document.getElementById('previewImg');
+                const removeImage = previewImg && previewImg.getAttribute('data-remove-image') === 'true';
                 
                 if (selectedImageUrl) {
-                    // User selected an image from recommendations
                     formData.image_url = selectedImageUrl;
+                    console.log('📷 Using selected image:', selectedImageUrl);
                 } else if (imageFile) {
-                    // User uploaded a custom image
                     try {
+                        console.log('📷 Uploading custom image...');
                         const imageUrl = await uploadProductImage(imageFile);
                         formData.image_url = imageUrl;
+                        console.log('📷 Image uploaded:', imageUrl);
                     } catch (error) {
+                        console.error('❌ Image upload failed:', error);
                         showError('Failed to upload image: ' + error.message);
                         return;
                     }
                 } else if (removeImage) {
-                    // User explicitly removed the image
                     formData.image_url = null;
+                    console.log('📷 Image removed');
                 } else if (editingProductId) {
-                    // If editing and no new image selected, preserve existing image
                     const existingProduct = products.find(p => p.id === editingProductId);
                     if (existingProduct && existingProduct.image_url) {
                         formData.image_url = existingProduct.image_url;
+                        console.log('📷 Preserving existing image:', existingProduct.image_url);
                     }
                 }
                 
-                const token = localStorage.getItem('authToken');
+                // Prepare complete form data with all required fields
+                const completeFormData = {
+                    id: editingProductId || undefined,
+                    code: formData.code,
+                    name: formData.name,
+                    category: formData.category,
+                    price: formData.price,
+                    cost: formData.cost,
+                    stock: formData.stock,
+                    min_stock: formData.min_stock,
+                    unit: formData.unit,
+                    business_type: 'retail', // Default business type
+                    barcode_data: formData.barcode || '',
+                    barcode_image: null,
+                    image_url: formData.image_url || null,
+                    expiry_date: null,
+                    description: formData.description || '',
+                    supplier: formData.supplier || '',
+                    is_active: 1,
+                    user_id: null // Will be set by backend based on session
+                };
+                
+                // Prepare API call
                 const url = editingProductId ? `/api/products/${editingProductId}` : '/api/products';
                 const method = editingProductId ? 'PUT' : 'POST';
                 
+                console.log('📤 API Request:', {
+                    url,
+                    method,
+                    editingProductId,
+                    data: completeFormData
+                });
+                
+                // Make API call
                 const response = await fetch(url, {
                     method: method,
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(completeFormData)
+                });
+                
+                console.log('🌐 API Response:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
                 });
                 
                 if (response.ok) {
-                    showSuccess(editingProductId ? 'Product updated successfully' : 'Product added successfully');
+                    const result = await response.json();
+                    console.log('✅ Product save successful:', result);
+                    
+                    const successMessage = editingProductId ? 
+                        `Product "${formData.name}" updated successfully` : 
+                        `Product "${formData.name}" added successfully`;
+                    
+                    showSuccess(successMessage);
                     closeModal();
                     loadProducts();
                 } else {
-                    const error = await response.json();
-                    showError(error.message || 'Failed to save product');
+                    let errorMessage = 'Failed to save product';
+                    try {
+                        const error = await response.json();
+                        console.error('❌ API Error response:', error);
+                        errorMessage = error.message || error.error || errorMessage;
+                    } catch (parseError) {
+                        console.error('❌ Could not parse error response:', parseError);
+                        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    }
+                    showError(errorMessage);
                 }
             } catch (error) {
+                console.error('❌ Save product error:', error);
                 showError('Error saving product: ' + error.message);
             }
         }
@@ -1868,12 +1997,8 @@
             if (!confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) return;
             
             try {
-                const token = localStorage.getItem('authToken');
                 const response = await fetch(`/api/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    method: 'DELETE'
                 });
                 
                 if (response.ok) {
@@ -1889,13 +2014,70 @@
         
         // Stock Management
         function openStockModal(productId, productName, currentStock) {
-            document.getElementById('stockProductId').value = productId;
-            document.getElementById('stockProductName').textContent = productName;
-            document.getElementById('currentStock').textContent = currentStock;
-            document.getElementById('stockQuantity').value = '';
-            document.getElementById('stockReason').value = '';
-            document.getElementById('stockNotes').value = '';
-            document.getElementById('stockModal').style.display = 'block';
+            console.log('📦 Stock button clicked!', { productId, productName, currentStock });
+            
+            if (!productId || !productName) {
+                console.error('❌ Invalid product data');
+                showError('Invalid product information');
+                return;
+            }
+            
+            try {
+                // Set form values
+                const stockProductIdElement = document.getElementById('stockProductId');
+                const stockProductNameElement = document.getElementById('stockProductName');
+                const currentStockElement = document.getElementById('currentStock');
+                const stockQuantityElement = document.getElementById('stockQuantity');
+                const stockReasonElement = document.getElementById('stockReason');
+                const stockNotesElement = document.getElementById('stockNotes');
+                const stockOperationElement = document.getElementById('stockOperation');
+                
+                console.log('🔍 Form elements check:', {
+                    stockProductId: stockProductIdElement,
+                    stockProductName: stockProductNameElement,
+                    currentStock: currentStockElement,
+                    stockQuantity: stockQuantityElement,
+                    stockReason: stockReasonElement,
+                    stockNotes: stockNotesElement,
+                    stockOperation: stockOperationElement
+                });
+                
+                if (!stockProductIdElement || !stockProductNameElement || !currentStockElement) {
+                    console.error('❌ Missing required form elements');
+                    showError('Stock form elements are missing');
+                    return;
+                }
+                
+                // Set values
+                stockProductIdElement.value = productId;
+                stockProductNameElement.textContent = productName;
+                currentStockElement.textContent = currentStock;
+                
+                if (stockQuantityElement) stockQuantityElement.value = '';
+                if (stockReasonElement) stockReasonElement.value = '';
+                if (stockNotesElement) stockNotesElement.value = '';
+                if (stockOperationElement) stockOperationElement.value = 'add';
+                
+                console.log('✅ Form values set:', {
+                    productId: stockProductIdElement.value,
+                    productName: stockProductNameElement.textContent,
+                    currentStock: currentStockElement.textContent
+                });
+                
+                // Show modal
+                const modal = document.getElementById('stockModal');
+                if (modal) {
+                    modal.style.display = 'block';
+                    console.log('✅ Stock modal opened');
+                } else {
+                    console.error('❌ Stock modal element not found');
+                    showError('Stock modal not found');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error opening stock modal:', error);
+                showError('Failed to open stock update form: ' + error.message);
+            }
         }
         
         function closeStockModal() {
@@ -1903,109 +2085,251 @@
         }
         
         async function updateStock() {
-            const productId = document.getElementById('stockProductId').value;
-            const operation = document.getElementById('stockOperation').value;
-            const quantity = parseInt(document.getElementById('stockQuantity').value);
-            const reason = document.getElementById('stockReason').value;
-            const notes = document.getElementById('stockNotes').value;
-            
-            if (!quantity || quantity < 0) {
-                showError('Please enter a valid quantity');
-                return;
-            }
-            
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-            
-            let newStock;
-            switch (operation) {
-                case 'add':
-                    newStock = product.stock + quantity;
-                    break;
-                case 'remove':
-                    newStock = Math.max(0, product.stock - quantity);
-                    break;
-                case 'set':
-                    newStock = quantity;
-                    break;
-            }
+            console.log('💾 Update stock clicked - ENHANCED DEBUGGING');
             
             try {
-                const token = localStorage.getItem('authToken');
-                const response = await fetch(`/api/products/${productId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        ...product,
-                        stock: newStock
-                    })
+                // Step 1: Check if all form elements exist
+                const elements = {
+                    productId: document.getElementById('stockProductId'),
+                    operation: document.getElementById('stockOperation'),
+                    quantity: document.getElementById('stockQuantity'),
+                    reason: document.getElementById('stockReason'),
+                    notes: document.getElementById('stockNotes')
+                };
+                
+                console.log('🔍 All form elements:', elements);
+                
+                // Check for missing elements
+                const missingElements = Object.entries(elements).filter(([key, element]) => !element);
+                if (missingElements.length > 0) {
+                    console.error('❌ Missing form elements:', missingElements.map(([key]) => key));
+                    showError(`Missing form elements: ${missingElements.map(([key]) => key).join(', ')}`);
+                    return;
+                }
+                
+                // Step 2: Get form values
+                const formData = {
+                    productId: elements.productId.value,
+                    operation: elements.operation.value,
+                    quantityInput: elements.quantity.value,
+                    reason: elements.reason.value,
+                    notes: elements.notes.value
+                };
+                
+                console.log('📊 Form data extracted:', formData);
+                
+                // Step 3: Validate form data
+                if (!formData.productId) {
+                    console.error('❌ Product ID missing');
+                    showError('Product ID is missing');
+                    return;
+                }
+                
+                if (!formData.operation) {
+                    console.error('❌ Operation missing');
+                    showError('Please select an operation');
+                    return;
+                }
+                
+                const quantity = parseInt(formData.quantityInput);
+                if (!formData.quantityInput || isNaN(quantity) || quantity <= 0) {
+                    console.error('❌ Invalid quantity:', formData.quantityInput, 'parsed:', quantity);
+                    showError('Please enter a valid quantity greater than 0');
+                    return;
+                }
+                
+                console.log('✅ Form validation passed');
+                
+                // Step 4: Find product in local array
+                console.log('🔍 Looking for product in array. Total products:', products.length);
+                const product = products.find(p => p.id === formData.productId);
+                if (!product) {
+                    console.error('❌ Product not found in local array');
+                    console.log('Available product IDs:', products.map(p => p.id));
+                    showError('Product not found in local data');
+                    return;
+                }
+                
+                console.log('✅ Found product:', {
+                    id: product.id,
+                    name: product.name,
+                    currentStock: product.stock
                 });
                 
-                if (response.ok) {
-                    showSuccess(`Stock updated successfully. ${operation === 'add' ? 'Added' : operation === 'remove' ? 'Removed' : 'Set'} ${quantity} units.`);
-                    closeStockModal();
-                    loadProducts();
+                // Step 5: Calculate new stock
+                let newStock;
+                if (formData.operation === 'add') {
+                    newStock = product.stock + quantity;
+                } else if (formData.operation === 'remove') {
+                    newStock = Math.max(0, product.stock - quantity);
+                } else if (formData.operation === 'set') {
+                    newStock = quantity;
                 } else {
-                    showError('Failed to update stock');
+                    console.error('❌ Invalid operation:', formData.operation);
+                    showError('Invalid operation selected');
+                    return;
                 }
+                
+                console.log(`📈 Stock calculation: ${product.stock} → ${newStock} (${formData.operation} ${quantity})`);
+                
+                // Step 6: Prepare API request
+                const url = `/api/products/${formData.productId}/stock`;
+                const payload = { 
+                    stock: newStock,
+                    operation: formData.operation,
+                    quantity: quantity,
+                    reason: formData.reason,
+                    notes: formData.notes
+                };
+                
+                console.log('📤 Preparing API request:', {
+                    url: url,
+                    method: 'PUT',
+                    payload: payload,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                // Step 7: Show loading state
+                const updateButton = document.querySelector('#stockModal .btn-primary');
+                const originalText = updateButton.textContent;
+                updateButton.textContent = 'Updating...';
+                updateButton.disabled = true;
+                
+                console.log('🔄 Making API request...');
+                
+                // Step 8: Make API call
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                console.log('🌐 API Response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    url: response.url,
+                    headers: Object.fromEntries(response.headers.entries())
+                });
+                
+                // Step 9: Handle response
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Success response:', result);
+                    showSuccess(`Stock updated successfully! ${product.name}: ${product.stock} → ${newStock}`);
+                    closeStockModal();
+                    
+                    // Refresh the products table
+                    console.log('🔄 Refreshing products table...');
+                    await loadProducts();
+                    console.log('✅ Products table refreshed');
+                } else {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    
+                    try {
+                        const errorText = await response.text();
+                        console.error('❌ Error response body:', errorText);
+                        
+                        const errorData = JSON.parse(errorText);
+                        errorMessage = errorData.error || errorMessage;
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse error response:', parseError);
+                    }
+                    
+                    console.error('❌ API request failed:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        message: errorMessage
+                    });
+                    
+                    showError(`Failed to update stock: ${errorMessage}`);
+                }
+                
             } catch (error) {
-                showError('Error updating stock: ' + error.message);
+                console.error('❌ Exception in updateStock():', error);
+                console.error('Stack trace:', error.stack);
+                showError(`Error updating stock: ${error.message}`);
+            } finally {
+                // Step 10: Reset button state
+                const updateButton = document.querySelector('#stockModal .btn-primary');
+                if (updateButton) {
+                    updateButton.textContent = 'Update Stock';
+                    updateButton.disabled = false;
+                }
             }
         }
         
         // Product Details
         function viewProductDetails(productId) {
+            console.log('👁️ View details clicked:', productId);
+            
+            if (!productId) {
+                showError('Invalid product ID');
+                return;
+            }
+            
             const product = products.find(p => p.id === productId);
-            if (!product) return;
+            if (!product) {
+                showError('Product not found');
+                console.error('❌ Product not found:', productId, 'Available products:', products);
+                return;
+            }
             
-            currentDetailProductId = productId;
-            const stockStatus = getStockStatus(product);
-            const profitMargin = ((product.price - product.cost) / product.cost * 100).toFixed(2);
-            const inventoryValue = (product.stock * product.cost).toFixed(2);
-            const potentialRevenue = (product.stock * product.price).toFixed(2);
-            const potentialProfit = (product.stock * (product.price - product.cost)).toFixed(2);
-            
-            const detailsHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-                    <div>
-                        <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">📋 Basic Information</h4>
-                        <p><strong>Code:</strong> ${product.code}</p>
-                        <p><strong>Name:</strong> ${product.name}</p>
-                        <p><strong>Category:</strong> ${product.category}</p>
-                        <p><strong>Unit:</strong> ${product.unit}</p>
-                        <p><strong>Barcode:</strong> ${product.barcode || 'Not set'}</p>
-                        <p><strong>Supplier:</strong> ${product.supplier || 'Not set'}</p>
-                        ${product.description ? `<p><strong>Description:</strong> ${product.description}</p>` : ''}
+            try {
+                currentDetailProductId = productId;
+                const stockStatus = getStockStatus(product);
+                const profitMargin = ((product.price - product.cost) / product.cost * 100).toFixed(2);
+                const inventoryValue = (product.stock * product.cost).toFixed(2);
+                const potentialRevenue = (product.stock * product.price).toFixed(2);
+                const potentialProfit = (product.stock * (product.price - product.cost)).toFixed(2);
+                
+                const detailsHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                        <div>
+                            <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">📋 Basic Information</h4>
+                            <p><strong>Code:</strong> ${product.code}</p>
+                            <p><strong>Name:</strong> ${product.name}</p>
+                            <p><strong>Category:</strong> ${product.category}</p>
+                            <p><strong>Unit:</strong> ${product.unit}</p>
+                            <p><strong>Barcode:</strong> ${product.barcode || 'Not set'}</p>
+                            <p><strong>Supplier:</strong> ${product.supplier || 'Not set'}</p>
+                            ${product.description ? `<p><strong>Description:</strong> ${product.description}</p>` : ''}
+                        </div>
+                        <div>
+                            <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">💰 Pricing</h4>
+                            <p><strong>Cost Price:</strong> ₹${product.cost}</p>
+                            <p><strong>Selling Price:</strong> ₹${product.price}</p>
+                            <p><strong>Profit per Unit:</strong> ₹${(product.price - product.cost).toFixed(2)}</p>
+                            <p><strong>Profit Margin:</strong> ${profitMargin}%</p>
+                        </div>
+                        <div>
+                            <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">📦 Stock Information</h4>
+                            <p><strong>Current Stock:</strong> ${product.stock} ${product.unit}</p>
+                            <p><strong>Minimum Stock:</strong> ${product.min_stock} ${product.unit}</p>
+                            <p><strong>Status:</strong> <span class="stock-badge stock-${stockStatus.class}">${stockStatus.label}</span></p>
+                            ${product.stock <= product.min_stock ? `<p style="color: #f57c00;"><strong>⚠️ Reorder Suggestion:</strong> ${product.min_stock * 2} ${product.unit}</p>` : ''}
+                        </div>
+                        <div>
+                            <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">💼 Financial Summary</h4>
+                            <p><strong>Inventory Value:</strong> ₹${inventoryValue}</p>
+                            <p><strong>Potential Revenue:</strong> ₹${potentialRevenue}</p>
+                            <p><strong>Potential Profit:</strong> ₹${potentialProfit}</p>
+                            <p><strong>ROI:</strong> ${((potentialProfit / inventoryValue) * 100).toFixed(1)}%</p>
+                        </div>
                     </div>
-                    <div>
-                        <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">💰 Pricing</h4>
-                        <p><strong>Cost Price:</strong> ₹${product.cost}</p>
-                        <p><strong>Selling Price:</strong> ₹${product.price}</p>
-                        <p><strong>Profit per Unit:</strong> ₹${(product.price - product.cost).toFixed(2)}</p>
-                        <p><strong>Profit Margin:</strong> ${profitMargin}%</p>
-                    </div>
-                    <div>
-                        <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">📦 Stock Information</h4>
-                        <p><strong>Current Stock:</strong> ${product.stock} ${product.unit}</p>
-                        <p><strong>Minimum Stock:</strong> ${product.min_stock} ${product.unit}</p>
-                        <p><strong>Status:</strong> <span class="stock-badge stock-${stockStatus.class}">${stockStatus.label}</span></p>
-                        ${product.stock <= product.min_stock ? `<p style="color: #f57c00;"><strong>⚠️ Reorder Suggestion:</strong> ${product.min_stock * 2} ${product.unit}</p>` : ''}
-                    </div>
-                    <div>
-                        <h4 style="color: #732C3F; margin-bottom: 15px; border-bottom: 2px solid #732C3F; padding-bottom: 5px;">💼 Financial Summary</h4>
-                        <p><strong>Inventory Value:</strong> ₹${inventoryValue}</p>
-                        <p><strong>Potential Revenue:</strong> ₹${potentialRevenue}</p>
-                        <p><strong>Potential Profit:</strong> ₹${potentialProfit}</p>
-                        <p><strong>ROI:</strong> ${((potentialProfit / inventoryValue) * 100).toFixed(1)}%</p>
-                    </div>
-                </div>
-            `;
-            
-            document.getElementById('productDetailsContent').innerHTML = detailsHTML;
-            document.getElementById('productDetailsModal').style.display = 'block';
+                `;
+                
+                document.getElementById('productDetailsContent').innerHTML = detailsHTML;
+                console.log('✅ Opening product details for:', product.name);
+                document.getElementById('productDetailsModal').style.display = 'block';
+            } catch (error) {
+                console.error('❌ Error opening product details:', error);
+                showError('Failed to open product details: ' + error.message);
+            }
         }
         
         function closeProductDetailsModal() {
@@ -2149,7 +2473,6 @@
             }
             
             try {
-                const token = localStorage.getItem('authToken');
                 let successCount = 0;
                 let errorCount = 0;
                 const errors = [];
@@ -2159,8 +2482,7 @@
                         const response = await fetch('/api/products', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
+                                'Content-Type': 'application/json'
                             },
                             body: JSON.stringify(productData)
                         });
@@ -2481,15 +2803,13 @@
             
             // Apply changes
             try {
-                const token = localStorage.getItem('authToken');
                 let updateCount = 0;
                 
                 for (const change of changes) {
                     const response = await fetch(`/api/products/${change.id}`, {
                         method: 'PUT',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
                             ...change,
@@ -2579,12 +2899,10 @@
             
             for (const productId of selectedIds) {
                 try {
-                    const token = localStorage.getItem('authToken');
                     const response = await fetch(`/api/products/${productId}`, {
                         method: 'DELETE',
                         headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                            'Content-Type': 'application/json'
                         }
                     });
                     
