@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Frontend Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #732C3F;
+        }
+        
+        .header h1 {
+            color: #732C3F;
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .header p {
+            color: #666;
+            margin: 10px 0 0 0;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #732C3F;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #732C3F;
+        }
+        
+        .test-btn {
+            background: #732C3F;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .test-btn:hover {
+            background: #8B4A5C;
+            transform: translateY(-2px);
+        }
+        
+        .test-btn.secondary {
+            background: #6B7280;
+        }
+        
+        .test-btn.secondary:hover {
+            background: #4B5563;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            display: none;
+        }
+        
+        .result.success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+        
+        .result.error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #EF4444;
+        }
+        
+        .result.info {
+            background: #DBEAFE;
+            color: #1E40AF;
+            border: 1px solid #3B82F6;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li::before {
+            content: "✅";
+            margin-right: 10px;
+        }
+        
+        .link-section {
+            background: linear-gradient(135deg, #732C3F, #8B4A5C);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .link-section h3 {
+            margin-top: 0;
+            color: white;
+        }
+        
+        .link-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .link-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="header">
+            <h1>🔔 Notification System Test</h1>
+            <p>Complete frontend and backend testing interface</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Features Implemented</h3>
+            <ul class="feature-list">
+                <li>Modern notification settings page with toggle switches</li>
+                <li>Real-time preview of notification appearance</li>
+                <li>API integration for saving/loading settings</li>
+                <li>Test notification functionality</li>
+                <li>Background stock monitoring service</li>
+                <li>Multi-tenant support with client isolation</li>
+                <li>Mobile responsive design</li>
+                <li>Professional UI with wine theme matching</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 API Tests</h3>
+            <p>Test the notification API endpoints directly:</p>
+            
+            <button class="test-btn" onclick="testGetSettings()">Get Settings</button>
+            <button class="test-btn" onclick="testSaveSettings()">Save Test Settings</button>
+            <button class="test-btn" onclick="testCreateNotification()">Create Test Notification</button>
+            <button class="test-btn secondary" onclick="clearResults()">Clear Results</button>
+            
+            <div id="apiResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Stock Monitor Tests</h3>
+            <p>Test the background stock monitoring system:</p>
+            
+            <button class="test-btn" onclick="testStockMonitor()">Run Stock Check</button>
+            <button class="test-btn" onclick="testCreateLowStockProduct()">Create Low Stock Product</button>
+            <button class="test-btn secondary" onclick="viewNotifications()">View All Notifications</button>
+            
+            <div id="stockResult" class="result"></div>
+        </div>
+
+        <div class="link-section">
+            <h3>🚀 Access the Full Interface</h3>
+            <p>Open the complete notification settings page:</p>
+            
+            <a href="/notification-settings" class="link-btn" target="_blank">
+                🔔 Open Notification Settings
+            </a>
+            
+            <a href="/retail/dashboard" class="link-btn" target="_blank">
+                📊 Go to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, type) {
+            const result = document.getElementById(elementId);
+            result.textContent = message;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+        }
+
+        function clearResults() {
+            document.getElementById('apiResult').style.display = 'none';
+            document.getElementById('stockResult').style.display = 'none';
+        }
+
+        async function testGetSettings() {
+            try {
+                showResult('apiResult', 'Loading settings...', 'info');
+                
+                const response = await fetch('/api/notifications/settings');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('apiResult', 
+                        `✅ Settings loaded successfully!\n\n` +
+                        `Low Stock Enabled: ${data.settings.low_stock_enabled}\n` +
+                        `Low Stock Threshold: ${data.settings.low_stock_threshold}\n` +
+                        `Updated At: ${data.settings.updated_at}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('apiResult', `❌ Failed to load settings: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('apiResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSaveSettings() {
+            try {
+                showResult('apiResult', 'Saving test settings...', 'info');
+                
+                const testSettings = {
+                    low_stock_enabled: true,
+                    low_stock_threshold: 10
+                };
+                
+                const response = await fetch('/api/notifications/settings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testSettings)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('apiResult', 
+                        `✅ Settings saved successfully!\n\n` +
+                        `Enabled: ${data.settings.low_stock_enabled}\n` +
+                        `Threshold: ${data.settings.low_stock_threshold}\n` +
+                        `Message: ${data.message}`, 
+                        'success'
+                    );
+                } else {
+                    showResult('apiResult', `❌ Failed to save settings: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('apiResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateNotification() {
+            try {
+                showResult('apiResult', 'Creating test notification...', 'info');
+                
+                const testNotification = {
+                    type: 'alert',
+                    message: 'Test Alert: This is a sample notification from the test interface',
+                    action_url: '/retail/products'
+                };
+                
+                const response = await fetch('/api/notifications/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testNotification)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showResult('apiResult', 
+                        `✅ Test notification created!\n\n` +
+                        `Notification ID: ${data.notification_id}\n` +
+                        `Message: ${data.message}\n\n` +
+                        `Check your notification panel to see it!`, 
+                        'success'
+                    );
+                } else {
+                    showResult('apiResult', `❌ Failed to create notification: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('apiResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStockMonitor() {
+            showResult('stockResult', 
+                `🔍 Stock Monitor Information:\n\n` +
+                `• Background service runs every 10 minutes\n` +
+                `• Checks all clients with alerts enabled\n` +
+                `• Creates notifications for low stock products\n` +
+                `• Prevents duplicate alerts (once per day per product)\n\n` +
+                `To test the stock monitor:\n` +
+                `1. Create products with low stock\n` +
+                `2. Enable notifications in settings\n` +
+                `3. Wait for automatic check or restart the app\n\n` +
+                `Check the server logs for stock monitor activity!`, 
+                'info'
+            );
+        }
+
+        async function testCreateLowStockProduct() {
+            showResult('stockResult', 
+                `📦 To create a low stock product for testing:\n\n` +
+                `1. Go to Products page\n` +
+                `2. Add a new product\n` +
+                `3. Set stock quantity to 2 or less\n` +
+                `4. Set minimum stock to 5\n` +
+                `5. Save the product\n\n` +
+                `The background monitor will detect this and\n` +
+                `create a low stock alert within 10 minutes!`, 
+                'info'
+            );
+        }
+
+        async function viewNotifications() {
+            try {
+                showResult('stockResult', 'Loading notifications...', 'info');
+                
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    const notifications = data.notifications || [];
+                    let message = `📋 Found ${notifications.length} notifications:\n\n`;
+                    
+                    if (notifications.length === 0) {
+                        message += 'No notifications found. Create some test notifications!';
+                    } else {
+                        notifications.slice(0, 5).forEach((notif, index) => {
+                            message += `${index + 1}. [${notif.type.toUpperCase()}] ${notif.message}\n`;
+                            message += `   Created: ${notif.created_at}\n`;
+                            message += `   Read: ${notif.is_read ? 'Yes' : 'No'}\n\n`;
+                        });
+                        
+                        if (notifications.length > 5) {
+                            message += `... and ${notifications.length - 5} more notifications`;
+                        }
+                    }
+                    
+                    showResult('stockResult', message, 'success');
+                } else {
+                    showResult('stockResult', `❌ Failed to load notifications: ${data.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                showResult('stockResult', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-load settings on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(testGetSettings, 1000);
+        });
+    </script>
+</body>
+</html>

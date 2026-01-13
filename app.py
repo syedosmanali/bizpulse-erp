@@ -14,6 +14,7 @@ from datetime import timedelta
 import logging
 import threading
 import time
+import atexit
 
 # Import shared utilities
 from modules.shared.database import init_db
@@ -34,6 +35,7 @@ from modules.credit.routes import credit_bp
 from modules.settings.routes import settings_bp
 from modules.reports.routes import reports_bp
 from modules.earnings.routes import earnings_bp
+from modules.notifications.routes import notifications_bp
 # from modules.rbac.routes import rbac_bp  # RBAC System - temporarily disabled
 
 # Import sync module (temporarily disabled)
@@ -134,6 +136,7 @@ app.register_blueprint(credit_bp)
 app.register_blueprint(settings_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(earnings_bp)
+app.register_blueprint(notifications_bp)
 app.register_blueprint(sync_api_bp)
 # app.register_blueprint(rbac_bp)  # RBAC System - temporarily disabled
 
@@ -154,6 +157,32 @@ def cleanup_task():
 # Start cleanup task in background
 cleanup_thread = threading.Thread(target=cleanup_task, daemon=True)
 cleanup_thread.start()
+
+# Start stock monitoring service
+def start_background_services():
+    """Start all background services"""
+    try:
+        from modules.notifications.stock_monitor import start_stock_monitor
+        start_stock_monitor()
+        print("✅ Stock monitoring service started")
+    except Exception as e:
+        print(f"❌ Failed to start stock monitoring service: {e}")
+
+# Start background services in a separate thread to avoid blocking startup
+services_thread = threading.Thread(target=start_background_services, daemon=True)
+services_thread.start()
+
+# Cleanup on app shutdown
+def cleanup_on_exit():
+    """Cleanup function called on app shutdown"""
+    try:
+        from modules.notifications.stock_monitor import stop_stock_monitor
+        stop_stock_monitor()
+        print("✅ Background services stopped")
+    except Exception as e:
+        print(f"❌ Error stopping background services: {e}")
+
+atexit.register(cleanup_on_exit)
 
 # Make socketio available globally for broadcasting (temporarily disabled)
 # app.socketio = socketio
@@ -259,6 +288,16 @@ def cms_gallery():
 def cms_profile():
     """CMS Profile & Password Management"""
     return render_template('cms_profile.html')
+
+@app.route('/notification-settings')
+def notification_settings():
+    """Notification Settings Page"""
+    return render_template('notification_settings.html')
+
+@app.route('/stock-alert-demo')
+def stock_alert_demo():
+    """Stock Alert Demo Page"""
+    return render_template('stock_alert_demo.html')
 
 def print_startup_info():
     """Print startup information"""

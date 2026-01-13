@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Alert Demo - BizPulse</title>
+    
+    <style>
+        :root {
+            --wine-primary: #732C3F;
+            --wine-light: #B85450;
+            --wine-lighter: #E8B4B8;
+            --wine-lightest: #F5E6E8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #F9F6F7 0%, #F5E6E8 25%, #F0E1E4 50%, #EBD7DB 75%, #E8D5DA 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #1A1A1A;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--wine-primary);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #6B7280;
+            font-size: 1.1rem;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .demo-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(115, 44, 63, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--wine-lightest), rgba(255, 255, 255, 0.9));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--wine-primary);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1A1A1A;
+        }
+
+        .demo-btn {
+            width: 100%;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .demo-btn.primary {
+            background: linear-gradient(135deg, var(--wine-primary), var(--wine-light));
+            color: white;
+        }
+
+        .demo-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(115, 44, 63, 0.3);
+        }
+
+        .demo-btn.warning {
+            background: linear-gradient(135deg, #F59E0B, #F97316);
+            color: white;
+        }
+
+        .demo-btn.warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        .demo-btn.danger {
+            background: linear-gradient(135deg, #DC2626, #EF4444);
+            color: white;
+        }
+
+        .demo-btn.danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .demo-btn.secondary {
+            background: #F3F4F6;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+        }
+
+        .demo-btn.secondary:hover {
+            background: #E5E7EB;
+        }
+
+        .demo-description {
+            color: #6B7280;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .status-display {
+            background: #F8F9FA;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #374151;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-display.success {
+            background: #D1FAE5;
+            border-color: #10B981;
+            color: #065F46;
+        }
+
+        .status-display.error {
+            background: #FEE2E2;
+            border-color: #EF4444;
+            color: #991B1B;
+        }
+
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            color: #374151;
+        }
+
+        .features-list li::before {
+            content: "✅";
+            margin-right: 10px;
+        }
+
+        .alert-preview {
+            background: #FEF3C7;
+            border: 2px solid #F59E0B;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .alert-preview.critical {
+            background: #FEE2E2;
+            border-color: #DC2626;
+        }
+
+        .alert-preview-icon {
+            font-size: 2rem;
+            animation: alertBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes alertBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .alert-preview-content {
+            flex: 1;
+        }
+
+        .alert-preview-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .alert-preview-message {
+            color: #6B7280;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--wine-primary);
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .back-link:hover {
+            color: var(--wine-light);
+            transform: translateX(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .demo-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/retail/dashboard" class="back-link">
+            ← Back to Dashboard
+        </a>
+
+        <div class="header">
+            <h1>🚨 Stock Alert System Demo</h1>
+            <p>Test automatic popups, browser notifications, and real-time alerts</p>
+        </div>
+
+        <div class="demo-grid">
+            <!-- Popup Alerts Demo -->
+            <div class="demo-card">
+                <div class="card-header">
+                    <div class="card-icon">🔔</div>
+                    <div class="card-title">Popup Alerts</div>
+                </div>
+                
+                <div class="demo-description">
+                    Test the automatic popup alerts that appear when stock runs low. These popups include sound alerts and action buttons.
+                </div>
+
+                <button class="demo-btn warning" onclick="showLowStockDemo()">
+                    ⚠️ Show Low Stock Alert
+                </button>
+
+                <button class="demo-btn danger" onclick="showOutOfStockDemo()">
+                    🚨 Show Out of Stock Alert
+                </button>
+
+                <button class="demo-btn secondary" onclick="clearAllPopups()">
+                    🗑️ Clear All Popups
+                </button>
+
+                <div id="popupStatus" class="status-display">
+                    Click buttons above to test popup alerts
+                </div>
+            </div>
+
+            <!-- Browser Notifications Demo -->
+            <div class="demo-card">
+                <div class="card-header">
+                    <div class="card-icon">🌐</div>
+                    <div class="card-title">Browser Notifications</div>
+                </div>
+                
+                <div class="demo-description">
+                    Test browser notifications that work even when the tab is not active. Requires permission from your browser.
+                </div>
+
+                <button class="demo-btn primary" onclick="requestNotificationPermission()">
+                    🔔 Enable Browser Notifications
+                </button>
+
+                <button class="demo-btn warning" onclick="sendTestBrowserNotification()">
+                    📢 Send Test Notification
+                </button>
+
+                <button class="demo-btn secondary" onclick="checkNotificationStatus()">
+                    ℹ️ Check Permission Status
+                </button>
+
+                <div id="browserStatus" class="status-display">
+                    Browser notification status will appear here
+                </div>
+            </div>
+
+            <!-- Real-time Monitoring Demo -->
+            <div class="demo-card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Real-time Monitoring</div>
+                </div>
+                
+                <div class="demo-description">
+                    Test the real-time stock monitoring system that checks for new alerts every 15 seconds automatically.
+                </div>
+
+                <button class="demo-btn primary" onclick="startRealTimeDemo()">
+                    🚀 Start Real-time Monitoring
+                </button>
+
+                <button class="demo-btn warning" onclick="createTestAlert()">
+                    🧪 Create Test Alert
+                </button>
+
+                <button class="demo-btn secondary" onclick="stopRealTimeDemo()">
+                    ⏹️ Stop Monitoring
+                </button>
+
+                <div id="realtimeStatus" class="status-display">
+                    Real-time monitoring status will appear here
+                </div>
+            </div>
+
+            <!-- System Features -->
+            <div class="demo-card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <div class="card-title">System Features</div>
+                </div>
+                
+                <div class="demo-description">
+                    Complete list of automatic alert system features implemented in your ERP.
+                </div>
+
+                <ul class="features-list">
+                    <li>Automatic popup alerts with sound</li>
+                    <li>Browser notifications (works when tab inactive)</li>
+                    <li>Real-time monitoring every 15 seconds</li>
+                    <li>Visual badge indicators with animations</li>
+                    <li>Action buttons (View Products, Mark as Read)</li>
+                    <li>Auto-dismiss after 12 seconds</li>
+                    <li>Mobile responsive design</li>
+                    <li>Multi-tenant support (client isolation)</li>
+                    <li>Configurable thresholds per client</li>
+                    <li>Duplicate prevention (once per day per product)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Alert Previews -->
+        <div class="demo-card">
+            <div class="card-header">
+                <div class="card-icon">👁️</div>
+                <div class="card-title">Alert Previews</div>
+            </div>
+
+            <div class="alert-preview">
+                <div class="alert-preview-icon">⚠️</div>
+                <div class="alert-preview-content">
+                    <div class="alert-preview-title">LOW STOCK ALERT</div>
+                    <div class="alert-preview-message">Low Stock Alert: iPhone 13 - Only 3 remaining (Electronics)</div>
+                </div>
+            </div>
+
+            <div class="alert-preview critical">
+                <div class="alert-preview-icon">🚨</div>
+                <div class="alert-preview-content">
+                    <div class="alert-preview-title">OUT OF STOCK ALERT</div>
+                    <div class="alert-preview-message">Out of Stock: Samsung Galaxy S21 (Electronics)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let realtimeInterval = null;
+        let alertCount = 0;
+
+        // Popup Alerts Demo
+        function showLowStockDemo() {
+            const alert = {
+                id: 'demo-' + Date.now(),
+                message: 'Low Stock Alert: iPhone 13 - Only 3 remaining (Electronics)',
+                type: 'alert'
+            };
+            
+            showStockAlertPopup(alert);
+            updateStatus('popupStatus', '✅ Low stock popup alert displayed!', 'success');
+        }
+
+        function showOutOfStockDemo() {
+            const alert = {
+                id: 'demo-' + Date.now(),
+                message: 'Out of Stock: Samsung Galaxy S21 (Electronics)',
+                type: 'alert'
+            };
+            
+            showStockAlertPopup(alert);
+            updateStatus('popupStatus', '🚨 Out of stock popup alert displayed!', 'success');
+        }
+
+        function clearAllPopups() {
+            const popups = document.querySelectorAll('.stock-alert-popup');
+            popups.forEach(popup => {
+                popup.classList.add('hide');
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.parentNode.removeChild(popup);
+                    }
+                }, 300);
+            });
+            updateStatus('popupStatus', '🗑️ All popups cleared', 'success');
+        }
+
+        // Browser Notifications Demo
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                updateStatus('browserStatus', '❌ Browser does not support notifications', 'error');
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    updateStatus('browserStatus', '✅ Browser notifications enabled!', 'success');
+                    
+                    // Show welcome notification
+                    new Notification('BizPulse Stock Alerts', {
+                        body: 'Browser notifications are now enabled for stock alerts!',
+                        icon: '/static/favicon.ico'
+                    });
+                } else {
+                    updateStatus('browserStatus', '❌ Notification permission denied', 'error');
+                }
+            } catch (error) {
+                updateStatus('browserStatus', '❌ Error requesting permission: ' + error.message, 'error');
+            }
+        }
+
+        function sendTestBrowserNotification() {
+            if (Notification.permission !== 'granted') {
+                updateStatus('browserStatus', '⚠️ Please enable notifications first', 'error');
+                return;
+            }
+
+            const notification = new Notification('🚨 Stock Alert Test', {
+                body: 'This is a test stock alert notification from BizPulse ERP',
+                icon: '/static/favicon.ico',
+                badge: '/static/favicon.ico',
+                requireInteraction: true
+            });
+
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
+
+            updateStatus('browserStatus', '📢 Test browser notification sent!', 'success');
+        }
+
+        function checkNotificationStatus() {
+            if (!('Notification' in window)) {
+                updateStatus('browserStatus', '❌ Browser does not support notifications', 'error');
+                return;
+            }
+
+            const permission = Notification.permission;
+            let message = '';
+            let type = '';
+
+            switch (permission) {
+                case 'granted':
+                    message = '✅ Notifications are enabled';
+                    type = 'success';
+                    break;
+                case 'denied':
+                    message = '❌ Notifications are blocked';
+                    type = 'error';
+                    break;
+                case 'default':
+                    message = '⚠️ Notification permission not requested yet';
+                    type = '';
+                    break;
+            }
+
+            updateStatus('browserStatus', message, type);
+        }
+
+        // Real-time Monitoring Demo
+        function startRealTimeDemo() {
+            if (realtimeInterval) {
+                clearInterval(realtimeInterval);
+            }
+
+            updateStatus('realtimeStatus', '🚀 Real-time monitoring started...', 'success');
+            
+            realtimeInterval = setInterval(() => {
+                updateStatus('realtimeStatus', `🔍 Checking for alerts... (${new Date().toLocaleTimeString()})`, '');
+            }, 3000);
+        }
+
+        function createTestAlert() {
+            alertCount++;
+            const alerts = [
+                'Low Stock Alert: MacBook Pro - Only 2 remaining (Electronics)',
+                'Out of Stock: iPad Air (Electronics)',
+                'Low Stock Alert: Office Chair - Only 1 remaining (Furniture)',
+                'Out of Stock: Wireless Mouse (Electronics)'
+            ];
+
+            const alert = {
+                id: 'realtime-' + Date.now(),
+                message: alerts[alertCount % alerts.length],
+                type: 'alert'
+            };
+
+            showStockAlertPopup(alert);
+            updateStatus('realtimeStatus', `🧪 Test alert #${alertCount} created and displayed!`, 'success');
+        }
+
+        function stopRealTimeDemo() {
+            if (realtimeInterval) {
+                clearInterval(realtimeInterval);
+                realtimeInterval = null;
+            }
+            updateStatus('realtimeStatus', '⏹️ Real-time monitoring stopped', '');
+        }
+
+        // Utility Functions
+        function updateStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = message;
+                element.className = `status-display ${type}`;
+            }
+        }
+
+        // Stock Alert Popup Function (copied from main dashboard)
+        function showStockAlertPopup(alert) {
+            const isOutOfStock = alert.message.includes('Out of Stock');
+            const alertType = isOutOfStock ? 'critical' : 'warning';
+            const alertIcon = isOutOfStock ? '🚨' : '⚠️';
+            
+            const popup = document.createElement('div');
+            popup.className = 'stock-alert-popup';
+            popup.innerHTML = `
+                <div class="alert-popup-content ${alertType}">
+                    <div class="alert-popup-header">
+                        <div class="alert-popup-icon">${alertIcon}</div>
+                        <div class="alert-popup-title">${isOutOfStock ? 'OUT OF STOCK ALERT' : 'LOW STOCK ALERT'}</div>
+                        <button class="alert-popup-close" onclick="closeStockAlert(this)">×</button>
+                    </div>
+                    <div class="alert-popup-message">${alert.message}</div>
+                    <div class="alert-popup-actions">
+                        <button class="alert-popup-btn primary" onclick="alert('Would navigate to products page'); closeStockAlert(this);">
+                            📦 View Products
+                        </button>
+                        <button class="alert-popup-btn secondary" onclick="closeStockAlert(this);">
+                            ✓ Mark as Read
+                        </button>
+                    </div>
+                    <div class="alert-popup-time">Just now</div>
+                </div>
+            `;
+            
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.classList.add('show');
+            }, 100);
+            
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    closeStockAlert(popup.querySelector('.alert-popup-close'));
+                }
+            }, 12000);
+        }
+
+        function closeStockAlert(button) {
+            const popup = button.closest('.stock-alert-popup');
+            if (popup) {
+                popup.classList.add('hide');
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        popup.parentNode.removeChild(popup);
+                    }
+                }, 300);
+            }
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkNotificationStatus();
+            updateStatus('popupStatus', 'Ready to test popup alerts', '');
+            updateStatus('realtimeStatus', 'Real-time monitoring ready', '');
+        });
+    </script>
+
+    <!-- Include the popup styles from the main dashboard -->
+    <style>
+        /* Stock Alert Popup Styles */
+        .stock-alert-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+            min-width: 350px;
+            opacity: 0;
+            transform: translateX(100%) scale(0.8);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .stock-alert-popup.show {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+        }
+        
+        .stock-alert-popup.hide {
+            opacity: 0;
+            transform: translateX(100%) scale(0.8);
+            pointer-events: none;
+        }
+        
+        .alert-popup-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 3px solid;
+            overflow: hidden;
+            animation: alertPulse 2s ease-in-out infinite;
+        }
+        
+        .alert-popup-content.critical {
+            border-color: #DC2626;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+        }
+        
+        .alert-popup-content.warning {
+            border-color: #F59E0B;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        }
+        
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 25px 50px rgba(220, 38, 38, 0.4); }
+        }
+        
+        .alert-popup-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 20px 15px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-popup-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            animation: alertBounce 1s ease-in-out infinite;
+        }
+        
+        .alert-popup-title {
+            flex: 1;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1F2937;
+            letter-spacing: 0.5px;
+        }
+        
+        .alert-popup-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .alert-popup-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #374151;
+        }
+        
+        .alert-popup-message {
+            padding: 15px 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #374151;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        .alert-popup-actions {
+            padding: 15px 20px 20px 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .alert-popup-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .alert-popup-btn.primary {
+            background: linear-gradient(135deg, var(--wine-primary), var(--wine-light));
+            color: white;
+        }
+        
+        .alert-popup-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(115, 44, 63, 0.3);
+        }
+        
+        .alert-popup-btn.secondary {
+            background: #F3F4F6;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+        }
+        
+        .alert-popup-btn.secondary:hover {
+            background: #E5E7EB;
+            transform: translateY(-1px);
+        }
+        
+        .alert-popup-time {
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.5);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</body>
+</html>

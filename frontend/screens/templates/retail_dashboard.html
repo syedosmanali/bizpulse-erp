@@ -475,6 +475,7 @@
             padding: 12px;
             border-radius: var(--radius-md);
             transition: all 0.2s ease;
+            margin-left: 15px;
         }
         
         .notification-btn:hover {
@@ -498,6 +499,349 @@
             align-items: center;
             justify-content: center;
             border: 2px solid white;
+        }
+        
+        /* Notification Panel */
+        .notification-panel {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-large);
+            z-index: 1001;
+            display: none;
+            overflow: hidden;
+        }
+        
+        .notification-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-secondary);
+        }
+        
+        .notification-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .notification-action-btn {
+            background: none;
+            border: none;
+            color: var(--wine-primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+        
+        .notification-action-btn:hover {
+            background: rgba(115, 44, 63, 0.1);
+        }
+        
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .notification-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        
+        .notification-item:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .notification-item.unread {
+            background: rgba(115, 44, 63, 0.02);
+            border-left: 3px solid var(--wine-primary);
+        }
+        
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .notification-icon.sale {
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: white;
+        }
+        
+        .notification-icon.alert {
+            background: linear-gradient(135deg, #F59E0B, #D97706);
+            color: white;
+        }
+        
+        .notification-icon.info {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            color: white;
+        }
+        
+        .notification-content {
+            flex: 1;
+        }
+        
+        .notification-text {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        
+        .notification-time {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .notification-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+        
+        .notification-empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        /* Stock Alert Popup Styles */
+        .stock-alert-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            max-width: 400px;
+            min-width: 350px;
+            opacity: 0;
+            transform: translateX(100%) scale(0.8);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .stock-alert-popup.show {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+        }
+        
+        .stock-alert-popup.hide {
+            opacity: 0;
+            transform: translateX(100%) scale(0.8);
+            pointer-events: none;
+        }
+        
+        .alert-popup-content {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 3px solid;
+            overflow: hidden;
+            animation: alertPulse 2s ease-in-out infinite;
+        }
+        
+        .alert-popup-content.critical {
+            border-color: #DC2626;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+        }
+        
+        .alert-popup-content.warning {
+            border-color: #F59E0B;
+            background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        }
+        
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3); }
+            50% { box-shadow: 0 25px 50px rgba(220, 38, 38, 0.4); }
+        }
+        
+        .alert-popup-header {
+            display: flex;
+            align-items: center;
+            padding: 20px 20px 15px 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .alert-popup-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            animation: alertBounce 1s ease-in-out infinite;
+        }
+        
+        @keyframes alertBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .alert-popup-title {
+            flex: 1;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1F2937;
+            letter-spacing: 0.5px;
+        }
+        
+        .alert-popup-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6B7280;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .alert-popup-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: #374151;
+        }
+        
+        .alert-popup-message {
+            padding: 15px 20px;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #374151;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.7);
+        }
+        
+        .alert-popup-actions {
+            padding: 15px 20px 20px 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .alert-popup-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .alert-popup-btn.primary {
+            background: linear-gradient(135deg, var(--wine-primary), var(--wine-light));
+            color: white;
+        }
+        
+        .alert-popup-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(115, 44, 63, 0.3);
+        }
+        
+        .alert-popup-btn.secondary {
+            background: #F3F4F6;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+        }
+        
+        .alert-popup-btn.secondary:hover {
+            background: #E5E7EB;
+            transform: translateY(-1px);
+        }
+        
+        .alert-popup-time {
+            padding: 10px 20px;
+            font-size: 0.8rem;
+            color: #6B7280;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.5);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Mobile responsive for popups */
+        @media (max-width: 768px) {
+            .stock-alert-popup {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                min-width: auto;
+            }
+            
+            .alert-popup-actions {
+                flex-direction: column;
+            }
+            
+            .alert-popup-btn {
+                flex: none;
+            }
+        }
+        
+        /* Notification Badge Animation */
+        .notification-badge {
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes badgePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Browser Notification Permission Prompt */
+        .browser-notification-prompt {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+            z-index: 9999;
+            max-width: 300px;
+            display: none;
+        }
+        
+        .browser-notification-prompt.show {
+            display: block;
+            animation: slideInRight 0.4s ease-out;
+        }
+        
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         
         /* Premium Main Content - Optimized Performance */
@@ -1250,6 +1594,39 @@
                 height: 80px !important;
                 padding: 0 20px !important;
                 z-index: 1000 !important;
+                flex-wrap: wrap !important;
+            }
+            
+            .header-left {
+                flex: 1 !important;
+                min-width: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
+            }
+            
+            .page-title {
+                font-size: 1rem !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+            
+            .search-box {
+                display: none !important;
+            }
+            
+            .notification-btn {
+                margin-left: 10px !important;
+                padding: 10px !important;
+            }
+            
+            .notification-panel {
+                top: 80px !important;
+                right: 10px !important;
+                left: 10px !important;
+                width: auto !important;
+                max-height: 400px !important;
             }
             
             .content-area {
@@ -1300,14 +1677,6 @@
             .quick-actions, .recent-activity {
                 padding: 24px !important;
                 margin-bottom: 24px !important;
-            }
-            
-            .search-box {
-                display: none !important;
-            }
-            
-            .page-title {
-                font-size: 1.1rem !important;
             }
             
             .section-title {
@@ -1532,16 +1901,23 @@
         <div class="header-left">
             <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
             <h1 class="page-title" id="pageTitle">{{ t('dashboard') }}</h1>
-        </div>
-        
-        <div class="header-right">
-            <!-- Shorter Search Box -->
-            <div class="search-box" style="max-width: 400px; margin-right: 15px;">
+            
+            <!-- Search Box moved to left -->
+            <div class="search-box" style="max-width: 350px; margin-left: 20px;">
                 <span class="search-icon">🔍</span>
                 <input type="text" id="universalSearch" placeholder="Search products, customers, sales..." 
                        onkeyup="handleSearch(event)" autocomplete="off">
                 <div id="searchResults" class="search-results" style="display: none;"></div>
             </div>
+            
+            <!-- Notification Button -->
+            <button class="notification-btn" onclick="toggleNotifications()" id="notificationBtn">
+                <span>🔔</span>
+                <div class="notification-badge" id="notificationBadge" style="display: none;">0</div>
+            </button>
+        </div>
+        
+        <div class="header-right">
             
             <!-- Internal Profile Button (Same Style as Search) -->
             <div id="internalProfileButton" style="
@@ -1644,6 +2020,23 @@
             </div>
         </div>
     </header>
+
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <div class="notification-title">Notifications</div>
+            <div class="notification-actions">
+                <button class="notification-action-btn" onclick="markAllAsRead()">Mark all read</button>
+                <button class="notification-action-btn" onclick="toggleNotifications()">✕</button>
+            </div>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <div class="notification-empty">
+                <div class="notification-empty-icon">🔔</div>
+                <div>No notifications yet</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Content -->
     <div class="main-content">
@@ -2826,6 +3219,355 @@
                 }
             });
 
+            // Notification System Functions
+            window.toggleNotifications = function() {
+                const panel = document.getElementById('notificationPanel');
+                const isVisible = panel.style.display === 'block';
+                
+                if (isVisible) {
+                    panel.style.display = 'none';
+                } else {
+                    panel.style.display = 'block';
+                    loadNotifications();
+                }
+            };
+            
+            window.markAllAsRead = function() {
+                const notifications = document.querySelectorAll('.notification-item.unread');
+                notifications.forEach(item => {
+                    item.classList.remove('unread');
+                });
+                
+                // Update badge
+                updateNotificationBadge(0);
+                
+                // Send to server
+                fetch('/api/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(e => console.error('Error marking notifications as read:', e));
+            };
+            
+            async function loadNotifications() {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    const response = await fetch('/api/notifications', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        displayNotifications(data.notifications || []);
+                        updateNotificationBadge(data.unread_count || 0);
+                    } else {
+                        // Show sample notifications for demo
+                        displaySampleNotifications();
+                    }
+                } catch (error) {
+                    console.error('Error loading notifications:', error);
+                    displaySampleNotifications();
+                }
+            }
+            
+            function displayNotifications(notifications) {
+                const listContainer = document.getElementById('notificationList');
+                
+                if (notifications.length === 0) {
+                    listContainer.innerHTML = `
+                        <div class="notification-empty">
+                            <div class="notification-empty-icon">🔔</div>
+                            <div>No notifications yet</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const notificationsHtml = notifications.map(notification => {
+                    const iconClass = getNotificationIconClass(notification.type);
+                    const icon = getNotificationIcon(notification.type);
+                    const timeAgo = formatTimeAgo(notification.created_at);
+                    const unreadClass = notification.is_read ? '' : 'unread';
+                    
+                    return `
+                        <div class="notification-item ${unreadClass}" onclick="handleNotificationClick('${notification.id}', '${notification.action_url || ''}')">
+                            <div class="notification-icon ${iconClass}">
+                                ${icon}
+                            </div>
+                            <div class="notification-content">
+                                <div class="notification-text">${notification.message}</div>
+                                <div class="notification-time">${timeAgo}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                listContainer.innerHTML = notificationsHtml;
+            }
+            
+            function displaySampleNotifications() {
+                const sampleNotifications = [
+                    {
+                        id: '1',
+                        type: 'sale',
+                        message: 'New sale completed: ₹2,500 from John Doe',
+                        created_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+                        is_read: false,
+                        action_url: '/sales'
+                    },
+                    {
+                        id: '2',
+                        type: 'alert',
+                        message: 'Low stock alert: iPhone 13 (Only 2 left)',
+                        created_at: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+                        is_read: false,
+                        action_url: '/products'
+                    },
+                    {
+                        id: '3',
+                        type: 'info',
+                        message: 'Daily report is ready for download',
+                        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+                        is_read: true,
+                        action_url: '/reports'
+                    }
+                ];
+                
+                displayNotifications(sampleNotifications);
+                updateNotificationBadge(2); // 2 unread notifications
+            }
+            
+            function getNotificationIconClass(type) {
+                switch (type) {
+                    case 'sale': return 'sale';
+                    case 'alert': case 'warning': return 'alert';
+                    case 'info': case 'report': return 'info';
+                    default: return 'info';
+                }
+            }
+            
+            function getNotificationIcon(type) {
+                switch (type) {
+                    case 'sale': return '💰';
+                    case 'alert': case 'warning': return '⚠️';
+                    case 'info': case 'report': return 'ℹ️';
+                    default: return '🔔';
+                }
+            }
+            
+            function formatTimeAgo(dateString) {
+                const now = new Date();
+                const date = new Date(dateString);
+                const diffInSeconds = Math.floor((now - date) / 1000);
+                
+                if (diffInSeconds < 60) return 'Just now';
+                if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+                if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+                return `${Math.floor(diffInSeconds / 86400)}d ago`;
+            }
+            
+            function updateNotificationBadge(count) {
+                const badge = document.getElementById('notificationBadge');
+                if (badge) {
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'flex' : 'none';
+                }
+            }
+            
+            window.handleNotificationClick = function(notificationId, actionUrl) {
+                // Mark as read
+                const notificationItem = document.querySelector(`[onclick*="${notificationId}"]`);
+                if (notificationItem) {
+                    notificationItem.classList.remove('unread');
+                }
+                
+                // Update badge count
+                const unreadCount = document.querySelectorAll('.notification-item.unread').length;
+                updateNotificationBadge(unreadCount);
+                
+                // Navigate to action URL if provided
+                if (actionUrl && actionUrl !== '') {
+                    window.location.href = actionUrl;
+                }
+                
+                // Mark as read on server
+                fetch(`/api/notifications/${notificationId}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }).catch(e => console.error('Error marking notification as read:', e));
+            };
+            
+            // Close notification panel when clicking outside
+            document.addEventListener('click', function(event) {
+                const panel = document.getElementById('notificationPanel');
+                const button = document.getElementById('notificationBtn');
+                
+                if (panel && button && !panel.contains(event.target) && !button.contains(event.target)) {
+                    panel.style.display = 'none';
+                }
+            });
+            
+            // Load notifications on page load
+            setTimeout(loadNotifications, 1000);
+            
+            // Auto-refresh notifications every 30 seconds
+            setInterval(loadNotifications, 30000);
+            
+            // Start automatic stock alert monitoring
+            startStockAlertMonitoring();
+            
+            // Automatic Stock Alert Monitoring System
+            let lastAlertCheck = Date.now();
+            let alertSound = null;
+            
+            function startStockAlertMonitoring() {
+                console.log('🔔 Starting automatic stock alert monitoring...');
+                
+                // Check for new stock alerts every 15 seconds
+                setInterval(checkForStockAlerts, 15000);
+                
+                // Initial check after 5 seconds
+                setTimeout(checkForStockAlerts, 5000);
+                
+                // Preload alert sound
+                try {
+                    alertSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+                } catch (e) {
+                    console.log('Alert sound not available');
+                }
+            }
+            
+            async function checkForStockAlerts() {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    if (!token) return;
+                    
+                    // Get recent notifications (last 5 minutes)
+                    const response = await fetch('/api/notifications?recent=true', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.notifications) {
+                            const recentAlerts = data.notifications.filter(notification => {
+                                const notifTime = new Date(notification.created_at).getTime();
+                                return notifTime > lastAlertCheck && 
+                                       notification.type === 'alert' && 
+                                       !notification.is_read &&
+                                       (notification.message.includes('Low Stock') || notification.message.includes('Out of Stock'));
+                            });
+                            
+                            if (recentAlerts.length > 0) {
+                                recentAlerts.forEach(alert => {
+                                    showStockAlertPopup(alert);
+                                });
+                                lastAlertCheck = Date.now();
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking for stock alerts:', error);
+                }
+            }
+            
+            function showStockAlertPopup(alert) {
+                // Play alert sound
+                if (alertSound) {
+                    try {
+                        alertSound.currentTime = 0;
+                        alertSound.play().catch(e => console.log('Sound play failed:', e));
+                    } catch (e) {
+                        console.log('Sound play error:', e);
+                    }
+                }
+                
+                // Determine alert type and styling
+                const isOutOfStock = alert.message.includes('Out of Stock');
+                const alertType = isOutOfStock ? 'critical' : 'warning';
+                const alertIcon = isOutOfStock ? '🚨' : '⚠️';
+                const alertColor = isOutOfStock ? '#DC2626' : '#F59E0B';
+                
+                // Create popup element
+                const popup = document.createElement('div');
+                popup.className = 'stock-alert-popup';
+                popup.innerHTML = `
+                    <div class="alert-popup-content ${alertType}">
+                        <div class="alert-popup-header">
+                            <div class="alert-popup-icon">${alertIcon}</div>
+                            <div class="alert-popup-title">${isOutOfStock ? 'OUT OF STOCK ALERT' : 'LOW STOCK ALERT'}</div>
+                            <button class="alert-popup-close" onclick="closeStockAlert(this)">×</button>
+                        </div>
+                        <div class="alert-popup-message">${alert.message}</div>
+                        <div class="alert-popup-actions">
+                            <button class="alert-popup-btn primary" onclick="goToProducts(); closeStockAlert(this);">
+                                📦 View Products
+                            </button>
+                            <button class="alert-popup-btn secondary" onclick="markAlertAsRead('${alert.id}'); closeStockAlert(this);">
+                                ✓ Mark as Read
+                            </button>
+                        </div>
+                        <div class="alert-popup-time">Just now</div>
+                    </div>
+                `;
+                
+                // Add popup to page
+                document.body.appendChild(popup);
+                
+                // Animate in
+                setTimeout(() => {
+                    popup.classList.add('show');
+                }, 100);
+                
+                // Auto-remove after 10 seconds if not interacted with
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        closeStockAlert(popup.querySelector('.alert-popup-close'));
+                    }
+                }, 10000);
+                
+                // Add to notification badge count
+                updateNotificationBadge(document.querySelectorAll('.notification-item.unread').length + 1);
+                
+                console.log(`🔔 Stock alert popup shown: ${alert.message}`);
+            }
+            
+            window.closeStockAlert = function(button) {
+                const popup = button.closest('.stock-alert-popup');
+                if (popup) {
+                    popup.classList.add('hide');
+                    setTimeout(() => {
+                        if (popup.parentNode) {
+                            popup.parentNode.removeChild(popup);
+                        }
+                    }, 300);
+                }
+            };
+            
+            window.goToProducts = function() {
+                window.location.href = '/retail/products';
+            };
+            
+            window.markAlertAsRead = async function(notificationId) {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    await fetch(`/api/notifications/${notificationId}/read`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    // Update notification panel
+                    loadNotifications();
+                } catch (error) {
+                    console.error('Error marking alert as read:', error);
+                }
+            };
+
             // async function loadNotifications(){ try{ const token = localStorage.getItem('authToken'); const res = await fetch('/api/notifications', { headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok){ const notes = await res.json(); updateNotificationBadge(notes.length); } }catch(e){ console.error(e); } }
 
             // function updateNotificationBadge(count){ const badge = document.querySelector('.notification-badge'); if (badge){ badge.textContent = count; badge.style.display = count>0 ? 'flex' : 'none'; } }
@@ -2842,6 +3584,186 @@
             // Check user role in parallel (for UI permissions)
             checkUserRole();
             
+            // Initialize browser notifications
+            initBrowserNotifications();
+            
+            // Initialize browser notifications
+            function initBrowserNotifications() {
+                // Check if browser supports notifications
+                if ('Notification' in window) {
+                    // Check current permission
+                    if (Notification.permission === 'default') {
+                        // Show permission prompt after 3 seconds
+                        setTimeout(showNotificationPermissionPrompt, 3000);
+                    }
+                } else {
+                    console.log('Browser does not support notifications');
+                }
+            }
+            
+            function showNotificationPermissionPrompt() {
+                const prompt = document.createElement('div');
+                prompt.className = 'browser-notification-prompt';
+                prompt.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <span style="font-size: 1.2rem;">🔔</span>
+                        <strong>Enable Stock Alerts</strong>
+                    </div>
+                    <p style="margin: 0 0 15px 0; font-size: 0.9rem; opacity: 0.9;">
+                        Get instant browser notifications for low stock alerts even when this tab is not active.
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="requestNotificationPermission()" style="flex: 1; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                            Enable
+                        </button>
+                        <button onclick="dismissNotificationPrompt()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                            Later
+                        </button>
+                    </div>
+                `;
+                
+                document.body.appendChild(prompt);
+                
+                setTimeout(() => {
+                    prompt.classList.add('show');
+                }, 100);
+                
+                // Auto-dismiss after 10 seconds
+                setTimeout(() => {
+                    if (prompt.parentNode) {
+                        dismissNotificationPrompt();
+                    }
+                }, 10000);
+            }
+            
+            window.requestNotificationPermission = async function() {
+                try {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('✅ Browser notifications enabled');
+                        
+                        // Show test notification
+                        new Notification('BizPulse Stock Alerts Enabled', {
+                            body: 'You will now receive instant alerts for low stock products.',
+                            icon: '/static/favicon.ico',
+                            badge: '/static/favicon.ico'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error requesting notification permission:', error);
+                }
+                
+                dismissNotificationPrompt();
+            };
+            
+            window.dismissNotificationPrompt = function() {
+                const prompt = document.querySelector('.browser-notification-prompt');
+                if (prompt) {
+                    prompt.classList.remove('show');
+                    setTimeout(() => {
+                        if (prompt.parentNode) {
+                            prompt.parentNode.removeChild(prompt);
+                        }
+                    }, 400);
+                }
+            };
+            
+            // Enhanced stock alert function with browser notifications
+            function showStockAlertPopup(alert) {
+                // Play alert sound
+                if (alertSound) {
+                    try {
+                        alertSound.currentTime = 0;
+                        alertSound.play().catch(e => console.log('Sound play failed:', e));
+                    } catch (e) {
+                        console.log('Sound play error:', e);
+                    }
+                }
+                
+                // Show browser notification if permission granted
+                if (Notification.permission === 'granted') {
+                    const isOutOfStock = alert.message.includes('Out of Stock');
+                    const title = isOutOfStock ? '🚨 OUT OF STOCK ALERT' : '⚠️ LOW STOCK ALERT';
+                    
+                    const browserNotification = new Notification(title, {
+                        body: alert.message,
+                        icon: '/static/favicon.ico',
+                        badge: '/static/favicon.ico',
+                        tag: 'stock-alert',
+                        requireInteraction: true,
+                        actions: [
+                            { action: 'view', title: 'View Products' },
+                            { action: 'dismiss', title: 'Dismiss' }
+                        ]
+                    });
+                    
+                    browserNotification.onclick = function() {
+                        window.focus();
+                        window.location.href = '/retail/products';
+                        browserNotification.close();
+                    };
+                    
+                    // Auto-close after 8 seconds
+                    setTimeout(() => {
+                        browserNotification.close();
+                    }, 8000);
+                }
+                
+                // Determine alert type and styling
+                const isOutOfStock = alert.message.includes('Out of Stock');
+                const alertType = isOutOfStock ? 'critical' : 'warning';
+                const alertIcon = isOutOfStock ? '🚨' : '⚠️';
+                
+                // Create popup element
+                const popup = document.createElement('div');
+                popup.className = 'stock-alert-popup';
+                popup.innerHTML = `
+                    <div class="alert-popup-content ${alertType}">
+                        <div class="alert-popup-header">
+                            <div class="alert-popup-icon">${alertIcon}</div>
+                            <div class="alert-popup-title">${isOutOfStock ? 'OUT OF STOCK ALERT' : 'LOW STOCK ALERT'}</div>
+                            <button class="alert-popup-close" onclick="closeStockAlert(this)">×</button>
+                        </div>
+                        <div class="alert-popup-message">${alert.message}</div>
+                        <div class="alert-popup-actions">
+                            <button class="alert-popup-btn primary" onclick="goToProducts(); closeStockAlert(this);">
+                                📦 View Products
+                            </button>
+                            <button class="alert-popup-btn secondary" onclick="markAlertAsRead('${alert.id}'); closeStockAlert(this);">
+                                ✓ Mark as Read
+                            </button>
+                        </div>
+                        <div class="alert-popup-time">Just now</div>
+                    </div>
+                `;
+                
+                // Add popup to page
+                document.body.appendChild(popup);
+                
+                // Animate in
+                setTimeout(() => {
+                    popup.classList.add('show');
+                }, 100);
+                
+                // Auto-remove after 12 seconds if not interacted with
+                setTimeout(() => {
+                    if (popup.parentNode) {
+                        closeStockAlert(popup.querySelector('.alert-popup-close'));
+                    }
+                }, 12000);
+                
+                // Flash the notification badge
+                const badge = document.getElementById('notificationBadge');
+                if (badge) {
+                    badge.style.animation = 'none';
+                    setTimeout(() => {
+                        badge.style.animation = 'badgePulse 1s ease-in-out infinite';
+                    }, 100);
+                }
+                
+                console.log(`🔔 Stock alert popup shown: ${alert.message}`);
+            }
+            
             // Force show Client Management only for bizpulse.erp@gmail.com
             setTimeout(async () => {
                 try {
@@ -2852,7 +3774,7 @@
                     if (response.ok) {
                         const userInfo = await response.json();
                         const clientManagementNav = document.getElementById('client-management-nav');
-                        if (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') {
+                        if (userInfo.is_super_admin) {
                             if (clientManagementNav) {
                                 clientManagementNav.style.display = 'flex';
                             }
@@ -2893,12 +3815,13 @@
                         document.getElementById('users-nav').style.display = 'flex';
                         document.getElementById('whatsapp-reports-nav').style.display = 'flex';
                         
-                        // Client Management ONLY for bizpulse.erp@gmail.com
+                        // Client Management for all super admins
+                        document.getElementById('client-management-nav').style.display = 'flex';
+                        
+                        // Show User Management for non-BizPulse admins, Client Management for BizPulse admins
                         if (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') {
-                            document.getElementById('client-management-nav').style.display = 'flex';
                             document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
                         } else {
-                            document.getElementById('client-management-nav').style.display = 'none';
                             document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'flex';
                         }
 

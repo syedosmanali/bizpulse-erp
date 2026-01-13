@@ -30,8 +30,8 @@ def super_admin_dashboard():
 @rbac_bp.route('/client-management')
 def client_management_page():
     """Client Management Page (redirects to RBAC dashboard)"""
-    # Check if user is already logged in as BizPulse admin
-    if session.get('email') == 'bizpulse.erp@gmail.com':
+    # Check if user is already logged in as admin
+    if session.get('is_super_admin'):
         # Already logged in with existing system
         return render_template('rbac_super_admin_dashboard.html')
     elif session.get('rbac_user_type') == 'super_admin':
@@ -94,7 +94,7 @@ def api_get_clients():
         
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         print(f"[DEBUG GET] RBAC admin: {is_rbac_admin}, Existing admin: {is_existing_admin}")
         
@@ -124,7 +124,7 @@ def api_create_client():
         
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         print(f"[DEBUG POST] RBAC admin: {is_rbac_admin}, Existing admin: {is_existing_admin}")
         
@@ -155,7 +155,7 @@ def api_get_client_details(client_id):
         
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         print(f"[DEBUG DETAILS] RBAC admin: {is_rbac_admin}, Existing admin: {is_existing_admin}")
         
@@ -182,7 +182,7 @@ def api_update_client(client_id):
     try:
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         if not (is_rbac_admin or is_existing_admin):
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -203,7 +203,7 @@ def api_reset_client_password(client_id):
     try:
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         if not (is_rbac_admin or is_existing_admin):
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -222,7 +222,7 @@ def api_toggle_client_status(client_id):
     try:
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         if not (is_rbac_admin or is_existing_admin):
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -245,7 +245,7 @@ def api_force_logout_client(client_id):
     try:
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         if not (is_rbac_admin or is_existing_admin):
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401
@@ -264,7 +264,7 @@ def api_update_subscription(client_id):
     try:
         # Check session (allow both RBAC and existing admin)
         is_rbac_admin = session.get('rbac_user_type') == 'super_admin'
-        is_existing_admin = session.get('email') == 'bizpulse.erp@gmail.com'
+        is_existing_admin = session.get('is_super_admin', False)
         
         if not (is_rbac_admin or is_existing_admin):
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401

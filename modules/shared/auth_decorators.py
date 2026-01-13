@@ -45,7 +45,7 @@ def require_super_admin(f):
         if not session.get('is_super_admin', False):
             return render_template('error.html', 
                                  error_title="Access Denied", 
-                                 error_message="This module is only available to super administrators (bizpulse.erp@gmail.com)."), 403
+                                 error_message="This module is only available to super administrators."), 403
         return f(*args, **kwargs)
     return decorated_function
 

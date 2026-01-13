@@ -17,7 +17,7 @@ class AuthService:
         
         try:
             # First check users table (includes BizPulse admin users)
-            user = conn.execute("SELECT id, first_name, last_name, email, business_name, business_type, password_hash, is_active FROM users WHERE email = ? AND is_active = 1", (login_id,)).fetchone()
+            user = conn.execute("SELECT id, first_name, last_name, email, business_name, business_type, password_hash, is_active, is_admin FROM users WHERE email = ? AND is_active = 1", (login_id,)).fetchone()
             
             if user and hash_password(password) == user['password_hash']:
                 # Determine if this is a BizPulse admin user
@@ -29,9 +29,11 @@ class AuthService:
                     'osman@bizpulse.com'
                 ]
                 
+                # Check admin status from multiple sources
                 is_bizpulse_admin = (
-                    user['email'].lower() in bizpulse_emails or 
-                    '@bizpulse.com' in user['email'].lower()
+                    user['is_admin'] == 1 or  # Database flag
+                    user['email'].lower() in bizpulse_emails or  # Email whitelist
+                    '@bizpulse.com' in user['email'].lower()  # Domain check
                 )
                 
                 session_data = {

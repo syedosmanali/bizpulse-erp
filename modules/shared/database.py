@@ -586,6 +586,63 @@ def init_db():
         )
     ''')
 
+    # Notifications table for user notifications
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            type TEXT NOT NULL DEFAULT 'info',
+            message TEXT NOT NULL,
+            action_url TEXT,
+            is_read INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Create index for faster notification queries
+    try:
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at)')
+    except sqlite3.OperationalError:
+        pass
+
+    # Notification Settings table for client-specific notification preferences
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS notification_settings (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL UNIQUE,
+            low_stock_enabled INTEGER DEFAULT 1,
+            low_stock_threshold INTEGER DEFAULT 5,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (client_id) REFERENCES clients (id)
+        )
+    ''')
+    
+    # Stock Alert Log table to track sent alerts (prevent duplicate alerts)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stock_alert_log (
+            id TEXT PRIMARY KEY,
+            client_id TEXT NOT NULL,
+            product_id TEXT NOT NULL,
+            alert_date DATE NOT NULL,
+            stock_level INTEGER NOT NULL,
+            threshold_level INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (client_id) REFERENCES clients (id),
+            FOREIGN KEY (product_id) REFERENCES products (id),
+            UNIQUE(client_id, product_id, alert_date)
+        )
+    ''')
+    
+    # Create indexes for performance
+    try:
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notification_settings_client_id ON notification_settings(client_id)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_stock_alert_log_client_product_date ON stock_alert_log(client_id, product_id, alert_date)')
+    except sqlite3.OperationalError:
+        pass
+
     # Initialize default company
     cursor.execute('SELECT COUNT(*) FROM companies')
     if cursor.fetchone()[0] == 0:

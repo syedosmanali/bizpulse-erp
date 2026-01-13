@@ -7,6 +7,14 @@ from modules.shared.database import get_db_connection, generate_id
 from datetime import datetime
 from modules.dashboard.models import ActivityTracker, log_sale_activity, log_order_activity
 
+# Import notification helper
+try:
+    from modules.notifications.routes import create_notification_for_user
+except ImportError:
+    # Fallback if notifications module is not available
+    def create_notification_for_user(user_id, notification_type, message, action_url=None):
+        pass
+
 class BillingService:
     
     def get_all_bills(self, user_id=None):
@@ -147,6 +155,41 @@ class BillingService:
                     # This should never happen due to our validation, but just in case
                     conn.execute("UPDATE products SET stock = 0 WHERE id = ?", (item['product_id'],))
                     print(f"⚠️ [BILLING SERVICE] WARNING: Stock for {updated_product['name']} was negative, reset to 0")
+                
+                # 🔔 CHECK FOR LOW STOCK AND CREATE NOTIFICATION
+                try:
+                    # Get product details including min_stock
+                    product_details = conn.execute("""
+                        SELECT name, stock, min_stock 
+                        FROM products 
+                        WHERE id = ?
+                    """, (item['product_id'],)).fetchone()
+                    
+                    if product_details:
+                        current_stock = product_details['stock']
+                        min_stock = product_details['min_stock'] or 0
+                        product_name = product_details['name']
+                        
+                        # Create notification if stock is low or out
+                        if current_stock == 0:
+                            create_notification_for_user(
+                                user_id=business_owner_id,
+                                notification_type='alert',
+                                message=f"Out of stock: {product_name} (0 remaining)",
+                                action_url='/retail/products'
+                            )
+                            print(f"🔔 [NOTIFICATION] Out of stock alert created for {product_name}")
+                        elif current_stock <= min_stock and min_stock > 0:
+                            create_notification_for_user(
+                                user_id=business_owner_id,
+                                notification_type='alert',
+                                message=f"Low stock alert: {product_name} (Only {current_stock} left)",
+                                action_url='/retail/products'
+                            )
+                            print(f"🔔 [NOTIFICATION] Low stock alert created for {product_name}")
+                            
+                except Exception as stock_notification_error:
+                    print(f"⚠️ [NOTIFICATION] Failed to create stock notification: {stock_notification_error}")
                 
                 # Get product details for sales entry
                 product = conn.execute("SELECT category FROM products WHERE id = ?", (item['product_id'],)).fetchone()
@@ -449,6 +492,32 @@ class BillingService:
                     
             except Exception as e:
                 print(f"⚠️ [DASHBOARD] Failed to log activity: {e}")
+            
+            # 🔔 CREATE NOTIFICATION FOR SUCCESSFUL SALE
+            try:
+                total_amount = data.get('total_amount', 0)
+                payment_method = data.get('payment_method', 'cash')
+                
+                # Create notification message based on payment method
+                if payment_method == 'credit':
+                    notification_message = f"Credit sale completed: ₹{total_amount:,.0f} from {customer_name}"
+                elif payment_method == 'partial':
+                    partial_amount = float(data.get('partial_amount', 0))
+                    notification_message = f"Partial payment sale: ₹{partial_amount:,.0f} paid, ₹{total_amount - partial_amount:,.0f} due from {customer_name}"
+                else:
+                    notification_message = f"Sale completed: ₹{total_amount:,.0f} from {customer_name}"
+                
+                # Create notification for the user who made the sale
+                create_notification_for_user(
+                    user_id=business_owner_id,
+                    notification_type='sale',
+                    message=notification_message,
+                    action_url='/retail/sales'
+                )
+                print(f"🔔 [NOTIFICATION] Sale notification created for user {business_owner_id}")
+                
+            except Exception as notification_error:
+                print(f"⚠️ [NOTIFICATION] Failed to create sale notification: {notification_error}")
             
             print(f"✅ [BILLING SERVICE] Bill created successfully: {bill_number}")
             print(f"✅ [BILLING SERVICE] Sales entries created: {len(data['items'])}")

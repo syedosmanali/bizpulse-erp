@@ -341,6 +341,12 @@ def dashboard_demo():
     return render_template('dashboard_demo.html')
 
 @main_bp.route('/client-management')
+@require_auth
 def client_management():
     """Client Management Page"""
     return render_template('client_management_clean.html')
+
+@main_bp.route('/test-admin-access')
+def test_admin_access():
+    """Test Admin Access Page"""
+    return send_from_directory('.', 'test_admin_access.html')
