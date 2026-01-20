@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Master - Setup Screen</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            padding: 32px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #732C3F;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #732C3F;
+        }
+
+        .barcode-input {
+            position: relative;
+        }
+
+        .barcode-input input {
+            padding-right: 100px;
+        }
+
+        .barcode-focus {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #732C3F;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .barcode-input.focused {
+            border-color: #28a745;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+        }
+
+        .pricing-section {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .pricing-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .pricing-title {
+            font-weight: 600;
+            color: #732C3F;
+            font-size: 16px;
+        }
+
+        .tax-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-switch.active {
+            background: #732C3F;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(26px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #732C3F;
+            border: 2px solid #732C3F;
+        }
+
+        .btn-outline:hover {
+            background: #732C3F;
+            color: white;
+        }
+
+        .products-table-section {
+            grid-column: 1 / -1;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .products-table th {
+            background: #732C3F;
+            color: white;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .products-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .products-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-icons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn.edit {
+            background: #007bff;
+            color: white;
+        }
+
+        .icon-btn.duplicate {
+            background: #28a745;
+            color: white;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .auto-generate {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                📦 Product Master
+                <span style="font-size: 16px; opacity: 0.8;">High-Speed Data Entry</span>
+            </h1>
+            <div class="header-actions">
+                <button class="btn-primary" onclick="bulkImport()">
+                    📊 Bulk Import
+                </button>
+                <button class="btn-primary" onclick="exportProducts()">
+                    📤 Export
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Product Form Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    ➕ Add New Product
+                </div>
+
+                <form id="productForm">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="productName">Product Name *</label>
+                            <input type="text" id="productName" name="productName" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sku">SKU</label>
+                            <input type="text" id="sku" name="sku" readonly>
+                            <div class="auto-generate">Auto-generated</div>
+                        </div>
+
+                        <div class="form-group barcode-input">
+                            <label for="barcode">Barcode</label>
+                            <input type="text" id="barcode" name="barcode">
+                            <button type="button" class="barcode-focus" onclick="focusBarcode()">Focus</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category *</label>
+                            <select id="category" name="category" required>
+                                <option value="">Select Category</option>
+                                <option value="electronics">Electronics</option>
+                                <option value="clothing">Clothing</option>
+                                <option value="food">Food & Beverages</option>
+                                <option value="books">Books</option>
+                                <option value="home">Home & Garden</option>
+                                <option value="sports">Sports</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="hsnCode">HSN Code</label>
+                            <input type="text" id="hsnCode" name="hsnCode">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gstRate">GST % *</label>
+                            <select id="gstRate" name="gstRate" required>
+                                <option value="0">0%</option>
+                                <option value="5">5%</option>
+                                <option value="12">12%</option>
+                                <option value="18" selected>18%</option>
+                                <option value="28">28%</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="uom">Unit of Measure *</label>
+                            <select id="uom" name="uom" required>
+                                <option value="piece">Piece</option>
+                                <option value="kg">Kilogram</option>
+                                <option value="gram">Gram</option>
+                                <option value="liter">Liter</option>
+                                <option value="meter">Meter</option>
+                                <option value="box">Box</option>
+                                <option value="pack">Pack</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Section -->
+                    <div class="pricing-section">
+                        <div class="pricing-header">
+                            <div class="pricing-title">💰 Pricing Information</div>
+                            <div class="tax-toggle">
+                                <span>Tax Exclusive</span>
+                                <div class="toggle-switch" id="taxToggle" onclick="toggleTaxMode()"></div>
+                                <span>Tax Inclusive</span>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="mrp">MRP *</label>
+                                <input type="number" id="mrp" name="mrp" step="0.01" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="purchasePrice">Base Purchase Price *</label>
+                                <input type="number" id="purchasePrice" name="purchasePrice" step="0.01" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sellingPrice">Standard Selling Price *</label>
+                                <input type="number" id="sellingPrice" name="sellingPrice" step="0.01" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="minStock">Minimum Stock Level</label>
+                                <input type="number" id="minStock" name="minStock" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn btn-success">
+                            ✅ Save Product
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="generateBarcode()">
+                            🏷️ Generate Barcode
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            🔄 Clear Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Actions Section -->
+            <div class="form-section">
+                <div class="section-title">
+                    ⚡ Quick Actions
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <button class="btn btn-outline" onclick="scanBarcode()">
+                        📷 Scan Barcode
+                    </button>
+                    
+                    <button class="btn btn-outline" onclick="duplicateLastProduct()">
+                        📋 Duplicate Last Product
+                    </button>
+                    
+                    <button class="btn btn-outline" onclick="bulkPriceUpdate()">
+                        💲 Bulk Price Update
+                    </button>
+                    
+                    <button class="btn btn-outline" onclick="categoryManager()">
+                        📁 Manage Categories
+                    </button>
+                </div>
+
+                <!-- Recent Activity -->
+                <div style="margin-top: 24px;">
+                    <h4 style="color: #732C3F; margin-bottom: 12px;">📈 Recent Activity</h4>
+                    <div id="recentActivity" style="font-size: 14px; color: #666;">
+                        <div>• Product "Sample Item" added</div>
+                        <div>• Barcode generated for "Test Product"</div>
+                        <div>• 5 products imported from CSV</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Table Section -->
+        <div class="products-table-section">
+            <div class="table-header">
+                <div class="section-title">
+                    📋 Product List
+                </div>
+                <div class="search-box">
+                    <input type="text" placeholder="Search products..." id="searchProducts">
+                    <span class="search-icon">🔍</span>
+                </div>
+            </div>
+
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>MRP</th>
+                        <th>Selling Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <tr>
+                        <td>Sample Product 1</td>
+                        <td>SKU001</td>
+                        <td>Electronics</td>
+                        <td>₹1,200</td>
+                        <td>₹1,000</td>
+                        <td>25</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <div class="action-icons">
+                                <button class="icon-btn edit" onclick="editProduct(1)">✏️</button>
+                                <button class="icon-btn duplicate" onclick="duplicateProduct(1)">📋</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Sample Product 2</td>
+                        <td>SKU002</td>
+                        <td>Clothing</td>
+                        <td>₹800</td>
+                        <td>₹650</td>
+                        <td>12</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <div class="action-icons">
+                                <button class="icon-btn edit" onclick="editProduct(2)">✏️</button>
+                                <button class="icon-btn duplicate" onclick="duplicateProduct(2)">📋</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Auto-generate SKU when product name changes
+        document.getElementById('productName').addEventListener('input', function() {
+            const name = this.value.trim();
+            if (name) {
+                const sku = 'SKU' + Date.now().toString().slice(-6);
+                document.getElementById('sku').value = sku;
+            }
+        });
+
+        // Tax mode toggle
+        function toggleTaxMode() {
+            const toggle = document.getElementById('taxToggle');
+            toggle.classList.toggle('active');
+            
+            // Update pricing calculations based on tax mode
+            updatePricingCalculations();
+        }
+
+        // Focus barcode input for scanner
+        function focusBarcode() {
+            const barcodeInput = document.getElementById('barcode');
+            const container = barcodeInput.closest('.barcode-input');
+            
+            barcodeInput.focus();
+            container.classList.add('focused');
+            
+            // Remove focus styling after 3 seconds
+            setTimeout(() => {
+                container.classList.remove('focused');
+            }, 3000);
+        }
+
+        // Generate barcode
+        function generateBarcode() {
+            const barcode = '8901030' + Math.floor(Math.random() * 100000).toString().padStart(5, '0');
+            document.getElementById('barcode').value = barcode;
+            alert('Barcode generated: ' + barcode);
+        }
+
+        // Bulk import
+        function bulkImport() {
+            alert('Bulk Import: Upload Excel/CSV file to import multiple products at once.');
+        }
+
+        // Export products
+        function exportProducts() {
+            alert('Exporting products to Excel file...');
+        }
+
+        // Scan barcode
+        function scanBarcode() {
+            alert('Camera scanner activated. Point camera at barcode.');
+        }
+
+        // Duplicate last product
+        function duplicateLastProduct() {
+            alert('Duplicating last added product with new SKU...');
+        }
+
+        // Bulk price update
+        function bulkPriceUpdate() {
+            alert('Bulk Price Update: Update prices for multiple products at once.');
+        }
+
+        // Category manager
+        function categoryManager() {
+            alert('Category Manager: Add, edit, or organize product categories.');
+        }
+
+        // Edit product
+        function editProduct(id) {
+            alert('Editing product ID: ' + id);
+        }
+
+        // Duplicate product
+        function duplicateProduct(id) {
+            alert('Duplicating product ID: ' + id);
+        }
+
+        // Update pricing calculations
+        function updatePricingCalculations() {
+            const taxInclusive = document.getElementById('taxToggle').classList.contains('active');
+            const gstRate = parseFloat(document.getElementById('gstRate').value) || 0;
+            
+            // Add logic to recalculate prices based on tax mode
+            console.log('Tax mode:', taxInclusive ? 'Inclusive' : 'Exclusive');
+            console.log('GST Rate:', gstRate + '%');
+        }
+
+        // Form submission
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const productData = Object.fromEntries(formData);
+            
+            console.log('Product Data:', productData);
+            alert('Product saved successfully!');
+            
+            // Reset form
+            this.reset();
+            document.getElementById('sku').value = '';
+        });
+
+        // Search products
+        document.getElementById('searchProducts').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#productsTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

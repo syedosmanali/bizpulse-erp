@@ -146,8 +146,9 @@ class ProductsService:
         try:
             conn.execute("""INSERT INTO products (
                     id, code, name, category, price, cost, stock, min_stock, 
-                    unit, business_type, barcode_data, barcode_image, image_url, expiry_date, is_active, user_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+                    unit, business_type, barcode_data, barcode_image, image_url, expiry_date, 
+                    supplier, description, bill_receipt_photo, last_stock_update, is_active, user_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
                 product_id, 
                 product_code, 
                 data['name'].strip(), 
@@ -162,6 +163,10 @@ class ProductsService:
                 barcode_image,  # Store barcode image
                 data.get('image_url'),  # Store product image URL
                 data.get('expiry_date'),  # Store expiry date
+                data.get('supplier'),  # Store supplier name
+                data.get('description'),  # Store product description
+                data.get('bill_receipt_photo'),  # Store bill receipt photo URL
+                datetime.now().isoformat(),  # Last stock update timestamp
                 1,  # is_active
                 data.get('user_id')  # 🔥 Store user_id for multi-tenant support
             ))
@@ -277,7 +282,8 @@ class ProductsService:
             conn.execute("""UPDATE products SET
                     code = ?, name = ?, category = ?, price = ?, cost = ?, 
                     stock = ?, min_stock = ?, unit = ?, business_type = ?,
-                    barcode_data = ?, barcode_image = ?, image_url = ?, expiry_date = ?
+                    barcode_data = ?, barcode_image = ?, image_url = ?, expiry_date = ?,
+                    supplier = ?, description = ?, bill_receipt_photo = ?, last_stock_update = ?
                 WHERE id = ?""", (
                 data.get('code', existing_product['code']),
                 data['name'].strip(), 
@@ -290,8 +296,12 @@ class ProductsService:
                 data.get('business_type', existing_product['business_type']),
                 barcode_data,
                 barcode_image,
-                data.get('image_url', existing_product['image_url']),  # Handle image URL
+                data.get('image_url', existing_product.get('image_url')),  # Handle image URL
                 data.get('expiry_date', existing_product.get('expiry_date')),  # Handle expiry date
+                data.get('supplier', existing_product.get('supplier')),  # Handle supplier
+                data.get('description', existing_product.get('description')),  # Handle description
+                data.get('bill_receipt_photo', existing_product.get('bill_receipt_photo')),  # Handle bill receipt
+                datetime.now().isoformat(),  # Update last_stock_update timestamp
                 product_id
             ))
             

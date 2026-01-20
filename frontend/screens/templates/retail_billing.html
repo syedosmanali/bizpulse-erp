@@ -70,6 +70,11 @@
             grid-template-columns: 1fr 400px;
             gap: 20px;
             margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .billing-grid.products-hidden {
+            grid-template-columns: 1fr;
         }
 
         .products-section {
@@ -78,6 +83,20 @@
             border-radius: 8px;
             max-height: 600px;
             overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+        
+        .products-section.hidden {
+            display: none;
+        }
+        
+        .cart-section {
+            transition: all 0.3s ease;
+        }
+        
+        .cart-section.expanded {
+            max-width: 100%;
+        }
         }
 
         .products-section h2 {
@@ -272,52 +291,119 @@
             margin-bottom: 15px;
         }
 
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            gap: 10px;
+        .cart-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .cart-item-info {
-            flex: 1;
+        .cart-table thead {
+            background: #f8f9fa;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
 
-        .cart-item-name {
+        .cart-table th {
+            padding: 8px 5px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .cart-table td {
+            padding: 10px 5px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .cart-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .product-name-cell {
             font-weight: 600;
             color: #333;
+            max-width: 120px;
+        }
+
+        .price-cell {
+            color: #732C3F;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .qty-input {
+            width: 45px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
             font-size: 13px;
+            font-weight: 600;
         }
 
-        .cart-item-price {
-            color: #666;
-            font-size: 11px;
+        .qty-input:focus {
+            outline: none;
+            border-color: #732C3F;
         }
 
-        .cart-item-qty {
+        .qty-controls {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
         }
 
-        .qty-btn {
+        .qty-btn-simple {
             background: #732C3F;
             color: white;
             border: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 4px;
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
         }
 
-        .qty-btn:hover {
+        .qty-btn-simple:hover {
             background: #8B4A5C;
+        }
+
+        .remove-btn-simple {
+            background: #dc3545;
+            color: white;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .remove-btn-simple:hover {
+            background: #c82333;
+        }
+
+        .total-cell {
+            text-align: right;
+            font-weight: 600;
+            color: #333;
+        }
+
+        /* Hide old cart item styles */
+        .cart-item {
+            display: none;
+        }
         }
 
         .qty-display {
@@ -486,26 +572,37 @@
             <div></div>
         </div>
 
-        <div class="billing-grid">
+        <div class="billing-grid" id="billingGrid">
+            
             <!-- Products Section -->
-            <div class="products-section">
+            <div class="products-section" id="productsSection">
                 <h2>📦 {{ t('select_products') }}</h2>
+                
+                <!-- Category Filter -->
                 <div class="search-box">
+                    <select class="search-input" id="categoryFilter" style="margin-bottom: 10px;">
+                        <option value="all">🏷️ All Categories</option>
+                    </select>
+                </div>
+                
+                <!-- Search Box -->
+                <div class="search-box" id="productSearchBox">
                     <input type="text" class="search-input" id="searchInput" placeholder="🔍 {{ t('search_products') }}">
                 </div>
+                
                 <div id="productsGrid" class="product-grid">
                     <div class="loading" data-i18n="loading_products">{{ t('loading_products') }}</div>
                 </div>
             </div>
 
             <!-- Cart Section -->
-            <div class="cart-section">
+            <div class="cart-section" id="cartSection">
                 <h2>🛍️ {{ t('bill') }}</h2>
                 
-                <!-- Customer Details Toggle Button -->
-                <button onclick="toggleCustomerDetails()" id="customerToggleBtn" style="width: 100%; padding: 10px; background: white; border: 1px solid #732C3F; color: #732C3F; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
-                    <span>👤 Add Customer Details</span>
-                    <span id="customerToggleIcon">▼</span>
+                <!-- Add Customer Button -->
+                <button onclick="toggleCustomerDetails()" id="customerToggleBtn" style="width: 100%; padding: 12px; background: #732C3F; border: none; color: white; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
+                    <span style="font-size: 18px;">+</span>
+                    <span>Add Customer</span>
                 </button>
                 
                 <!-- Customer Details Form (Hidden by default) -->
@@ -568,12 +665,26 @@
                         <span id="afterDiscountAmount">₹0.00</span>
                     </div>
                     
+                    <!-- GST Selector -->
+                    <div class="total-row" style="border-top: 1px dashed #ddd; padding-top: 8px; margin-top: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600;">GST Rate:</span>
+                            <select id="gstRate" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; font-weight: 600; color: #732C3F;" onchange="renderCart()">
+                                <option value="0">0% (No GST)</option>
+                                <option value="5">5% GST</option>
+                                <option value="12">12% GST</option>
+                                <option value="18" selected>18% GST (Default)</option>
+                                <option value="28">28% GST</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="total-row">
-                        <span data-i18n="cgst">CGST (9%):</span>
+                        <span id="cgstLabel">CGST (<span id="cgstPercent">9</span>%):</span>
                         <span id="cgst">₹0.00</span>
                     </div>
                     <div class="total-row">
-                        <span data-i18n="sgst">SGST (9%):</span>
+                        <span id="sgstLabel">SGST (<span id="sgstPercent">9</span>%):</span>
                         <span id="sgst">₹0.00</span>
                     </div>
                     
@@ -638,12 +749,53 @@
 
         let products = [];
         let cart = [];
+        let productsVisible = true;
+
+        // Toggle product list visibility
+        function toggleProductList() {
+            productsVisible = !productsVisible;
+            const productsSection = document.getElementById('productsSection');
+            const cartSection = document.getElementById('cartSection');
+            const billingGrid = document.getElementById('billingGrid');
+            const toggleBtn = document.getElementById('toggleProductBtn');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const floatingSearchBar = document.getElementById('floatingSearchBar');
+            
+            if (productsVisible) {
+                // Show products
+                productsSection.classList.remove('hidden');
+                cartSection.classList.remove('expanded');
+                billingGrid.classList.remove('products-hidden');
+                toggleIcon.textContent = '◀';
+                toggleBtn.style.right = '20px';
+                // Hide floating search bar when products are visible
+                if (floatingSearchBar) floatingSearchBar.style.display = 'none';
+            } else {
+                // Hide products
+                productsSection.classList.add('hidden');
+                cartSection.classList.add('expanded');
+                billingGrid.classList.add('products-hidden');
+                toggleIcon.textContent = '▶';
+                toggleBtn.style.right = '20px';
+                // Show floating search bar when products are hidden
+                if (floatingSearchBar) floatingSearchBar.style.display = 'block';
+            }
+        }
 
         // Load products
         async function loadProducts() {
             try {
                 const response = await fetch('/api/products');
                 products = await response.json();
+                
+                // Extract unique categories and populate category filter
+                const categories = [...new Set(products.map(p => p.category).filter(c => c))];
+                const categoryFilter = document.getElementById('categoryFilter');
+                categoryFilter.innerHTML = '<option value="all">🏷️ All Categories</option>';
+                categories.sort().forEach(category => {
+                    categoryFilter.innerHTML += `<option value="${category}">${category}</option>`;
+                });
+                
                 renderProducts(products);
             } catch (error) {
                 console.error('Error loading products:', error);
@@ -690,8 +842,7 @@
             }).join('');
         }
 
-        // Add to cart
-        // Add to cart - Show quantity modal first
+        // Add to cart - Direct add with quantity 1
         function addToCart(productId) {
             const product = products.find(p => p.id === productId);
             if (!product) return;
@@ -702,187 +853,30 @@
                 return;
             }
 
-            // Show quantity modal
-            showQuantityModal(product);
-        }
-
-        // Show quantity modal
-        function showQuantityModal(product) {
-            // Remove existing modal if any
-            const existingModal = document.getElementById('quantityModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-
-            // Create modal
-            const modal = document.createElement('div');
-            modal.id = 'quantityModal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10000;
-                backdrop-filter: blur(5px);
-            `;
-
-            modal.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 15px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2); max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto;">
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <h3 style="margin: 0 0 10px 0; color: #732C3F; font-size: 20px; font-weight: 700;">Add to Cart</h3>
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 4px solid #732C3F;">
-                            <div style="font-weight: 600; color: #333; margin-bottom: 5px;">${product.name}</div>
-                            <div style="color: #666; font-size: 14px;">Price: ₹${product.price} | Stock: ${product.stock}</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px;">Quantity:</label>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <button onclick="decreaseQuantity()" style="background: #dc3545; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 20px; font-weight: 700; cursor: pointer; min-width: 50px;">−</button>
-                            <input type="number" id="modalQuantity" value="1" min="1" max="${product.stock}" 
-                                   style="flex: 1; padding: 12px; border: 2px solid #732C3F; border-radius: 8px; text-align: center; font-size: 20px; font-weight: 700; color: #732C3F;"
-                                   oninput="validateQuantity(${product.stock})">
-                            <button onclick="increaseQuantity(${product.stock})" style="background: #28a745; color: white; border: none; padding: 12px 18px; border-radius: 8px; font-size: 20px; font-weight: 700; cursor: pointer; min-width: 50px;">+</button>
-                        </div>
-                        <div id="quantityError" style="color: #dc3545; font-size: 12px; margin-top: 5px; display: none;"></div>
-                    </div>
-                    
-                    <div style="background: #f0f8ff; padding: 12px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #732C3F;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 14px; color: #666;">Total Amount:</span>
-                            <span id="modalTotal" style="font-size: 24px; font-weight: 700; color: #732C3F;">₹${product.price}</span>
-                        </div>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button onclick="closeQuantityModal()" style="flex: 1; background: #6c757d; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Cancel</button>
-                        <button onclick="confirmAddToCart('${product.id}', ${product.price}, ${product.stock})" style="flex: 2; background: #732C3F; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">Add to Cart</button>
-                    </div>
-                </div>
-            `;
-
-            document.body.appendChild(modal);
-
-            // Update total on quantity change
-            document.getElementById('modalQuantity').addEventListener('input', function() {
-                const qty = parseInt(this.value) || 1;
-                const total = qty * product.price;
-                document.getElementById('modalTotal').textContent = `₹${total}`;
-            });
-
-            // Close modal when clicking outside
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
-                    closeQuantityModal();
-                }
-            });
-        }
-
-        // Close quantity modal
-        function closeQuantityModal() {
-            const modal = document.getElementById('quantityModal');
-            if (modal) {
-                modal.remove();
-            }
-        }
-
-        // Increase quantity
-        function increaseQuantity(maxStock) {
-            const input = document.getElementById('modalQuantity');
-            let value = parseInt(input.value) || 1;
-            if (value < maxStock) {
-                input.value = value + 1;
-                input.dispatchEvent(new Event('input'));
-            } else {
-                showQuantityError(`Maximum stock available: ${maxStock}`);
-            }
-        }
-
-        // Decrease quantity
-        function decreaseQuantity() {
-            const input = document.getElementById('modalQuantity');
-            let value = parseInt(input.value) || 1;
-            if (value > 1) {
-                input.value = value - 1;
-                input.dispatchEvent(new Event('input'));
-            }
-        }
-
-        // Validate quantity
-        function validateQuantity(maxStock) {
-            const input = document.getElementById('modalQuantity');
-            let value = parseInt(input.value) || 1;
-            
-            if (value < 1) {
-                input.value = 1;
-                showQuantityError('Minimum quantity is 1');
-            } else if (value > maxStock) {
-                input.value = maxStock;
-                showQuantityError(`Maximum stock available: ${maxStock}`);
-            } else {
-                hideQuantityError();
-            }
-        }
-
-        // Show quantity error
-        function showQuantityError(message) {
-            const errorDiv = document.getElementById('quantityError');
-            if (errorDiv) {
-                errorDiv.textContent = message;
-                errorDiv.style.display = 'block';
-            }
-        }
-
-        // Hide quantity error
-        function hideQuantityError() {
-            const errorDiv = document.getElementById('quantityError');
-            if (errorDiv) {
-                errorDiv.style.display = 'none';
-            }
-        }
-
-        // Confirm add to cart
-        function confirmAddToCart(productId, price, maxStock) {
-            const quantity = parseInt(document.getElementById('modalQuantity').value) || 1;
-            
-            // Validate quantity
-            if (quantity < 1 || quantity > maxStock) {
-                alert(`Please enter a valid quantity (1-${maxStock})`);
-                return;
-            }
-
-            const product = products.find(p => p.id === productId);
-            if (!product) return;
-
+            // Check if product already in cart
             const existingItem = cart.find(item => item.id === productId);
             
             if (existingItem) {
-                const newQuantity = existingItem.quantity + quantity;
-                if (newQuantity <= product.stock) {
-                    existingItem.quantity = newQuantity;
-                } else {
-                    alert(t('insufficient_stock'));
+                // Check if we can add more (stock limit)
+                if (existingItem.quantity >= product.stock) {
+                    alert(`❌ Cannot add more. Only ${product.stock} ${product.unit || 'pcs'} available in stock.`);
                     return;
                 }
+                // Increment quantity
+                existingItem.quantity += 1;
             } else {
+                // Add new item with quantity 1
                 cart.push({
                     id: product.id,
                     name: product.name,
                     price: product.price,
-                    originalPrice: product.price, // Store original price
-                    quantity: quantity,
-                    stock: product.stock
+                    quantity: 1,
+                    stock: product.stock,
+                    unit: product.unit || 'pcs'
                 });
             }
-
+            
             renderCart();
-            closeQuantityModal();
         }
 
         // Edit price
@@ -924,6 +918,52 @@
             renderCart();
         }
 
+        // Update quantity directly from input
+        function updateQuantityDirect(productId, value) {
+            const item = cart.find(i => i.id === productId);
+            if (!item) return;
+
+            const newQty = parseInt(value) || 1;
+            
+            if (newQty < 1) {
+                alert('Quantity must be at least 1');
+                renderCart();
+                return;
+            }
+
+            if (newQty > item.stock) {
+                alert(`Only ${item.stock} ${item.unit || 'pcs'} available in stock`);
+                renderCart();
+                return;
+            }
+
+            item.quantity = newQty;
+            renderCart();
+        }
+
+        // Validate quantity input in real-time
+        function validateQuantityInput(input, maxStock) {
+            const value = parseInt(input.value);
+            
+            // Prevent entering more than available stock
+            if (value > maxStock) {
+                input.value = maxStock;
+                input.style.borderColor = '#dc3545';
+                setTimeout(() => {
+                    input.style.borderColor = '#ddd';
+                }, 1000);
+            }
+            
+            // Prevent entering less than 1
+            if (value < 1 && input.value !== '') {
+                input.value = 1;
+                input.style.borderColor = '#dc3545';
+                setTimeout(() => {
+                    input.style.borderColor = '#ddd';
+                }, 1000);
+            }
+        }
+
         // Remove from cart
         function removeFromCart(productId) {
             cart = cart.filter(item => item.id !== productId);
@@ -951,62 +991,93 @@
                 return;
             }
 
-            cartItemsDiv.innerHTML = cart.map(item => `
-                <div class="cart-item">
-                    <div class="cart-item-info">
-                        <div class="cart-item-name">${item.name}</div>
-                        <div class="cart-item-price">
-                            ₹${item.price.toFixed(2)} × ${item.quantity}
-                            <button class="edit-price-btn" onclick="editPrice('${item.id}')" title="${t('edit_price')}">Edit</button>
-                        </div>
-                    </div>
-                    <div class="cart-item-qty">
-                        <button class="qty-btn" onclick="updateQuantity('${item.id}', -1)">-</button>
-                        <span class="qty-display">${item.quantity}</span>
-                        <button class="qty-btn" onclick="updateQuantity('${item.id}', 1)">+</button>
-                    </div>
-                    <button class="remove-btn" onclick="removeFromCart('${item.id}')">×</button>
-                </div>
-            `).join('');
+            // Create table layout
+            cartItemsDiv.innerHTML = `
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th style="text-align: right;">Price</th>
+                            <th style="text-align: center;">Qty</th>
+                            <th style="text-align: right;">Total</th>
+                            <th style="width: 30px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cart.map(item => `
+                            <tr>
+                                <td class="product-name-cell">${item.name}</td>
+                                <td class="price-cell">₹${item.price.toFixed(2)}</td>
+                                <td>
+                                    <div class="qty-controls">
+                                        <button class="qty-btn-simple" onclick="updateQuantity('${item.id}', -1)">−</button>
+                                        <input type="number" class="qty-input" value="${item.quantity}" min="1" max="${item.stock}" 
+                                               oninput="validateQuantityInput(this, ${item.stock})"
+                                               onchange="updateQuantityDirect('${item.id}', this.value)" 
+                                               onkeypress="if(event.key==='Enter') this.blur()">
+                                        <button class="qty-btn-simple" onclick="updateQuantity('${item.id}', 1)">+</button>
+                                    </div>
+                                </td>
+                                <td class="total-cell">₹${(item.price * item.quantity).toFixed(2)}</td>
+                                <td style="text-align: center;">
+                                    <button class="remove-btn-simple" onclick="removeFromCart('${item.id}')">×</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
 
-            // Calculate totals with discount
+            // Calculate totals - GST FIRST, then discount
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             
-            // Calculate discount
+            // Get selected GST rate
+            const gstRate = parseFloat(document.getElementById('gstRate')?.value || 18) / 100;
+            const gstHalfRate = gstRate / 2; // Split equally between CGST and SGST
+            
+            // Calculate GST on subtotal FIRST (before discount)
+            const cgst = subtotal * gstHalfRate;
+            const sgst = subtotal * gstHalfRate;
+            const subtotalWithGst = subtotal + cgst + sgst;
+            
+            // Update GST percentage labels
+            const gstPercentDisplay = (gstHalfRate * 100).toFixed(1);
+            document.getElementById('cgstPercent').textContent = gstPercentDisplay;
+            document.getElementById('sgstPercent').textContent = gstPercentDisplay;
+            
+            // Then apply discount on total (after GST)
             const discountType = document.getElementById('discountType')?.value || 'amount';
             const discountValue = parseFloat(document.getElementById('discountValue')?.value || 0);
             let discountAmount = 0;
             
             if (discountValue > 0) {
                 if (discountType === 'percentage') {
-                    discountAmount = (subtotal * discountValue) / 100;
+                    discountAmount = (subtotalWithGst * discountValue) / 100;
                 } else {
                     discountAmount = discountValue;
                 }
             }
             
-            const subtotalAfterDiscount = subtotal - discountAmount;
-            const cgst = subtotalAfterDiscount * 0.09;
-            const sgst = subtotalAfterDiscount * 0.09;
-            const grandTotal = subtotalAfterDiscount + cgst + sgst;
+            // Grand total = subtotal with GST - discount
+            const grandTotal = subtotalWithGst - discountAmount;
 
             document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('cgst').textContent = `₹${cgst.toFixed(2)}`;
+            document.getElementById('sgst').textContent = `₹${sgst.toFixed(2)}`;
             
             // Show/hide discount amount display
             if (discountAmount > 0) {
                 document.getElementById('discountAmountRow').style.display = 'flex';
                 document.getElementById('discountAmountDisplay').textContent = `-₹${discountAmount.toFixed(2)}`;
                 
-                // Show "After Discount" amount
+                // Show "After Discount" amount (subtotal with GST, before discount)
                 document.getElementById('afterDiscountRow').style.display = 'flex';
-                document.getElementById('afterDiscountAmount').textContent = `₹${subtotalAfterDiscount.toFixed(2)}`;
+                document.getElementById('afterDiscountAmount').textContent = `₹${subtotalWithGst.toFixed(2)}`;
             } else {
                 document.getElementById('discountAmountRow').style.display = 'none';
                 document.getElementById('afterDiscountRow').style.display = 'none';
             }
             
-            document.getElementById('cgst').textContent = `₹${cgst.toFixed(2)}`;
-            document.getElementById('sgst').textContent = `₹${sgst.toFixed(2)}`;
             document.getElementById('grandTotal').textContent = `₹${grandTotal.toFixed(2)}`;
             
             // Update remaining due if partial payment is selected
@@ -1020,19 +1091,11 @@
         // Toggle customer details form
         function toggleCustomerDetails() {
             const form = document.getElementById('customerDetailsForm');
-            const icon = document.getElementById('customerToggleIcon');
-            const btn = document.getElementById('customerToggleBtn');
             
             if (form.style.display === 'none') {
                 form.style.display = 'block';
-                icon.textContent = '▲';
-                btn.style.background = '#732C3F';
-                btn.style.color = 'white';
             } else {
                 form.style.display = 'none';
-                icon.textContent = '▼';
-                btn.style.background = 'white';
-                btn.style.color = '#732C3F';
             }
         }
 
@@ -1139,23 +1202,30 @@
             try {
                 const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
                 
-                // Calculate discount
+                // Get selected GST rate
+                const gstRate = parseFloat(document.getElementById('gstRate')?.value || 18) / 100;
+                const gstHalfRate = gstRate / 2; // Split equally between CGST and SGST
+                
+                // Calculate GST on subtotal FIRST (before discount)
+                const cgst = subtotal * gstHalfRate;
+                const sgst = subtotal * gstHalfRate;
+                const subtotalWithGst = subtotal + cgst + sgst;
+                
+                // Then apply discount on total (after GST)
                 const discountType = document.getElementById('discountType')?.value || 'amount';
                 const discountValue = parseFloat(document.getElementById('discountValue')?.value || 0);
                 let discountAmount = 0;
                 
                 if (discountValue > 0) {
                     if (discountType === 'percentage') {
-                        discountAmount = (subtotal * discountValue) / 100;
+                        discountAmount = (subtotalWithGst * discountValue) / 100;
                     } else {
                         discountAmount = discountValue;
                     }
                 }
                 
-                const subtotalAfterDiscount = subtotal - discountAmount;
-                const cgst = subtotalAfterDiscount * 0.09;
-                const sgst = subtotalAfterDiscount * 0.09;
-                const grandTotal = subtotalAfterDiscount + cgst + sgst;
+                // Grand total = subtotal with GST - discount
+                const grandTotal = subtotalWithGst - discountAmount;
 
                 // Get customer details (optional)
                 const customerName = document.getElementById('customerName').value.trim();
@@ -1194,6 +1264,10 @@
                     business_type: 'retail',
                     subtotal: subtotal,
                     tax_amount: cgst + sgst,
+                    gst_rate: parseFloat(document.getElementById('gstRate')?.value || 18), // Send GST rate
+                    cgst_amount: cgst,
+                    sgst_amount: sgst,
+                    discount_amount: discountAmount,
                     total_amount: grandTotal,
                     payment_method: paymentMode,  // Send 'partial' as payment_method
                     partial_payment_method: paymentMode === 'partial' ? document.getElementById('partialPaymentMethod').value : null,  // Actual payment method for partial
@@ -1208,6 +1282,7 @@
                 };
                 
                 console.log('🔍 [FRONTEND] Sending bill data:', billData);
+                console.log('🔍 [FRONTEND] GST Rate:', billData.gst_rate);
                 console.log('🔍 [FRONTEND] Payment Mode:', paymentMode);
                 console.log('🔍 [FRONTEND] Partial Amount:', partialAmount);
                 
@@ -1303,14 +1378,58 @@
             }
         }
 
-        // Search products
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filtered = products.filter(p => 
-                p.name.toLowerCase().includes(searchTerm) ||
-                (p.code && p.code.toLowerCase().includes(searchTerm))
-            );
+        // Category filter
+        document.getElementById('categoryFilter').addEventListener('change', (e) => {
+            const category = e.target.value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            let filtered = products;
+            
+            // Filter by category
+            if (category !== 'all') {
+                filtered = filtered.filter(p => p.category === category);
+            }
+            
+            // Filter by search term
+            if (searchTerm) {
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(searchTerm) ||
+                    (p.code && p.code.toLowerCase().includes(searchTerm))
+                );
+            }
+            
             renderProducts(filtered);
+        });
+
+        // Search products function
+        function searchProducts(searchTerm) {
+            const category = document.getElementById('categoryFilter').value;
+            
+            let filtered = products;
+            
+            // Filter by category first
+            if (category !== 'all') {
+                filtered = filtered.filter(p => p.category === category);
+            }
+            
+            // Then filter by search term
+            if (searchTerm) {
+                const term = searchTerm.toLowerCase();
+                filtered = filtered.filter(p => 
+                    p.name.toLowerCase().includes(term) ||
+                    (p.code && p.code.toLowerCase().includes(term))
+                );
+            }
+            
+            renderProducts(filtered);
+        }
+        
+        // Search products from main search box
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            searchProducts(e.target.value);
+            // Sync with floating search
+            const floatingSearch = document.getElementById('floatingSearchInput');
+            if (floatingSearch) floatingSearch.value = e.target.value;
         });
 
         // Checkout button

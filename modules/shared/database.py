@@ -228,6 +228,81 @@ def init_db():
         )
     ''')
     
+    # ==================== CLIENT MANAGEMENT TABLES ====================
+    
+    # Tenants table - Main client accounts managed by super admin
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tenants (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT UNIQUE NOT NULL,
+            business_name TEXT NOT NULL,
+            owner_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phone TEXT,
+            address TEXT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            plan_type TEXT DEFAULT 'basic',
+            plan_expiry_date DATE,
+            subscription_status TEXT DEFAULT 'active',
+            status TEXT DEFAULT 'active',
+            is_active BOOLEAN DEFAULT 1,
+            created_by TEXT,
+            last_login TIMESTAMP,
+            login_count INTEGER DEFAULT 0,
+            failed_login_attempts INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Tenant Users table - Users created by tenant admins
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS tenant_users (
+            id TEXT PRIMARY KEY,
+            tenant_id TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'USER',
+            department TEXT,
+            phone TEXT,
+            is_active BOOLEAN DEFAULT 1,
+            permissions TEXT DEFAULT '{}',
+            last_login TIMESTAMP,
+            created_by TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tenant_id) REFERENCES tenants (tenant_id)
+        )
+    ''')
+    
+    # Super Admin Users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS super_admins (
+            id TEXT PRIMARY KEY,
+            username TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            role TEXT DEFAULT 'SUPER_ADMIN',
+            is_active BOOLEAN DEFAULT 1,
+            last_login TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # ==================== NEW USER MANAGEMENT SYSTEM ====================
+    
+    # Initialize user management tables
+    from modules.user_management.models import UserManagementModels
+    UserManagementModels.create_user_tables()
+    
+    # Add permissions column if it doesn't exist
+    UserManagementModels.add_permissions_column()
+    
     # Clients table - for client management system
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS clients (
@@ -249,35 +324,48 @@ def init_db():
         )
     ''')
     
-    # Client Users table (employees created by clients)
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS client_users (
-            id TEXT PRIMARY KEY,
-            client_id TEXT NOT NULL,
-            full_name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            password_plain TEXT,
-            role TEXT NOT NULL DEFAULT 'employee',
-            department TEXT,
-            phone_number TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            permissions TEXT DEFAULT '{}',
-            last_login TIMESTAMP,
-            created_by TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (client_id) REFERENCES clients (id),
-            FOREIGN KEY (created_by) REFERENCES clients (id)
-        )
-    ''')
-    
     # Add password_plain column if it doesn't exist (for existing databases)
     try:
         cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
     except sqlite3.OperationalError:
         # Column already exists
+        pass
+    
+    # Add tenant_id column to existing tables if they don't exist
+    tables_to_add_tenant_id = [
+        'products', 'customers', 'bills', 'bill_items', 'payments', 'sales',
+        'hotel_guests', 'hotel_services', 'credit_transactions', 'invoices',
+        'notifications', 'inventory_items', 'inventory_categories', 'inventory_movements'
+    ]
+    
+    for table in tables_to_add_tenant_id:
+        try:
+            cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id TEXT')
+            print(f"✅ Added tenant_id to {table}")
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+    
+    # Add user_id column to existing tables if they don't exist (for backward compatibility)
+    try:
+        cursor.execute('ALTER TABLE products ADD COLUMN user_id TEXT')
+    except sqlite3.OperationalError:
+        pass
+    
+    try:
+        cursor.execute('ALTER TABLE customers ADD COLUMN user_id TEXT')
+    except sqlite3.OperationalError:
+        pass
+    
+    # Add additional columns to clients table if they don't exist
+    try:
+        cursor.execute('ALTER TABLE clients ADD COLUMN city TEXT')
+        cursor.execute('ALTER TABLE clients ADD COLUMN state TEXT')
+        cursor.execute('ALTER TABLE clients ADD COLUMN country TEXT DEFAULT "India"')
+        cursor.execute('ALTER TABLE clients ADD COLUMN login_count INTEGER DEFAULT 0')
+    except sqlite3.OperationalError:
+        # Columns already exist
+        pass
         pass
     
     # Add profile_picture column to clients table if it doesn't exist
@@ -314,6 +402,12 @@ def init_db():
     # Add missing columns to existing tables if they don't exist
     try:
         cursor.execute('ALTER TABLE bills ADD COLUMN customer_name TEXT')
+    except sqlite3.OperationalError:
+        # Column already exists
+        pass
+    
+    try:
+        cursor.execute('ALTER TABLE bills ADD COLUMN gst_rate REAL DEFAULT 18')
     except sqlite3.OperationalError:
         # Column already exists
         pass

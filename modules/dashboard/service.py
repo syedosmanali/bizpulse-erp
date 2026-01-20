@@ -105,51 +105,69 @@ class DashboardService:
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get user_id from session for data isolation
+        from flask import session
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
+        
+        # Build user filter
+        user_filter = ""
+        user_params = []
+        if user_id:
+            user_filter = " AND business_owner_id = ?"
+            user_params = [user_id]
+        
         # Today's metrics
         # Sales = ALL bills (including credit/partial)
         # Revenue = Only PAID amount (exclude unpaid credit)
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(total_amount), 0) as today_sales,
                 COALESCE(SUM(CASE 
-                    WHEN payment_status = 'COMPLETED' THEN total_amount
-                    WHEN payment_status = 'PARTIAL' THEN COALESCE(paid_amount, 0)
+                    WHEN payment_status = 'paid' THEN total_amount
+                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
                     ELSE 0
                 END), 0) as today_revenue,
                 COUNT(*) as today_orders
             FROM bills 
-            WHERE DATE(created_at) = DATE('now')
-        ''')
+            WHERE DATE(created_at) = DATE('now'){user_filter}
+        ''', user_params)
         today = cursor.fetchone()
         
         # This week's metrics
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(total_amount), 0) as week_sales,
                 COALESCE(SUM(CASE 
-                    WHEN payment_status = 'COMPLETED' THEN total_amount
-                    WHEN payment_status = 'PARTIAL' THEN COALESCE(paid_amount, 0)
+                    WHEN payment_status = 'paid' THEN total_amount
+                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
                     ELSE 0
                 END), 0) as week_revenue,
                 COUNT(*) as week_orders
             FROM bills 
-            WHERE created_at >= date('now', '-7 days')
-        ''')
+            WHERE created_at >= date('now', '-7 days'){user_filter}
+        ''', user_params)
         week = cursor.fetchone()
         
         # This month's metrics
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(total_amount), 0) as month_sales,
                 COALESCE(SUM(CASE 
-                    WHEN payment_status = 'COMPLETED' THEN total_amount
-                    WHEN payment_status = 'PARTIAL' THEN COALESCE(paid_amount, 0)
+                    WHEN payment_status = 'paid' THEN total_amount
+                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
                     ELSE 0
                 END), 0) as month_revenue,
                 COUNT(*) as month_orders
             FROM bills 
-            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')
-        ''')
+            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now'){user_filter}
+        ''', user_params)
+        month = cursor.fetchone()
+        
+        conn.close()
         month = cursor.fetchone()
         
         conn.close()

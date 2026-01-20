@@ -2235,7 +2235,7 @@
         // Test function to verify advanced modules work
         window.testAdvancedModule = function() {
             console.log('🧪 Testing advanced module function...');
-            openAdvancedModule('client-management');
+            openAdvancedModule('user-management');
         };
         
         // Make functions globally accessible
@@ -2378,7 +2378,12 @@
                     console.log('handleLogin: server login success', data);
                     // Successful server login
                     localStorage.setItem('bizpulse_login', JSON.stringify({ email: email, loginTime: new Date().toISOString() }));
-                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    (function(){
+                        const u = data.user || {};
+                        u.user_type = u.user_type || u.type;
+                        u.type = u.type || u.user_type;
+                        localStorage.setItem('userInfo', JSON.stringify(u));
+                    })();
 
                     // If opened via token link, confirm it for this session
                     if (window.__mobileLinkToken) {
@@ -2579,7 +2584,6 @@
                         
                         if (userInfo.is_super_admin) {
                             // Super admin modules
-                            html += '<div class="menu-item" onclick="openAdvancedModule(\'client-management\')" style="background: rgba(52, 152, 219, 0.1);">🏢 Client Management <span style="background: #3498db; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; margin-left: 5px;">NEW</span></div>';
                             html += '<div class="menu-item" onclick="openAdvancedModule(\'whatsapp-reports\')" style="background: rgba(37, 211, 102, 0.1);">📱 WhatsApp Reports <span style="background: #25D366; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; margin-left: 5px;">HOT</span></div>';
                             html += '<div class="menu-item" onclick="openAdvancedModule(\'developer-tools\')" style="background: rgba(231, 76, 60, 0.1);">⚙️ Developer Tools <span style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; margin-left: 5px;">ADMIN</span></div>';
                         }
@@ -2759,9 +2763,6 @@
                 // Show the requested advanced module
                 console.log('📱 Switching to module:', moduleType);
                 switch(moduleType) {
-                    case 'client-management':
-                        showClientManagementModule();
-                        break;
                     case 'user-management':
                         showUserManagementModule();
                         break;

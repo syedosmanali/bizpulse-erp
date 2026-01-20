@@ -1,43 +1,94 @@
 """
 Products models
-COPIED AS-IS from app.py
+UPDATED to use new transaction-based stock system
 """
 
 from modules.shared.database import get_db_connection
+
+# Import new stock system
+try:
+    from modules.stock.database import get_current_stock
+except ImportError:
+    # Fallback if stock module is not available
+    def get_current_stock(product_id, business_owner_id=None):
+        # Fallback to old products.stock field
+        conn = get_db_connection()
+        result = conn.execute("SELECT stock FROM products WHERE id = ?", (product_id,)).fetchone()
+        conn.close()
+        return result[0] if result else 0
 
 class ProductsModels:
     
     @staticmethod
     def get_all_products(user_id=None):
-        """Get all active products - filtered by user_id for data isolation"""
+        """Get all active products with current stock from new system"""
         conn = get_db_connection()
         try:
             if user_id:
-                # STRICT ISOLATION: Only show user's own products
-                products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchall()
+                # Get products with current stock from new system
+                products = conn.execute('''
+                    SELECT p.*, COALESCE(cs.current_quantity, 0) as current_stock
+                    FROM products p
+                    LEFT JOIN current_stock cs ON p.id = cs.product_id
+                    WHERE p.is_active = 1 AND p.user_id = ?
+                    ORDER BY p.name
+                ''', (user_id,)).fetchall()
+                
+                # Convert to dict and ensure stock field exists for backward compatibility
+                result = []
+                for row in products:
+                    product = dict(row)
+                    # Keep both stock (for backward compatibility) and current_stock
+                    product['stock'] = product['current_stock']
+                    result.append(product)
+                
+                return result
             else:
-                products = []
-            return [dict(row) for row in products]
+                return []
         finally:
             conn.close()
     
     @staticmethod
-    def get_product_by_id(product_id):
-        """Get product by ID"""
+    def get_product_by_id(product_id, user_id=None):
+        """Get product by ID with current stock"""
         conn = get_db_connection()
         try:
-            product = conn.execute('SELECT * FROM products WHERE id = ? AND is_active = 1', (product_id,)).fetchone()
-            return dict(product) if product else None
+            # Get product with current stock
+            product = conn.execute('''
+                SELECT p.*, COALESCE(cs.current_quantity, 0) as current_stock
+                FROM products p
+                LEFT JOIN current_stock cs ON p.id = cs.product_id
+                WHERE p.id = ? AND p.is_active = 1
+            ''', (product_id,)).fetchone()
+            
+            if product:
+                result = dict(product)
+                # Keep both stock (for backward compatibility) and current_stock
+                result['stock'] = result['current_stock']
+                return result
+            return None
         finally:
             conn.close()
     
     @staticmethod
-    def get_product_by_barcode(barcode):
-        """Get product by barcode"""
+    def get_product_by_barcode(barcode, user_id=None):
+        """Get product by barcode with current stock"""
         conn = get_db_connection()
         try:
-            product = conn.execute('SELECT * FROM products WHERE barcode_data = ? AND is_active = 1', (barcode,)).fetchone()
-            return dict(product) if product else None
+            # Get product with current stock
+            product = conn.execute('''
+                SELECT p.*, COALESCE(cs.current_quantity, 0) as current_stock
+                FROM products p
+                LEFT JOIN current_stock cs ON p.id = cs.product_id
+                WHERE p.barcode_data = ? AND p.is_active = 1
+            ''', (barcode,)).fetchone()
+            
+            if product:
+                result = dict(product)
+                # Keep both stock (for backward compatibility) and current_stock
+                result['stock'] = result['current_stock']
+                return result
+            return None
         finally:
             conn.close()
     

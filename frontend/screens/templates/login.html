@@ -514,7 +514,13 @@
                 if (response.ok) {
                     showSuccess('Login successful! Redirecting to Desktop...');
                     localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    // Ensure both `type` and `user_type` keys are present for compatibility
+                    (function(){
+                        const u = data.user || {};
+                        u.user_type = u.user_type || u.type;
+                        u.type = u.type || u.user_type;
+                        localStorage.setItem('userInfo', JSON.stringify(u));
+                    })();
                     
                     setTimeout(() => {
                         if (serviceType === 'hotel') {
@@ -559,7 +565,12 @@
                 if (response.ok) {
                     showSuccess('Login successful! Opening Mobile App...');
                     localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    (function(){
+                        const u = data.user || {};
+                        u.user_type = u.user_type || u.type;
+                        u.type = u.type || u.user_type;
+                        localStorage.setItem('userInfo', JSON.stringify(u));
+                    })();
                     
                     setTimeout(() => {
                         // Redirect to mobile app

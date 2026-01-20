@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management Debug - BizPulse ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>User Management API Debug</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>API Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-2" onclick="testUsers()">Test Get Users</button><br>
+                        <button class="btn btn-success mb-2" onclick="testRoles()">Test Get Roles</button><br>
+                        <button class="btn btn-warning mb-2" onclick="testInitialize()">Test Initialize</button><br>
+                        <button class="btn btn-info mb-2" onclick="testSession()">Test Session Info</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Results</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre id="results" style="max-height: 400px; overflow-y: auto;"></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const results = document.getElementById('results');
+            results.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            results.scrollTop = results.scrollHeight;
+        }
+
+        async function testUsers() {
+            log('Testing GET /api/user-management/users...');
+            try {
+                const response = await fetch('/api/user-management/users');
+                log(`Status: ${response.status}`);
+                const data = await response.json();
+                log(`Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+            log('---');
+        }
+
+        async function testRoles() {
+            log('Testing GET /api/user-management/roles...');
+            try {
+                const response = await fetch('/api/user-management/roles');
+                log(`Status: ${response.status}`);
+                const data = await response.json();
+                log(`Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+            log('---');
+        }
+
+        async function testInitialize() {
+            log('Testing POST /api/user-management/initialize...');
+            try {
+                const response = await fetch('/api/user-management/initialize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                log(`Status: ${response.status}`);
+                const data = await response.json();
+                log(`Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+            log('---');
+        }
+
+        async function testSession() {
+            log('Testing session info...');
+            try {
+                const response = await fetch('/api/auth/user-info');
+                log(`Status: ${response.status}`);
+                const data = await response.json();
+                log(`Session: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+            log('---');
+        }
+
+        // Auto-run tests on page load
+        window.onload = function() {
+            log('User Management API Debug Started');
+            log('Session info:');
+            testSession();
+        };
+    </script>
+</body>
+</html>

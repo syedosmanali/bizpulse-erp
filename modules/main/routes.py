@@ -325,6 +325,18 @@ def sales_management_old():
 def low_stock_management():
     return render_template('low_stock_management.html')
 
+@main_bp.route('/inventory')
+@require_auth
+def inventory_dashboard():
+    """Comprehensive Inventory Management Dashboard"""
+    return render_template('inventory_dashboard.html')
+
+@main_bp.route('/inventory/management')
+@require_auth
+def inventory_management():
+    """Comprehensive Inventory Management Dashboard (Alternative Route)"""
+    return render_template('inventory_dashboard.html')
+
 @main_bp.route('/premium-dashboard')
 def premium_dashboard():
     """Premium Dashboard with 4 sections: Recent Sales, Last Product, Last Customer, Last Bulk Order"""
@@ -339,12 +351,6 @@ def dashboard_main():
 def dashboard_demo():
     """Dashboard API Demo Page"""
     return render_template('dashboard_demo.html')
-
-@main_bp.route('/client-management')
-@require_auth
-def client_management():
-    """Client Management Page"""
-    return render_template('client_management_clean.html')
 
 @main_bp.route('/test-admin-access')
 def test_admin_access():

@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Control - Real-time Stock Management</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+            color: white;
+            padding: 24px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 24px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            padding: 12px 16px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 24px;
+            padding: 32px;
+        }
+
+        .stock-table-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #732C3F;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #732C3F;
+            background: white;
+            color: #732C3F;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #732C3F;
+            color: white;
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 40px 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
+
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stock-table th {
+            background: #732C3F;
+            color: white;
+            padding: 16px 12px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .stock-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .stock-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            min-width: 80px;
+            display: inline-block;
+        }
+
+        .status-in-stock {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-low-stock {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-out-of-stock {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .action-panel {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: #732C3F;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a2332;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .stock-ledger {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .ledger-title {
+            font-weight: 600;
+            color: #732C3F;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ledger-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 14px;
+        }
+
+        .ledger-entry:last-child {
+            border-bottom: none;
+        }
+
+        .ledger-type {
+            font-weight: 500;
+        }
+
+        .ledger-in {
+            color: #28a745;
+        }
+
+        .ledger-out {
+            color: #dc3545;
+        }
+
+        .ledger-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .quick-stats {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #732C3F;
+        }
+
+        .stat-desc {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .last-updated {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .reorder-alert {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .alert-item {
+            font-size: 14px;
+            color: #856404;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .sidebar {
+                grid-row: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-stats {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .filter-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                📊 Inventory Control
+                <span style="font-size: 16px; opacity: 0.8;">Real-time Stock Tracking</span>
+            </h1>
+            <div class="header-stats">
+                <div class="stat-card">
+                    <span class="stat-number">1,247</span>
+                    <span class="stat-label">Total Items</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">23</span>
+                    <span class="stat-label">Low Stock</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5</span>
+                    <span class="stat-label">Out of Stock</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">₹2.4L</span>
+                    <span class="stat-label">Total Value</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Live Stock Table -->
+            <div class="stock-table-section">
+                <div class="section-title">
+                    📋 Live Stock Table
+                </div>
+
+                <div class="table-controls">
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterStock('all')">All Items</button>
+                        <button class="filter-btn" onclick="filterStock('in-stock')">In Stock</button>
+                        <button class="filter-btn" onclick="filterStock('low-stock')">Low Stock</button>
+                        <button class="filter-btn" onclick="filterStock('out-of-stock')">Out of Stock</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Search products..." id="stockSearch">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                </div>
+
+                <table class="stock-table">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Current Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Status</th>
+                            <th>Last Updated</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockTableBody">
+                        <tr data-status="in-stock">
+                            <td>
+                                <strong>Samsung Galaxy Phone</strong><br>
+                                <small style="color: #666;">Electronics • SKU001</small>
+                            </td>
+                            <td><strong>45 units</strong></td>
+                            <td>10 units</td>
+                            <td><span class="status-badge status-in-stock">In Stock</span></td>
+                            <td>2 hours ago</td>
+                            <td>
+                                <button class="action-btn btn-primary" onclick="selectProduct('SKU001')">View</button>
+                            </td>
+                        </tr>
+                        <tr data-status="low-stock">
+                            <td>
+                                <strong>Nike Running Shoes</strong><br>
+                                <small style="color: #666;">Footwear • SKU002</small>
+                            </td>
+                            <td><strong>3 units</strong></td>
+                            <td>5 units</td>
+                            <td><span class="status-badge status-low-stock">Low Stock</span></td>
+                            <td>1 hour ago</td>
+                            <td>
+                                <button class="action-btn btn-warning" onclick="selectProduct('SKU002')">View</button>
+                            </td>
+                        </tr>
+                        <tr data-status="out-of-stock">
+                            <td>
+                                <strong>Apple MacBook Pro</strong><br>
+                                <small style="color: #666;">Computers • SKU003</small>
+                            </td>
+                            <td><strong>0 units</strong></td>
+                            <td>2 units</td>
+                            <td><span class="status-badge status-out-of-stock">Out of Stock</span></td>
+                            <td>30 minutes ago</td>
+                            <td>
+                                <button class="action-btn btn-primary" onclick="selectProduct('SKU003')">View</button>
+                            </td>
+                        </tr>
+                        <tr data-status="in-stock">
+                            <td>
+                                <strong>Organic Coffee Beans</strong><br>
+                                <small style="color: #666;">Food • SKU004</small>
+                            </td>
+                            <td><strong>120 kg</strong></td>
+                            <td>20 kg</td>
+                            <td><span class="status-badge status-in-stock">In Stock</span></td>
+                            <td>4 hours ago</td>
+                            <td>
+                                <button class="action-btn btn-primary" onclick="selectProduct('SKU004')">View</button>
+                            </td>
+                        </tr>
+                        <tr data-status="low-stock">
+                            <td>
+                                <strong>Wireless Headphones</strong><br>
+                                <small style="color: #666;">Electronics • SKU005</small>
+                            </td>
+                            <td><strong>7 units</strong></td>
+                            <td>15 units</td>
+                            <td><span class="status-badge status-low-stock">Low Stock</span></td>
+                            <td>6 hours ago</td>
+                            <td>
+                                <button class="action-btn btn-warning" onclick="selectProduct('SKU005')">View</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Action Panel -->
+                <div class="action-panel">
+                    <div class="section-title">
+                        ⚡ Quick Actions
+                    </div>
+
+                    <button class="action-btn btn-primary" onclick="stockAdjustment()">
+                        🔧 Stock Adjustment
+                    </button>
+
+                    <button class="action-btn btn-secondary" onclick="stockTransfer()">
+                        🔄 Stock Transfer
+                    </button>
+
+                    <button class="action-btn btn-warning" onclick="reorderReport()">
+                        📊 Reorder Report
+                    </button>
+
+                    <button class="action-btn btn-primary" onclick="stockAudit()">
+                        📋 Stock Audit
+                    </button>
+
+                    <button class="action-btn btn-secondary" onclick="exportStock()">
+                        📤 Export Stock
+                    </button>
+                </div>
+
+                <!-- Reorder Alerts -->
+                <div class="reorder-alert">
+                    <div class="alert-title">⚠️ Reorder Alerts</div>
+                    <div class="alert-item">• Nike Running Shoes (3 left)</div>
+                    <div class="alert-item">• Wireless Headphones (7 left)</div>
+                    <div class="alert-item">• Apple MacBook Pro (0 left)</div>
+                    <div class="alert-item">• Office Chair (2 left)</div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats">
+                    <div class="section-title">
+                        📈 Quick Stats
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value">1,247</div>
+                            <div class="stat-desc">Total Products</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">₹2.4L</div>
+                            <div class="stat-desc">Stock Value</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">23</div>
+                            <div class="stat-desc">Low Stock</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">5</div>
+                            <div class="stat-desc">Out of Stock</div>
+                        </div>
+                    </div>
+                    <div class="last-updated">
+                        Last updated: 2 minutes ago
+                    </div>
+                </div>
+
+                <!-- Stock Ledger -->
+                <div class="stock-ledger">
+                    <div class="ledger-title">
+                        📜 Stock Ledger
+                        <small style="font-weight: normal; color: #666;">(Selected Product)</small>
+                    </div>
+                    
+                    <div id="ledgerEntries">
+                        <div class="ledger-entry">
+                            <div>
+                                <div class="ledger-type ledger-in">+10 Purchase</div>
+                                <div class="ledger-date">Today, 2:30 PM</div>
+                            </div>
+                            <div>45 → 55</div>
+                        </div>
+                        
+                        <div class="ledger-entry">
+                            <div>
+                                <div class="ledger-type ledger-out">-2 Sales</div>
+                                <div class="ledger-date">Today, 1:15 PM</div>
+                            </div>
+                            <div>47 → 45</div>
+                        </div>
+                        
+                        <div class="ledger-entry">
+                            <div>
+                                <div class="ledger-type ledger-out">-1 Damage</div>
+                                <div class="ledger-date">Yesterday, 4:20 PM</div>
+                            </div>
+                            <div>48 → 47</div>
+                        </div>
+                        
+                        <div class="ledger-entry">
+                            <div>
+                                <div class="ledger-type ledger-in">+20 Purchase</div>
+                                <div class="ledger-date">Yesterday, 10:00 AM</div>
+                            </div>
+                            <div>28 → 48</div>
+                        </div>
+                        
+                        <div class="ledger-entry">
+                            <div>
+                                <div class="ledger-type ledger-out">-5 Sales</div>
+                                <div class="ledger-date">2 days ago, 3:45 PM</div>
+                            </div>
+                            <div>33 → 28</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Filter stock table
+        function filterStock(status) {
+            const buttons = document.querySelectorAll('.filter-btn');
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            
+            // Update active button
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filter rows
+            rows.forEach(row => {
+                if (status === 'all') {
+                    row.style.display = '';
+                } else {
+                    const rowStatus = row.getAttribute('data-status');
+                    row.style.display = rowStatus === status ? '' : 'none';
+                }
+            });
+        }
+
+        // Search functionality
+        document.getElementById('stockSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        // Select product and update ledger
+        function selectProduct(sku) {
+            console.log('Selected product:', sku);
+            
+            // Update ledger title
+            const ledgerTitle = document.querySelector('.ledger-title');
+            ledgerTitle.innerHTML = `📜 Stock Ledger <small style="font-weight: normal; color: #666;">(${sku})</small>`;
+            
+            // Highlight selected row
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            rows.forEach(row => row.style.backgroundColor = '');
+            
+            const selectedRow = Array.from(rows).find(row => 
+                row.textContent.includes(sku)
+            );
+            if (selectedRow) {
+                selectedRow.style.backgroundColor = '#e3f2fd';
+            }
+        }
+
+        // Action functions
+        function stockAdjustment() {
+            alert('Stock Adjustment: Manually fix counts due to damage, theft, or counting errors.');
+        }
+
+        function stockTransfer() {
+            alert('Stock Transfer: Move items between Godown and Shop locations.');
+        }
+
+        function reorderReport() {
+            alert('Reorder Report: View all items below reorder threshold.');
+        }
+
+        function stockAudit() {
+            alert('Stock Audit: Complete inventory count and reconciliation.');
+        }
+
+        function exportStock() {
+            alert('Export Stock: Download current stock levels as Excel/CSV.');
+        }
+
+        // Auto-refresh simulation
+        setInterval(() => {
+            const lastUpdated = document.querySelector('.last-updated');
+            const now = new Date();
+            const minutes = Math.floor(Math.random() * 5) + 1;
+            lastUpdated.textContent = `Last updated: ${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        }, 30000);
+
+        // Real-time stock updates simulation
+        function simulateStockUpdate() {
+            const rows = document.querySelectorAll('#stockTableBody tr');
+            const randomRow = rows[Math.floor(Math.random() * rows.length)];
+            const stockCell = randomRow.cells[1];
+            const currentStock = parseInt(stockCell.textContent);
+            const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+            const newStock = Math.max(0, currentStock + change);
+            
+            stockCell.innerHTML = `<strong>${newStock} units</strong>`;
+            
+            // Update status based on new stock
+            const reorderLevel = parseInt(randomRow.cells[2].textContent);
+            const statusCell = randomRow.cells[3];
+            let statusClass, statusText;
+            
+            if (newStock === 0) {
+                statusClass = 'status-out-of-stock';
+                statusText = 'Out of Stock';
+                randomRow.setAttribute('data-status', 'out-of-stock');
+            } else if (newStock <= reorderLevel) {
+                statusClass = 'status-low-stock';
+                statusText = 'Low Stock';
+                randomRow.setAttribute('data-status', 'low-stock');
+            } else {
+                statusClass = 'status-in-stock';
+                statusText = 'In Stock';
+                randomRow.setAttribute('data-status', 'in-stock');
+            }
+            
+            statusCell.innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+            
+            // Update last updated time
+            randomRow.cells[4].textContent = 'Just now';
+        }
+
+        // Simulate stock updates every 10 seconds
+        setInterval(simulateStockUpdate, 10000);
+    </script>
+</body>
+</html>

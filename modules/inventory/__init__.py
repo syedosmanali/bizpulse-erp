@@ -1,1 +1,1 @@
-# Inventory module
+# Inventory Management Module

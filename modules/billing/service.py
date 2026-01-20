@@ -1,11 +1,26 @@
 """
 Billing service
-COPIED AS-IS from app_original_backup.py
+UPDATED to use new transaction-based stock system
 """
 
 from modules.shared.database import get_db_connection, generate_id
 from datetime import datetime
 from modules.dashboard.models import ActivityTracker, log_sale_activity, log_order_activity
+
+# Import new stock service
+try:
+    from modules.stock.service import StockService
+    from modules.stock.database import get_current_stock
+    stock_service = StockService()
+except ImportError:
+    # Fallback if stock module is not available
+    stock_service = None
+    def get_current_stock(product_id, business_owner_id=None):
+        # Fallback to old products.stock field
+        conn = get_db_connection()
+        result = conn.execute("SELECT stock FROM products WHERE id = ?", (product_id,)).fetchone()
+        conn.close()
+        return result[0] if result else 0
 
 # Import notification helper
 try:
@@ -57,26 +72,27 @@ class BillingService:
         conn = get_db_connection()
         
         # ============================================================================
-        # STOCK VALIDATION - Prevent negative stock
+        # STOCK VALIDATION - Using new stock system
         # ============================================================================
         out_of_stock_items = []
         for item in data['items']:
-            product = conn.execute("SELECT name, stock FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+            # Get current stock using new system
+            current_stock = get_current_stock(item['product_id'], business_owner_id)
             
-            if not product:
-                out_of_stock_items.append(f"❌ Product '{item['product_name']}' not found")
-                continue
+            # Get product name for error messages
+            product = conn.execute("SELECT name FROM products WHERE id = ?", (item['product_id'],)).fetchone()
+            product_name = product[0] if product else item.get('product_name', 'Unknown Product')
             
             # Check if stock is sufficient
-            if product['stock'] < item['quantity']:
+            if current_stock < item['quantity']:
                 out_of_stock_items.append(
-                    f"❌ {product['name']}: Requested {item['quantity']}, Available {product['stock']}"
+                    f"❌ {product_name}: Requested {item['quantity']}, Available {current_stock}"
                 )
             
             # Check if stock would go negative
-            if product['stock'] - item['quantity'] < 0:
+            if current_stock - item['quantity'] < 0:
                 out_of_stock_items.append(
-                    f"❌ {product['name']}: Cannot reduce stock below 0"
+                    f"❌ {product_name}: Cannot reduce stock below 0"
                 )
         
         # If any items are out of stock, return error
@@ -100,10 +116,11 @@ class BillingService:
         conn.execute('BEGIN TRANSACTION')
         
         try:
-            # Create bill record with customer name and business_owner_id
+            # Create bill record with customer name, business_owner_id, and gst_rate
             customer_name = data.get('customer_name', 'Walk-in Customer')
-            conn.execute("""INSERT INTO bills (id, bill_number, customer_id, customer_name, business_type, business_owner_id, subtotal, tax_amount, discount_amount, total_amount, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+            gst_rate = data.get('gst_rate', 18)  # Get GST rate from frontend
+            conn.execute("""INSERT INTO bills (id, bill_number, customer_id, customer_name, business_type, business_owner_id, subtotal, tax_amount, discount_amount, gst_rate, total_amount, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
                 bill_id, 
                 bill_number, 
                 data.get('customer_id'),
@@ -113,6 +130,7 @@ class BillingService:
                 data.get('subtotal', 0), 
                 data.get('tax_amount', 0), 
                 data.get('discount_amount', 0),  # 🔥 Save discount_amount to database
+                gst_rate,  # 🔥 Save GST rate to database
                 data.get('total_amount', 0),
                 'completed',
                 datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -141,32 +159,49 @@ class BillingService:
                     item['total_price']
                 ))
                 
-                # Update product stock (SAFE STOCK REDUCTION - Never go below 0)
-                result = conn.execute("""UPDATE products SET stock = CASE 
-                        WHEN stock - ? >= 0 THEN stock - ?
-                        ELSE 0
-                    END 
-                    WHERE id = ?""", (item['quantity'], item['quantity'], item['product_id']))
+                # 🔥 NEW: Create stock OUT transaction instead of direct stock update
+                if stock_service:
+                    stock_result = stock_service.create_sale_transaction(
+                        product_id=item['product_id'],
+                        quantity=item['quantity'],
+                        bill_id=bill_id,
+                        bill_number=bill_number,
+                        created_by=business_owner_id,
+                        business_owner_id=business_owner_id
+                    )
+                    
+                    if not stock_result['success']:
+                        # This should not happen due to pre-validation, but just in case
+                        print(f"⚠️ [BILLING SERVICE] Stock transaction failed: {stock_result['error']}")
+                        # Continue with old method as fallback
+                        conn.execute("""UPDATE products SET stock = CASE 
+                                WHEN stock - ? >= 0 THEN stock - ?
+                                ELSE 0
+                            END 
+                            WHERE id = ?""", (item['quantity'], item['quantity'], item['product_id']))
+                    else:
+                        print(f"✅ [BILLING SERVICE] Stock transaction created: {stock_result['transaction_id']}")
+                else:
+                    # Fallback to old method if stock service not available
+                    conn.execute("""UPDATE products SET stock = CASE 
+                            WHEN stock - ? >= 0 THEN stock - ?
+                            ELSE 0
+                        END 
+                        WHERE id = ?""", (item['quantity'], item['quantity'], item['product_id']))
                 
-                # Double check that stock didn't go negative
-                updated_product = conn.execute("SELECT name, stock FROM products WHERE id = ?", (item['product_id'],)).fetchone()
-                
-                if updated_product and updated_product['stock'] < 0:
-                    # This should never happen due to our validation, but just in case
-                    conn.execute("UPDATE products SET stock = 0 WHERE id = ?", (item['product_id'],))
-                    print(f"⚠️ [BILLING SERVICE] WARNING: Stock for {updated_product['name']} was negative, reset to 0")
-                
-                # 🔔 CHECK FOR LOW STOCK AND CREATE NOTIFICATION
+                # 🔔 CHECK FOR LOW STOCK AND CREATE NOTIFICATION (Updated for new system)
                 try:
+                    # Get current stock using new system
+                    current_stock = get_current_stock(item['product_id'], business_owner_id)
+                    
                     # Get product details including min_stock
                     product_details = conn.execute("""
-                        SELECT name, stock, min_stock 
+                        SELECT name, min_stock 
                         FROM products 
                         WHERE id = ?
                     """, (item['product_id'],)).fetchone()
                     
                     if product_details:
-                        current_stock = product_details['stock']
                         min_stock = product_details['min_stock'] or 0
                         product_name = product_details['name']
                         

@@ -939,10 +939,6 @@
         <!-- Advanced Modules -->
         <div class="menu-section">
             <div class="menu-section-title">Advanced</div>
-            <div class="menu-item" onclick="showModule('client-management')">
-                <span class="menu-item-icon">🏢</span>
-                <span>Client Management</span>
-            </div>
             <div class="menu-item" onclick="showModule('user-management')">
                 <span class="menu-item-icon">👥</span>
                 <span>User Management</span>
@@ -2216,7 +2212,6 @@
             
             const loadingElement = moduleElement.querySelector('.loading');
             const moduleNames = {
-                'client-management': { icon: '🏢', name: 'Client Management' },
                 'user-management': { icon: '👥', name: 'User Management' },
                 'staff-management': { icon: '👨‍💼', name: 'Staff Management' },
                 'whatsapp-reports': { icon: '📱', name: 'WhatsApp Reports' }
@@ -2303,6 +2298,9 @@
             initializeDashboard();
         });
     </script>
+
+    <!-- Performance Optimization Script -->
+    <script src="/static/js/performance-boost.js"></script>
 </body>
 </html>
         
@@ -2466,11 +2464,6 @@
         async function loadSettingsModule() {
             console.log('⚙️ Loading Settings Module...');
             showComingSoon('settings');
-        }
-        
-        async function loadClientManagementModule() {
-            console.log('🏢 Loading Client Management Module...');
-            showComingSoon('client-management');
         }
         
         async function loadUserManagementModule() {

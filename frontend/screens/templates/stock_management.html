@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Management - BizPulse ERP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .stock-card {
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        .stock-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .low-stock {
+            border-left-color: #ffc107;
+        }
+        .out-of-stock {
+            border-left-color: #dc3545;
+        }
+        .stock-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .quick-add-form {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 bg-dark text-white p-3">
+                <h5><i class="fas fa-boxes"></i> Stock Management</h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#overview" onclick="showSection('overview')">
+                            <i class="fas fa-chart-bar"></i> Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#add-stock" onclick="showSection('add-stock')">
+                            <i class="fas fa-plus"></i> Add Stock
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#adjust-stock" onclick="showSection('adjust-stock')">
+                            <i class="fas fa-edit"></i> Adjust Stock
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#history" onclick="showSection('history')">
+                            <i class="fas fa-history"></i> History
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="/retail/products">
+                            <i class="fas fa-arrow-left"></i> Back to Products
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <!-- Overview Section -->
+                <div id="overview" class="content-section">
+                    <h2><i class="fas fa-chart-bar"></i> Stock Overview</h2>
+                    
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <h5>Total Products</h5>
+                                    <h3 id="total-products">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body">
+                                    <h5>Total Stock Value</h5>
+                                    <h3 id="total-value">₹-</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <h5>Low Stock Items</h5>
+                                    <h3 id="low-stock-count">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body">
+                                    <h5>Out of Stock</h5>
+                                    <h3 id="out-of-stock-count">-</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Alerts -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-exclamation-triangle"></i> Stock Alerts</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="low-stock-products">
+                                <p class="text-muted">Loading stock alerts...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Stock Section -->
+                <div id="add-stock" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-plus"></i> Add Stock (Purchase)</h2>
+                    
+                    <div class="quick-add-form">
+                        <form id="add-stock-form">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Product</label>
+                                    <select class="form-select" id="add-product-select" required>
+                                        <option value="">Select Product...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="add-quantity" min="1" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Unit Cost (₹)</label>
+                                    <input type="number" class="form-control" id="add-unit-cost" step="0.01" min="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Supplier</label>
+                                    <input type="text" class="form-control" id="add-supplier" placeholder="Optional">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-success w-100">
+                                        <i class="fas fa-plus"></i> Add Stock
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Notes (Optional)</label>
+                                    <input type="text" class="form-control" id="add-notes" placeholder="Purchase notes...">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Adjust Stock Section -->
+                <div id="adjust-stock" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-edit"></i> Adjust Stock</h2>
+                    
+                    <div class="quick-add-form">
+                        <form id="adjust-stock-form">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">Product</label>
+                                    <select class="form-select" id="adjust-product-select" required>
+                                        <option value="">Select Product...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Current Stock</label>
+                                    <input type="number" class="form-control" id="current-stock" readonly>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">New Quantity</label>
+                                    <input type="number" class="form-control" id="adjust-quantity" min="0" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Reason</label>
+                                    <select class="form-select" id="adjust-type" required>
+                                        <option value="correction">Correction</option>
+                                        <option value="damage">Damage</option>
+                                        <option value="expired">Expired</option>
+                                        <option value="found">Found</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">&nbsp;</label>
+                                    <button type="submit" class="btn btn-warning w-100">
+                                        <i class="fas fa-edit"></i> Adjust
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-12">
+                                    <label class="form-label">Notes (Optional)</label>
+                                    <input type="text" class="form-control" id="adjust-notes" placeholder="Adjustment notes...">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- History Section -->
+                <div id="history" class="content-section" style="display: none;">
+                    <h2><i class="fas fa-history"></i> Stock Transaction History</h2>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Product</th>
+                                            <th>Type</th>
+                                            <th>Quantity</th>
+                                            <th>Reference</th>
+                                            <th>Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-table">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Loading history...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Stock Management</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toast-message">
+                <!-- Message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let products = [];
+        let currentSection = 'overview';
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            loadStockSummary();
+            loadLowStockProducts();
+            loadStockHistory();
+        });
+
+        // Show section
+        function showSection(section) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Show selected section
+            document.getElementById(section).style.display = 'block';
+            currentSection = section;
+            
+            // Refresh data for the section
+            if (section === 'overview') {
+                loadStockSummary();
+                loadLowStockProducts();
+            } else if (section === 'history') {
+                loadStockHistory();
+            }
+        }
+
+        // Load products for dropdowns
+        async function loadProducts() {
+            try {
+                const response = await fetch('/api/products');
+                const data = await response.json();
+                
+                if (data.success) {
+                    products = data.products;
+                    populateProductDropdowns();
+                }
+            } catch (error) {
+                console.error('Error loading products:', error);
+            }
+        }
+
+        // Populate product dropdowns
+        function populateProductDropdowns() {
+            const addSelect = document.getElementById('add-product-select');
+            const adjustSelect = document.getElementById('adjust-product-select');
+            
+            // Clear existing options
+            addSelect.innerHTML = '<option value="">Select Product...</option>';
+            adjustSelect.innerHTML = '<option value="">Select Product...</option>';
+            
+            // Add product options
+            products.forEach(product => {
+                const option1 = new Option(`${product.name} (Current: ${product.stock || 0})`, product.id);
+                const option2 = new Option(`${product.name} (Current: ${product.stock || 0})`, product.id);
+                
+                addSelect.appendChild(option1);
+                adjustSelect.appendChild(option2);
+            });
+        }
+
+        // Load stock summary
+        async function loadStockSummary() {
+            try {
+                const response = await fetch('/api/stock/summary');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const summary = data.summary;
+                    document.getElementById('total-products').textContent = summary.total_products || 0;
+                    document.getElementById('total-value').textContent = `₹${(summary.total_stock_value || 0).toFixed(2)}`;
+                    document.getElementById('low-stock-count').textContent = summary.low_stock_count || 0;
+                    document.getElementById('out-of-stock-count').textContent = summary.out_of_stock_count || 0;
+                }
+            } catch (error) {
+                console.error('Error loading stock summary:', error);
+            }
+        }
+
+        // Load low stock products
+        async function loadLowStockProducts() {
+            try {
+                const response = await fetch('/api/stock/low-stock');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const container = document.getElementById('low-stock-products');
+                    
+                    if (data.products.length === 0) {
+                        container.innerHTML = '<p class="text-success"><i class="fas fa-check"></i> All products have sufficient stock!</p>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.products.forEach(product => {
+                        const statusClass = product.stock_status === 'out_of_stock' ? 'out-of-stock' : 'low-stock';
+                        const statusIcon = product.stock_status === 'out_of_stock' ? 'fas fa-times-circle text-danger' : 'fas fa-exclamation-triangle text-warning';
+                        
+                        html += `
+                            <div class="stock-card card mb-2 ${statusClass}">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="${statusIcon}"></i>
+                                            <strong>${product.name}</strong>
+                                            <span class="text-muted">- Current: ${product.current_quantity || 0}</span>
+                                            ${product.min_stock ? `<span class="text-muted">(Min: ${product.min_stock})</span>` : ''}
+                                        </div>
+                                        <div class="stock-actions">
+                                            <button class="btn btn-sm btn-success" onclick="quickAddStock('${product.id}', '${product.name}')">
+                                                <i class="fas fa-plus"></i> Add Stock
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading low stock products:', error);
+            }
+        }
+
+        // Load stock history
+        async function loadStockHistory() {
+            try {
+                const response = await fetch('/api/stock/history?limit=50');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const tbody = document.getElementById('history-table');
+                    
+                    if (data.transactions.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No stock transactions found</td></tr>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.transactions.forEach(transaction => {
+                        const date = new Date(transaction.created_at).toLocaleDateString();
+                        const typeIcon = transaction.transaction_type === 'IN' ? 'fas fa-arrow-up text-success' : 'fas fa-arrow-down text-danger';
+                        const quantity = Math.abs(transaction.quantity);
+                        
+                        html += `
+                            <tr>
+                                <td>${date}</td>
+                                <td>${transaction.product_name || 'Unknown'}</td>
+                                <td><i class="${typeIcon}"></i> ${transaction.transaction_type}</td>
+                                <td>${quantity}</td>
+                                <td>${transaction.reference_type || '-'}</td>
+                                <td>${transaction.notes || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tbody.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Error loading stock history:', error);
+            }
+        }
+
+        // Quick add stock
+        function quickAddStock(productId, productName) {
+            showSection('add-stock');
+            document.getElementById('add-product-select').value = productId;
+            document.getElementById('add-quantity').focus();
+        }
+
+        // Handle add stock form
+        document.getElementById('add-stock-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                product_id: document.getElementById('add-product-select').value,
+                quantity: parseInt(document.getElementById('add-quantity').value),
+                unit_cost: parseFloat(document.getElementById('add-unit-cost').value) || 0,
+                supplier_name: document.getElementById('add-supplier').value,
+                notes: document.getElementById('add-notes').value
+            };
+            
+            try {
+                const response = await fetch('/api/stock/add-purchase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    this.reset();
+                    loadProducts(); // Refresh product list
+                    loadStockSummary();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error adding stock: ' + error.message, 'error');
+            }
+        });
+
+        // Handle product selection for adjustment
+        document.getElementById('adjust-product-select').addEventListener('change', async function() {
+            const productId = this.value;
+            if (!productId) return;
+            
+            try {
+                const response = await fetch(`/api/stock/current/${productId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('current-stock').value = data.current_stock;
+                    document.getElementById('adjust-quantity').value = data.current_stock;
+                }
+            } catch (error) {
+                console.error('Error getting current stock:', error);
+            }
+        });
+
+        // Handle adjust stock form
+        document.getElementById('adjust-stock-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                product_id: document.getElementById('adjust-product-select').value,
+                new_quantity: parseInt(document.getElementById('adjust-quantity').value),
+                adjustment_type: document.getElementById('adjust-type').value,
+                notes: document.getElementById('adjust-notes').value
+            };
+            
+            try {
+                const response = await fetch('/api/stock/adjust', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    this.reset();
+                    loadProducts(); // Refresh product list
+                    loadStockSummary();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error adjusting stock: ' + error.message, 'error');
+            }
+        });
+
+        // Show toast message
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast ${type === 'success' ? 'bg-success text-white' : 'bg-danger text-white'}`;
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+    </script>
+</body>
+</html>

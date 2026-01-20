@@ -601,12 +601,15 @@ class PremiumBilling {
             additionalCharges += 20; // packing charges
         }
         
-        // Calculate GST on subtotal + additional charges
-        const taxableAmount = this.subtotal + additionalCharges - this.discountAmount;
+        // Calculate GST on subtotal + additional charges (BEFORE discount)
+        const taxableAmount = this.subtotal + additionalCharges;
         const cgst = Math.round(taxableAmount * 0.09);
         const sgst = Math.round(taxableAmount * 0.09);
         const totalGst = cgst + sgst;
-        const grandTotal = taxableAmount + totalGst;
+        const subtotalWithGst = taxableAmount + totalGst;
+        
+        // Apply discount on total amount (including GST)
+        const grandTotal = subtotalWithGst - this.discountAmount;
         
         // Update UI
         document.getElementById('billSubtotal').textContent = `₹${this.subtotal}`;

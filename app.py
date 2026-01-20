@@ -6,7 +6,6 @@ WITH REAL-TIME SYNC SUPPORT
 
 from flask import Flask, request, g, make_response
 from flask_cors import CORS
-# from flask_socketio import SocketIO  # Temporarily commented for testing
 from werkzeug.utils import secure_filename
 import os
 import json
@@ -16,7 +15,6 @@ import threading
 import time
 import atexit
 
-# Import shared utilities
 from modules.shared.database import init_db
 
 # Import all module blueprints
@@ -36,10 +34,13 @@ from modules.settings.routes import settings_bp
 from modules.reports.routes import reports_bp
 from modules.earnings.routes import earnings_bp
 from modules.notifications.routes import notifications_bp
-# from modules.rbac.routes import rbac_bp  # RBAC System - temporarily disabled
+from modules.inventory.routes import inventory_bp
+from modules.client_management.routes import client_management_bp
+from modules.user_management.routes import user_management_bp
+from modules.stock.routes import stock_bp  # NEW: Stock management module
+from modules.integrated_inventory.routes import integrated_inventory_bp  # NEW: Integrated inventory system
 
-# Import sync module (temporarily disabled)
-# from modules.sync.routes import init_socketio_events
+# Import sync module
 from modules.sync.service import sync_service
 from modules.sync.api_routes import sync_api_bp
 
@@ -50,9 +51,6 @@ logger = logging.getLogger(__name__)
 # Enable CORS for all domains and methods (for mobile app)
 CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
-
-# Initialize SocketIO for real-time sync (temporarily disabled)
-# socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
 
 # App configuration
 app.config['SECRET_KEY'] = 'cms-secret-key-change-in-production-2024'  # Change this in production
@@ -137,11 +135,12 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(reports_bp)
 app.register_blueprint(earnings_bp)
 app.register_blueprint(notifications_bp)
+app.register_blueprint(inventory_bp)
+app.register_blueprint(client_management_bp)
+app.register_blueprint(user_management_bp)
+app.register_blueprint(stock_bp)  # NEW: Stock management routes
+app.register_blueprint(integrated_inventory_bp)  # NEW: Integrated inventory system
 app.register_blueprint(sync_api_bp)
-# app.register_blueprint(rbac_bp)  # RBAC System - temporarily disabled
-
-# Initialize WebSocket events for real-time sync (temporarily disabled)
-# init_socketio_events(socketio)
 
 # Background task for cleanup
 def cleanup_task():
@@ -184,13 +183,19 @@ def cleanup_on_exit():
 
 atexit.register(cleanup_on_exit)
 
-# Make socketio available globally for broadcasting (temporarily disabled)
-# app.socketio = socketio
-
 # Initialize database
 def initialize_database():
     """Initialize database on startup"""
     init_db()
+    
+    # Initialize inventory tables
+    from modules.inventory.database import init_inventory_tables
+    init_inventory_tables()
+    
+    # Initialize integrated inventory system
+    from modules.integrated_inventory.database import init_integrated_inventory_tables
+    init_integrated_inventory_tables()
+    
     print("✅ Database initialized successfully")
 
 # Import auth decorators for CMS
@@ -212,7 +217,7 @@ def cms_login():
         
         # Simple authentication (in production, use proper password hashing)
         if username == 'admin' and password == 'admin123':
-            session['cms_admin_id'] = 'admin'  # Fixed: use cms_admin_id instead of cms_authenticated
+            session['cms_admin_id'] = 'admin'
             session['cms_user'] = username
             flash('Login successful!', 'success')
             return redirect(url_for('cms_dashboard'))
@@ -224,7 +229,7 @@ def cms_login():
 @app.route('/cms/logout')
 def cms_logout():
     """CMS Logout"""
-    session.pop('cms_admin_id', None)  # Fixed: use cms_admin_id
+    session.pop('cms_admin_id', None)
     session.pop('cms_user', None)
     flash('Logged out successfully!', 'success')
     return redirect(url_for('cms_login'))
@@ -325,4 +330,4 @@ if __name__ == '__main__':
     # Production configuration
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV') == 'development'
-    app.run(debug=debug, host='0.0.0.0', port=port) 
+    app.run(debug=debug, host='0.0.0.0', port=port)

@@ -36,9 +36,24 @@ def retail_billing():
 def retail_billing_test():
     return "<h1>✅ Billing Route Working!</h1><p>This is a test route to verify billing is accessible.</p>"
 
+@retail_bp.route('/retail/inventory')
+def retail_inventory():
+    return render_template('inventory_dashboard_redesigned.html')
+
 @retail_bp.route('/retail/dashboard')
 def retail_dashboard():
-    return render_template('retail_dashboard.html')
+    from flask import session
+    from modules.user_management.service import UserManagementService
+    
+    # Get user permissions if employee
+    user_permissions = {}
+    if session.get('user_type') in ['employee', 'staff', 'client_user']:
+        user_service = UserManagementService()
+        result = user_service.get_current_user_permissions(session.get('user_id'))
+        if result.get('success'):
+            user_permissions = result.get('permissions', {})
+    
+    return render_template('retail_dashboard.html', user_permissions=user_permissions)
 
 @retail_bp.route('/api/dashboard/stats', methods=['GET'])
 def get_dashboard_stats():
@@ -89,10 +104,6 @@ def retail_credit():
 @retail_bp.route('/retail/sales-old')
 def retail_sales_old():
     return render_template('retail_sales_enhanced.html')
-
-@retail_bp.route('/retail/inventory')
-def retail_inventory():
-    return render_template('inventory_professional.html')
 
 @retail_bp.route('/retail/settings')
 def retail_settings():
@@ -700,5 +711,281 @@ def get_bill_payment_history(bill_id):
         return jsonify({
             'success': False,
             'error': str(e)
+        }), 500
+
+
+# ============================================================================
+# PRODUCTS API ROUTES
+# ============================================================================
+
+@retail_bp.route('/api/products', methods=['GET'])
+def get_products():
+    """Get all products - Filtered by user"""
+    from modules.shared.database import get_db_connection
+    import traceback
+    
+    try:
+        # Get user_id for filtering
+        user_id = get_user_id_from_session()
+        print(f"🔍 [PRODUCTS] Filtering by user_id: {user_id}")
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Query with user filtering
+        query = """
+            SELECT 
+                id, name, description, category, price, cost, stock, min_stock, 
+                unit, code, barcode_data, image_url, is_active, created_at
+            FROM products
+            WHERE is_active = 1
+        """
+        
+        params = []
+        
+        # Add user filtering
+        if user_id:
+            query += " AND (user_id = ? OR user_id IS NULL)"
+            params.append(user_id)
+        
+        query += " ORDER BY name ASC"
+        
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        
+        products = []
+        for row in rows:
+            products.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2] or '',
+                'category': row[3] or 'Other',
+                'price': float(row[4] or 0),
+                'cost': float(row[5] or 0),
+                'stock': int(row[6] or 0),
+                'min_stock': int(row[7] or 0),
+                'unit': row[8] or 'piece',
+                'code': row[9] or '',
+                'barcode_data': row[10] or '',
+                'image_url': row[11] or '',
+                'is_active': row[12],
+                'created_at': row[13]
+            })
+        
+        conn.close()
+        
+        print(f"✅ Found {len(products)} products")
+        
+        return jsonify(products)
+        
+    except Exception as e:
+        print(f"❌ ERROR: {str(e)}")
+        traceback.print_exc()
+        return jsonify([]), 500
+
+
+@retail_bp.route('/api/products', methods=['POST'])
+def add_product():
+    """Add a new product"""
+    from flask import request
+    from modules.shared.database import get_db_connection
+    import uuid
+    from datetime import datetime
+    
+    try:
+        data = request.json
+        user_id = get_user_id_from_session()
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Auto-generate product code if not provided
+        product_code = data.get('code')
+        if not product_code:
+            # Get the highest numeric code
+            cursor.execute("""
+                SELECT code FROM products 
+                WHERE user_id = ? OR user_id IS NULL
+                ORDER BY CAST(code AS INTEGER) DESC LIMIT 1
+            """, (user_id,))
+            result = cursor.fetchone()
+            
+            if result and result[0]:
+                try:
+                    max_code = int(result[0])
+                    product_code = str(max_code + 1)
+                except:
+                    product_code = '1'
+            else:
+                product_code = '1'
+        
+        # Check for duplicate code
+        cursor.execute("""
+            SELECT id FROM products WHERE code = ? AND (user_id = ? OR user_id IS NULL)
+        """, (product_code, user_id))
+        
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({
+                'success': False,
+                'error': 'Product code already exists'
+            }), 400
+        
+        # Generate product ID
+        product_id = str(uuid.uuid4())
+        now = datetime.now().isoformat()
+        
+        cursor.execute("""
+            INSERT INTO products (
+                id, name, description, category, price, cost, stock, min_stock, 
+                unit, code, barcode_data, image_url, is_active, user_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+        """, (
+            product_id,
+            data.get('name'),
+            data.get('description', ''),
+            data.get('category', 'Other'),
+            data.get('price', 0),
+            data.get('cost', 0),
+            data.get('stock', 0),
+            data.get('min_stock', 0),
+            data.get('unit', 'piece'),
+            product_code,
+            data.get('barcode_data', ''),
+            data.get('image_url', ''),
+            user_id,
+            now
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Product added successfully',
+            'product_id': product_id,
+            'product_code': product_code
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@retail_bp.route('/api/products/<product_id>', methods=['PUT'])
+def update_product(product_id):
+    """Update a product"""
+    from flask import request
+    from modules.shared.database import get_db_connection
+    
+    try:
+        data = request.json
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE products SET
+                name = ?, description = ?, category = ?, price = ?, cost = ?,
+                stock = ?, min_stock = ?, unit = ?, code = ?, barcode_data = ?, image_url = ?
+            WHERE id = ?
+        """, (
+            data.get('name'),
+            data.get('description', ''),
+            data.get('category', 'Other'),
+            data.get('price', 0),
+            data.get('cost', 0),
+            data.get('stock', 0),
+            data.get('min_stock', 0),
+            data.get('unit', 'piece'),
+            data.get('code', ''),
+            data.get('barcode_data', ''),
+            data.get('image_url', ''),
+            product_id
+        ))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Product updated successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@retail_bp.route('/api/products/<product_id>', methods=['DELETE'])
+def delete_product(product_id):
+    """Delete a product (soft delete)"""
+    from modules.shared.database import get_db_connection
+    
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE products SET is_active = 0 WHERE id = ?", (product_id,))
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Product deleted successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@retail_bp.route('/api/products/next-code', methods=['GET'])
+def get_next_product_code():
+    """Get the next available product code"""
+    from modules.shared.database import get_db_connection
+    
+    try:
+        user_id = get_user_id_from_session()
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Get the highest numeric code
+        cursor.execute("""
+            SELECT code FROM products 
+            WHERE (user_id = ? OR user_id IS NULL) AND is_active = 1
+            ORDER BY CAST(code AS INTEGER) DESC LIMIT 1
+        """, (user_id,))
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result and result[0]:
+            try:
+                max_code = int(result[0])
+                next_code = str(max_code + 1)
+            except:
+                next_code = '1'
+        else:
+            next_code = '1'
+        
+        return jsonify({
+            'success': True,
+            'next_code': next_code
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'next_code': '1'
         }), 500
 

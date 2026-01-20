@@ -324,7 +324,12 @@
                 if (response.ok) {
                     showSuccess('Login successful! Redirecting...');
                     localStorage.setItem('authToken', data.token);
-                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    (function(){
+                        const u = data.user || {};
+                        u.user_type = u.user_type || u.type;
+                        u.type = u.type || u.user_type;
+                        localStorage.setItem('userInfo', JSON.stringify(u));
+                    })();
                     
                     setTimeout(() => {
                         if (serviceType === 'hotel') {

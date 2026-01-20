@@ -30,24 +30,28 @@
             --radius-xl: 20px;
         }
 
-        /* Disable animations during sidebar transition to prevent lag */
-        .sidebar-transitioning * {
-            transition: none !important;
-            animation: none !important;
+        /* CRITICAL: Hide all modules by default for security */
+        /* JavaScript will show only the modules user has permission for */
+        .nav-item.module-dashboard,
+        .nav-item.module-sales,
+        .nav-item.module-credit,
+        .nav-item.module-billing,
+        .nav-item.module-invoices,
+        .nav-item.module-eway,
+        .nav-item.module-products,
+        .nav-item.module-inventory,
+        .nav-item.module-customers,
+        .nav-item.module-reports,
+        .nav-item.module-settings {
+            display: none !important;
         }
         
-        /* Re-enable animations after transition */
-        .sidebar:not(.sidebar-transitioning) .stat-card {
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        /* These will be shown by JavaScript based on user permissions */
+        .nav-item.module-visible {
+            display: flex !important;
         }
-        
-        .sidebar:not(.sidebar-transitioning) .action-btn {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .sidebar:not(.sidebar-transitioning) .activity-item {
-            transition: all 0.2s ease;
-        }    /* Performance Optimizations */
+
+        /* Performance Optimizations */
         * {
             margin: 0;
             padding: 0;
@@ -62,6 +66,17 @@
             transform: translateZ(0);
             backface-visibility: hidden;
             perspective: 1000px;
+        }
+        
+        /* Optimize scrolling performance */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            /* Enable hardware acceleration for smooth scrolling */
+            -webkit-overflow-scrolling: touch;
+            transform: translateZ(0);
         }
         
         /* Reduce repaints during transitions */
@@ -106,6 +121,7 @@
             color: var(--text-dark);
             line-height: 1.6;
             overflow-x: hidden;
+            overflow-y: hidden; /* Remove body scroll */
         }
         
         /* Add subtle wine pattern overlay */
@@ -143,6 +159,13 @@
             transition: transform 0.2s ease-out;
             will-change: transform;
             transform: translateX(0);
+            /* Optimize for smooth scrolling */
+            contain: layout style paint;
+            -webkit-overflow-scrolling: touch;
+            /* Fix position to prevent movement during main content scroll */
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
         }
         
         .sidebar.collapsed {
@@ -182,12 +205,51 @@
             padding-bottom: 120px;
             height: calc(100vh - 120px);
             overflow-y: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
+            overflow-x: hidden;
+            /* Custom scrollbar styling for better visibility and smoothness */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+            scroll-behavior: smooth;
+            /* Hardware acceleration for smooth scrolling */
+            transform: translateZ(0);
+            -webkit-overflow-scrolling: touch;
+            /* Optimize scrolling performance */
+            contain: layout style paint;
         }
         
+        /* Custom webkit scrollbar for better visibility */
         .nav-menu::-webkit-scrollbar {
-            display: none;
+            width: 8px;
+        }
+        
+        .nav-menu::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin: 4px 0;
+        }
+        
+        .nav-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-menu::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+        
+        .nav-menu::-webkit-scrollbar-thumb:active {
+            background: rgba(255, 255, 255, 0.6);
+        }
+        
+        /* Make scrollbar more visible on sidebar hover */
+        .sidebar:hover .nav-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .sidebar:hover .nav-menu::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.08);
         }
         
         .nav-item {
@@ -196,14 +258,17 @@
             padding: 12px 24px;
             margin: 2px 16px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background-color 0.2s ease, transform 0.2s ease;
             border-radius: var(--radius-md);
             position: relative;
+            /* Optimize for smooth scrolling */
+            will-change: transform, background-color;
+            transform: translateZ(0);
         }
         
         .nav-item:hover {
             background: rgba(255, 255, 255, 0.1);
-            transform: translateX(4px);
+            transform: translateX(4px) translateZ(0);
         }
         
         .nav-item.active {
@@ -301,6 +366,9 @@
             z-index: 999;
             transition: left 0.2s ease-out;
             will-change: left;
+            /* Fix position to prevent movement during main content scroll */
+            position: fixed !important;
+            top: 0 !important;
         }
         
         .sidebar.collapsed ~ .top-header {
@@ -855,6 +923,10 @@
             position: relative;
             width: calc(100vw - 280px);
             will-change: margin-left, width;
+            /* Ensure main content scrolls independently */
+            overflow-y: auto;
+            overflow-x: hidden;
+            height: 100vh;
         }
         
         .sidebar.collapsed ~ .main-content {
@@ -1813,7 +1885,7 @@
         </div>
         
         <nav class="nav-menu">
-            <div class="nav-item active" onclick="showModule('dashboard')">
+            <div class="nav-item module-dashboard active" onclick="showModule('dashboard')">
                 <span class="nav-icon">📊</span>
                 <span class="nav-text">{{ t('dashboard') }}</span>
             </div>
@@ -1842,13 +1914,20 @@
                 <span class="nav-text">{{ t('products') }}</span>
             </div>
             <div class="nav-item module-inventory" onclick="showModule('inventory')">
-                <span class="nav-icon">📋</span>
+                <span class="nav-icon">📦</span>
                 <span class="nav-text">{{ t('inventory') }}</span>
             </div>
             <div class="nav-item module-customers" onclick="showModule('customers')">
                 <span class="nav-icon">👥</span>
                 <span class="nav-text">{{ t('customers') }}</span>
             </div>
+            
+            <!-- User Management for clients -->
+            <div id="user-management-nav" class="nav-item module-users" onclick="openUserManagement()" style="display: none;">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">User Management</span>
+            </div>
+            
             <div class="nav-item" onclick="openStaffManagement()">
                 <span class="nav-icon">👥</span>
                 <span class="nav-text">Staff</span>
@@ -1882,7 +1961,7 @@
             </div>
             
             <!-- User Management for clients -->
-            <div class="nav-item nav-item-special" onclick="openUserManagement()">
+            <div class="nav-item nav-item-special" onclick="openUserManagement()" style="display: none;">
                 <span class="nav-icon">👤</span>
                 <span class="nav-text">User Management</span>
             </div>
@@ -2507,6 +2586,16 @@
                 window.location.href = '/whatsapp-sender';
             }
             
+            // Client Management function
+            function openClientManagement() {
+                window.location.href = '/admin/clients';
+            }
+            
+            // Client Management function
+            function openClientManagement() {
+                window.location.href = '/admin/clients';
+            }
+            
             // Staff Management function (for business owners)
             function openStaffManagement() {
                 window.location.href = '/retail/staff';
@@ -2524,12 +2613,15 @@
             
             // User Management function (for clients to manage employees)
             function openUserManagement() {
-                window.open('/user-management', '_blank');
-            }
-            
-            // Client Management function
-            function openClientManagement() {
-                window.location.href = '/client-management';
+                // Double check user type before allowing access
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                if (userInfo.user_type === 'employee') {
+                    // Silently redirect employees to dashboard
+                    console.log('🚫 Employee tried to access User Management - redirecting to dashboard');
+                    window.location.href = '/retail/dashboard';
+                    return;
+                }
+                window.location.href = '/user-management';
             }
             
             // Check if user is BizPulse official user
@@ -3809,13 +3901,18 @@
                     console.log('👤 User info loaded:', userInfo);
                     
                     // Show/hide modules based on user type
-                    if (userInfo.is_super_admin) {
+                    if (userInfo.is_super_admin || 
+                        (userInfo.email && userInfo.email.toLowerCase() === 'admin@bizpulse.com') ||
+                        (userInfo.email && userInfo.email.toLowerCase() === 'bizpulse.erp@gmail.com') ||
+                        (userInfo.user_type === 'admin')) {
+                        
+                        console.log('✅ Showing super admin modules');
                         // Super admin sees all ERP modules + developer modules
                         showAllModules();
                         document.getElementById('users-nav').style.display = 'flex';
                         document.getElementById('whatsapp-reports-nav').style.display = 'flex';
                         
-                        // Client Management for all super admins
+                        // Client Management for super admins only
                         document.getElementById('client-management-nav').style.display = 'flex';
                         
                         // Show User Management for non-BizPulse admins, Client Management for BizPulse admins
@@ -3828,41 +3925,41 @@
                         // Hide staff management for super admin
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
                     } else if (userInfo.user_type === 'client') {
-                        // 🔥 CLIENTS - SHOW ALL MODULES EXCEPT CLIENT MANAGEMENT
-                        console.log('🏢 Client detected - showing all modules');
+                        // 🔥 CLIENTS - SHOW ALL MODULES INCLUDING USER MANAGEMENT
+                        console.log('🏢 Client detected - showing all modules including user management');
                         console.log('📋 Calling showAllModules()...');
                         showAllModules();
                         
-                        // Hide management modules for clients
+                        // Hide admin-only modules but show user management
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
-                        // Keep client management hidden for clients
-                        document.getElementById('client-management-nav').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
-                        document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
+                        document.getElementById('user-management-nav').style.display = 'flex'; // Show user management for clients
                         
                         console.log('✅ Client modules should now be visible');
                     } else if (userInfo.user_type === 'staff' || userInfo.user_type === 'client_user' || userInfo.user_type === 'employee') {
-                        // 🔥 EMPLOYEES/CLIENTS - SHOW ALL MODULES EXCEPT CLIENT MANAGEMENT
-                        console.log('👤 Employee/Client detected - showing all modules');
-                        console.log('📋 Calling showAllModules()...');
-                        showAllModules();
+                        // 🔥 EMPLOYEES - DO NOT SHOW ALL MODULES, ONLY SHOW BASED ON PERMISSIONS
+                        console.log('👤 Employee detected - applying permission-based access');
                         
                         // Hide management modules for employees/clients
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
-                        // Keep client management hidden for employees
-                        document.getElementById('client-management-nav').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
-                        document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
+                        document.getElementById('user-management-nav').style.display = 'none';
                         
-                        console.log('✅ Employee modules should now be visible');
+                        // Hide all user management navigation items
+                        document.querySelectorAll('.nav-item[onclick="openUserManagement()"]').forEach(item => {
+                            item.style.display = 'none';
+                        });
+                        
+                        console.log('✅ Employee detected - applying user-specific permissions...');
+                        
+                        // Apply user-specific permissions (this will hide all modules first, then show only allowed ones)
+                        await applyUserPermissions();
                     } else {
                         // Default - hide all management modules
                         document.getElementById('users-nav').style.display = 'none';
                         document.getElementById('whatsapp-reports-nav').style.display = 'none';
-                        // Keep client management hidden for default users
-                        document.getElementById('client-management-nav').style.display = 'none';
                         // WhatsApp banner removed
                         document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
                         document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
@@ -3885,7 +3982,7 @@
                     document.getElementById('whatsapp-reports-nav').style.display = 'none';
                     document.getElementById('client-management-nav').style.display = 'none';
                     document.querySelector('.nav-item[onclick="openStaffManagement()"]').style.display = 'none';
-                    document.querySelector('.nav-item[onclick="openUserManagement()"]').style.display = 'none';
+                    document.getElementById('user-management-nav').style.display = 'none';
                 }
             }
 
@@ -3915,8 +4012,7 @@
                         allowedModules.forEach(module => {
                             const moduleElement = getModuleElement(module);
                             if (moduleElement) {
-                                moduleElement.style.display = 'flex';
-                                moduleElement.style.setProperty('display', 'flex', 'important');
+                                moduleElement.classList.add('module-visible');
                             }
                         });
                         
@@ -3943,12 +4039,13 @@
             }
 
             function hideAllModules() {
-                // Hide all ERP modules (they are already hidden by default in HTML)
-                const modules = ['sales', 'credit', 'products', 'inventory', 'customers', 'reports', 'billing', 'invoices', 'settings'];
+                // Hide all ERP modules by removing the visible class
+                const modules = ['sales', 'credit', 'products', 'inventory', 'customers', 'reports', 'billing', 'invoices', 'settings', 'dashboard'];
                 modules.forEach(module => {
                     const moduleElement = getModuleElement(module);
                     if (moduleElement) {
-                        moduleElement.style.display = 'none';
+                        moduleElement.classList.remove('module-visible');
+                        moduleElement.style.setProperty('display', 'none', 'important');
                     }
                 });
             }
@@ -4007,30 +4104,143 @@
 
             function showAllModules() {
                 console.log('🔥 showAllModules() called');
-                // Show all ERP modules for super admin, business owners, and employees/clients
-                const modules = ['sales', 'credit', 'products', 'inventory', 'customers', 'reports', 'billing', 'invoices', 'eway', 'settings'];
+                // Show all ERP modules by adding the module-visible class
+                const modules = ['dashboard', 'sales', 'credit', 'products', 'inventory', 'customers', 'users', 'reports', 'billing', 'invoices', 'eway', 'settings'];
                 modules.forEach(module => {
                     const moduleElement = getModuleElement(module);
                     console.log(`📋 Module ${module}:`, moduleElement ? 'found' : 'NOT FOUND');
                     if (moduleElement) {
-                        moduleElement.style.display = 'flex';
-                        moduleElement.style.setProperty('display', 'flex', 'important');
+                        moduleElement.classList.add('module-visible');
                         console.log(`✅ ${module} module shown`);
                     } else {
                         console.log(`❌ ${module} module element not found`);
                     }
                 });
                 
-                // Also show E-Way Bills module (it doesn't have module- class)
-                const ewayElement = document.querySelector('.nav-item[onclick*="eway"]');
-                console.log('📋 E-Way Bills element:', ewayElement ? 'found' : 'NOT FOUND');
-                if (ewayElement) {
-                    ewayElement.style.display = 'flex';
-                    ewayElement.style.setProperty('display', 'flex', 'important');
-                    console.log('✅ E-Way Bills module shown');
-                }
-                
                 console.log('🔥 showAllModules() completed');
+            }
+            
+            async function applyUserPermissions() {
+                try {
+                    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    // Normalize user type to support old sessions that used `type`
+                    userInfo.user_type = userInfo.user_type || userInfo.type || userInfo.userType;
+                    userInfo.type = userInfo.type || userInfo.user_type || userInfo.userType;
+                    const normalizedUserType = (userInfo.user_type || userInfo.type || '').toLowerCase();
+
+                    console.log('🔐 Checking user type:', normalizedUserType);
+                    console.log('🔐 Full user info:', userInfo);
+                    
+                    // Only apply permissions for employees/staff/client_user
+                    if (['employee','staff','client_user'].indexOf(normalizedUserType) === -1) {
+                        console.log('👤 Not an employee - showing all modules');
+                        // For non-employees (admin, client), show all modules
+                        document.querySelectorAll('.module-dashboard, .module-sales, .module-credit, .module-billing, .module-invoices, .module-eway, .module-products, .module-inventory, .module-customers, .module-reports, .module-settings').forEach(el => {
+                            el.classList.add('module-visible');
+                        });
+                        return;
+                    }
+                    
+                    console.log('🔐 Employee detected! Loading user permissions...');
+                    
+                    // Fetch user permissions from backend
+                    const response = await fetch('/api/user-management/user-permissions', {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
+                    
+                    console.log('📊 Permission API response status:', response.status);
+                    
+                    if (!response.ok) {
+                        console.error('❌ Could not load permissions - keeping all modules HIDDEN');
+                        return; // Keep everything hidden if API fails
+                    }
+                    
+                    const data = await response.json();
+                    console.log('📋 Permission API response:', data);
+                    
+                    if (data.success && data.permissions) {
+                        console.log('✅ User permissions loaded:', data.permissions);
+                        
+                        // STEP 3: Show only enabled modules (use class to override CSS !important rules)
+                        console.log('✅ Showing enabled modules...');
+                        const moduleMap = {
+                            'dashboard': '.module-dashboard',
+                            'billing': '.module-billing',
+                            'sales': '.module-sales',
+                            'products': '.module-products',
+                            'customers': '.module-customers',
+                            'inventory': '.module-inventory',
+                            'reports': '.module-reports',
+                            'credit': '.module-credit'
+                        };
+                        
+                        // First, ensure all modules are hidden by removing the visible class
+                        Object.values(moduleMap).forEach(sel => {
+                            document.querySelectorAll(sel).forEach(el => {
+                                el.classList.remove('module-visible');
+                                el.style.setProperty('display', 'none', 'important');
+                            });
+                        });
+                        
+                        let enabledCount = 0;
+                        Object.keys(moduleMap).forEach(module => {
+                            if (data.permissions[module] === true) {
+                                const elements = document.querySelectorAll(moduleMap[module]);
+                                elements.forEach(element => {
+                                    // Add the visible class which has `display:flex !important` in CSS
+                                    element.classList.add('module-visible');
+                                    enabledCount++;
+                                    console.log(`✅ ${module} module ENABLED and SHOWN`);
+                                });
+                            } else {
+                                console.log(`🚫 ${module} module DISABLED (kept hidden)`);
+                            }
+                        });
+                        
+                        // Also ensure E-Way bills and other non-class modules are controlled the same way
+                        const eway = document.querySelector('.nav-item[onclick*="eway"]');
+                        if (eway) {
+                            if (data.permissions['billing'] === true || data.permissions['invoices'] === true) {
+                                eway.classList.add('module-visible');
+                            } else {
+                                eway.classList.remove('module-visible');
+                            }
+                        }
+                        
+                        console.log(`✅ Permissions applied! ${enabledCount} modules enabled out of ${Object.keys(moduleMap).length}`);
+                        
+                        // If NO modules are enabled, show a message
+                        if (enabledCount === 0) {
+                            console.warn('⚠️ No modules enabled for this user!');
+                            const contentArea = document.getElementById('contentArea');
+                            if (contentArea) {
+                                contentArea.innerHTML = `
+                                    <div style="text-align: center; padding: 50px; background: white; border-radius: 15px; margin: 20px;">
+                                        <div style="font-size: 4rem; margin-bottom: 20px;">🔒</div>
+                                        <h2 style="color: #732C3F; margin-bottom: 15px;">No Access</h2>
+                                        <p style="color: #666; font-size: 1.1rem;">You don't have permission to access any modules.</p>
+                                        <p style="color: #666;">Please contact your administrator to grant you access.</p>
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        // Schedule one re-validation shortly to catch other scripts that may override visibility
+                        if (!window.__permissionsAppliedOnce) {
+                            window.__permissionsAppliedOnce = true;
+                            setTimeout(() => {
+                                try { applyUserPermissions(); } catch (e) { console.error('Re-run applyUserPermissions failed', e); }
+                            }, 500);
+                        }
+                    } else {
+                        console.error('❌ Invalid permission data:', data);
+                        // Keep everything hidden if data is invalid
+                    }
+                } catch (error) {
+                    console.error('❌ Error applying user permissions:', error);
+                    // Keep everything hidden on error
+                }
             }
 
             // Expose functions for inline handlers
@@ -4043,28 +4253,31 @@
             window.openUserManagement = openUserManagement;
             window.openUsers = openUsers;
             window.openWhatsAppReports = openWhatsAppReports;
-            window.openClientManagement = openClientManagement; // FORCE EXPOSE
             
             // 🔥 DEBUG FUNCTIONS - EXPOSE FOR TESTING
-            window.showAllModules = showAllModules;
+            // Wrap showAllModules to prevent accidental revealing of modules for employees
+            window.showAllModules = function() {
+                try {
+                    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    userInfo.user_type = userInfo.user_type || userInfo.type || userInfo.userType;
+                    const ut = (userInfo.user_type || userInfo.type || '').toLowerCase();
+                    if (['employee','staff','client_user'].indexOf(ut) !== -1) {
+                        console.log('🔒 Suppressing showAllModules() for employee/staff - enforcing per-user permissions');
+                        // Re-apply permissions to ensure only allowed modules are visible
+                        applyUserPermissions();
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error checking user type in showAllModules wrapper', e);
+                }
+
+                // Otherwise call original
+                showAllModules();
+            };
             window.checkUserRole = checkUserRole;
             window.testModuleDisplay = function() {
                 console.log('🧪 Testing module display...');
                 showAllModules();
-            };
-            
-            // Debug function to force show Client Management
-            window.forceShowClientManagement = function() {
-                console.log('🔧 Force showing Client Management...');
-                const clientManagementNav = document.getElementById('client-management-nav');
-                if (clientManagementNav) {
-                    clientManagementNav.style.display = 'flex';
-                    clientManagementNav.style.setProperty('display', 'flex', 'important');
-                    clientManagementNav.style.visibility = 'visible';
-                    console.log('✅ Client Management should now be visible');
-                } else {
-                    console.error('❌ Client Management nav element not found');
-                }
             };
             
             // Debug function to check current user info
@@ -4091,7 +4304,6 @@
                 console.log('🔍 Client Management Access Requirements:');
                 console.log('✅ Required Email: bizpulse.erp@gmail.com');
                 console.log('🔧 Run debugUserInfo() to check your current email');
-                console.log('🔧 Run forceShowClientManagement() to force show the module');
                 console.log('🔧 Run conditionalShowClientManagement() to run the check again');
             };
             
@@ -4667,7 +4879,9 @@
         localStorage.setItem('userInfo', JSON.stringify({
             id: userInfo.user_id,
             name: userInfo.user_name,
+            // keep both keys for compatibility
             type: userInfo.user_type,
+            user_type: userInfo.user_type,
             is_super_admin: userInfo.is_super_admin,
             profile_picture: userInfo.profile_picture
         }));

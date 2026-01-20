@@ -113,7 +113,11 @@ class ActivityTracker:
         """Get recent sales section data"""
         # Get user_id from session for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         
         # Build query with user filtering and today's date filter
         from datetime import datetime
@@ -312,7 +316,11 @@ class ActivityTracker:
         """Get last bulk order section data"""
         # Get user_id from session for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         
         # Build query with user filtering and today's date filter
         from datetime import datetime
@@ -590,7 +598,11 @@ class DashboardStats:
         
         # Get user_id from session for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         
         # Calculate date range
         end_date = datetime.now()
@@ -609,8 +621,8 @@ class DashboardStats:
             SELECT 
                 COALESCE(SUM(total_amount), 0) as today_sales,
                 COALESCE(SUM(CASE 
-                    WHEN payment_status = 'COMPLETED' THEN total_amount
-                    WHEN payment_status = 'PARTIAL' THEN COALESCE(paid_amount, 0)
+                    WHEN payment_status = 'paid' THEN total_amount
+                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
                     ELSE 0
                 END), 0) as today_revenue,
                 COUNT(*) as today_orders
@@ -625,8 +637,8 @@ class DashboardStats:
             SELECT 
                 COALESCE(SUM(total_amount), 0) as month_sales,
                 COALESCE(SUM(CASE 
-                    WHEN payment_status = 'COMPLETED' THEN total_amount
-                    WHEN payment_status = 'PARTIAL' THEN COALESCE(paid_amount, 0)
+                    WHEN payment_status = 'paid' THEN total_amount
+                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
                     ELSE 0
                 END), 0) as month_revenue,
                 COUNT(*) as month_orders
@@ -652,16 +664,16 @@ class DashboardStats:
         low_stock = cursor.fetchone()
         
         # Top selling products this month
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT p.name, SUM(bi.quantity) as total_sold, SUM(bi.total_price) as revenue
             FROM bill_items bi
             JOIN products p ON bi.product_id = p.id
             JOIN bills b ON bi.bill_id = b.id
-            WHERE strftime('%Y-%m', b.created_at) = strftime('%Y-%m', 'now')
+            WHERE strftime('%Y-%m', b.created_at) = strftime('%Y-%m', 'now'){user_filter}
             GROUP BY p.id, p.name
             ORDER BY total_sold DESC
             LIMIT 5
-        ''')
+        ''', user_params)
         top_products = cursor.fetchall()
         
         conn.close()

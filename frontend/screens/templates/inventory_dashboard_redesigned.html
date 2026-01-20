@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Dashboard - Modern ERP</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .header-left p {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.9);
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background: white;
+            transform: translateY(-1px);
+        }
+        
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 32px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .stat-icon.total { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-icon.low { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-icon.out { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-icon.value { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .stat-icon.movement { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            color: #718096;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .stat-change {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        
+        .stat-change.positive {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .stat-change.negative {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        /* Main Content Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        
+        /* Stock Overview */
+        .stock-overview {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .filter-tabs {
+            display: flex;
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        
+        .filter-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-tab.active {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            color: #667eea;
+        }
+        
+        .stock-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .stock-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 32px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+        }
+        
+        .stock-item:hover {
+            background: #f8fafc;
+        }
+        
+        .item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 16px;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 2px;
+        }
+        
+        .item-code {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .item-stock {
+            text-align: right;
+            margin-right: 16px;
+        }
+        
+        .stock-number {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .stock-unit {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .stock-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            min-width: 80px;
+        }
+        
+        .status-good { background: #c6f6d5; color: #22543d; }
+        .status-low { background: #fed7d7; color: #c53030; }
+        .status-out { background: #bee3f8; color: #2a69ac; }
+        
+        /* Alerts Panel */
+        .alerts-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .alert-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .alert-icon.warning { background: #fed7d7; color: #c53030; }
+        .alert-icon.info { background: #bee3f8; color: #2a69ac; }
+        .alert-icon.success { background: #c6f6d5; color: #22543d; }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .alert-message {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .alert-time {
+            color: #a0aec0;
+            font-size: 11px;
+        }
+        
+        /* Recent Activity */
+        .recent-activity {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .activity-item {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .activity-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .activity-icon.in { background: #c6f6d5; color: #22543d; }
+        .activity-icon.out { background: #fed7d7; color: #c53030; }
+        .activity-icon.adjust { background: #bee3f8; color: #2a69ac; }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .activity-details {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        .activity-time {
+            color: #a0aec0;
+            font-size: 11px;
+            text-align: right;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
+        .action-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 12px;
+        }
+        
+        .action-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .action-description {
+            color: #718096;
+            font-size: 12px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+            
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>📊 Inventory Dashboard</h1>
+                <p>Real-time inventory monitoring and management</p>
+            </div>
+            <div class="header-actions">
+                <a href="/retail/dashboard" class="btn btn-secondary">
+                    ← Dashboard
+                </a>
+                <a href="/inventory/product-master" class="btn btn-primary">
+                    📦 Product Master
+                </a>
+                <a href="/inventory/purchase-entry" class="btn btn-primary">
+                    📥 Purchase Entry
+                </a>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon total">📦</div>
+                    <div class="stat-change positive">+5.2%</div>
+                </div>
+                <div class="stat-value" id="totalProducts">1,247</div>
+                <div class="stat-label">Total Products</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon low">⚠️</div>
+                    <div class="stat-change negative">+12</div>
+                </div>
+                <div class="stat-value" id="lowStockCount">23</div>
+                <div class="stat-label">Low Stock Items</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon out">🚫</div>
+                    <div class="stat-change negative">+3</div>
+                </div>
+                <div class="stat-value" id="outOfStockCount">5</div>
+                <div class="stat-label">Out of Stock</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon value">💰</div>
+                    <div class="stat-change positive">+8.7%</div>
+                </div>
+                <div class="stat-value" id="totalValue">₹2.4L</div>
+                <div class="stat-label">Inventory Value</div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-icon movement">📈</div>
+                    <div class="stat-change positive">+15</div>
+                </div>
+                <div class="stat-value" id="todayMovements">47</div>
+                <div class="stat-label">Today's Movements</div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Stock Overview -->
+            <div class="stock-overview">
+                <div class="section-header">
+                    <h2 class="section-title">Stock Overview</h2>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterStock('all')">All Items</button>
+                        <button class="filter-tab" onclick="filterStock('low')">Low Stock</button>
+                        <button class="filter-tab" onclick="filterStock('out')">Out of Stock</button>
+                    </div>
+                </div>
+                
+                <div class="stock-table" id="stockTable">
+                    <!-- Stock items will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Alerts Panel -->
+            <div class="alerts-panel">
+                <div class="section-header">
+                    <h2 class="section-title">Alerts & Notifications</h2>
+                </div>
+                
+                <div id="alertsList">
+                    <div class="alert-item">
+                        <div class="alert-icon warning">⚠️</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Low Stock Alert</div>
+                            <div class="alert-message">Nike Running Shoes - Only 3 units left</div>
+                        </div>
+                        <div class="alert-time">2 min ago</div>
+                    </div>
+                    
+                    <div class="alert-item">
+                        <div class="alert-icon warning">🚫</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Out of Stock</div>
+                            <div class="alert-message">Apple MacBook Pro - Stock depleted</div>
+                        </div>
+                        <div class="alert-time">15 min ago</div>
+                    </div>
+                    
+                    <div class="alert-item">
+                        <div class="alert-icon info">📦</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Stock Received</div>
+                            <div class="alert-message">Samsung Galaxy Phone - 20 units added</div>
+                        </div>
+                        <div class="alert-time">1 hour ago</div>
+                    </div>
+                    
+                    <div class="alert-item">
+                        <div class="alert-icon success">✅</div>
+                        <div class="alert-content">
+                            <div class="alert-title">Reorder Complete</div>
+                            <div class="alert-message">Wireless Headphones - 50 units ordered</div>
+                        </div>
+                        <div class="alert-time">2 hours ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="recent-activity">
+            <div class="section-header">
+                <h2 class="section-title">Recent Stock Movements</h2>
+                <button class="btn btn-secondary" onclick="viewAllActivity()">View All</button>
+            </div>
+            
+            <div id="recentActivity">
+                <div class="activity-item">
+                    <div class="activity-icon in">📥</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Stock In - Samsung Galaxy Phone</div>
+                        <div class="activity-details">Added 20 units from ABC Electronics Ltd.</div>
+                    </div>
+                    <div class="activity-time">10:30 AM</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon out">📤</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Sale - Nike Running Shoes</div>
+                        <div class="activity-details">Sold 2 units to customer</div>
+                    </div>
+                    <div class="activity-time">2:15 PM</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon adjust">🔧</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Stock Adjustment - Organic Coffee</div>
+                        <div class="activity-details">Adjusted -1 unit (damaged item)</div>
+                    </div>
+                    <div class="activity-time">4:20 PM</div>
+                </div>
+                
+                <div class="activity-item">
+                    <div class="activity-icon in">📥</div>
+                    <div class="activity-content">
+                        <div class="activity-title">Purchase - Wireless Headphones</div>
+                        <div class="activity-details">Added 15 units from XYZ Trading</div>
+                    </div>
+                    <div class="activity-time">Yesterday</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="margin-top: 24px;">
+            <div class="section-header" style="background: none; padding: 0 0 16px 0; border: none;">
+                <h2 class="section-title">Quick Actions</h2>
+            </div>
+            
+            <div class="quick-actions">
+                <div class="action-card" onclick="window.location.href='/inventory/product-master'">
+                    <div class="action-icon total">➕</div>
+                    <div class="action-title">Add Product</div>
+                    <div class="action-description">Create new product entries</div>
+                </div>
+                
+                <div class="action-card" onclick="window.location.href='/inventory/purchase-entry'">
+                    <div class="action-icon value">📥</div>
+                    <div class="action-title">Stock In</div>
+                    <div class="action-description">Record new purchases</div>
+                </div>
+                
+                <div class="action-card" onclick="stockAdjustment()">
+                    <div class="action-icon movement">🔧</div>
+                    <div class="action-title">Stock Adjustment</div>
+                    <div class="action-description">Adjust stock levels</div>
+                </div>
+                
+                <div class="action-card" onclick="generateReports()">
+                    <div class="action-icon low">📊</div>
+                    <div class="action-title">Generate Reports</div>
+                    <div class="action-description">Inventory reports</div>
+                </div>
+                
+                <div class="action-card" onclick="stockTransfer()">
+                    <div class="action-icon out">🔄</div>
+                    <div class="action-title">Stock Transfer</div>
+                    <div class="action-description">Move between locations</div>
+                </div>
+                
+                <div class="action-card" onclick="reorderReport()">
+                    <div class="action-icon warning">📋</div>
+                    <div class="action-title">Reorder Report</div>
+                    <div class="action-description">Items to reorder</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample stock data
+        const stockData = [
+            { id: 1, name: 'Samsung Galaxy Phone', code: 'PHONE001', stock: 45, unit: 'piece', status: 'good', icon: '📱' },
+            { id: 2, name: 'Nike Running Shoes', code: 'SHOE001', stock: 3, unit: 'pair', status: 'low', icon: '👟' },
+            { id: 3, name: 'Apple MacBook Pro', code: 'LAPTOP001', stock: 0, unit: 'piece', status: 'out', icon: '💻' },
+            { id: 4, name: 'Organic Coffee Beans', code: 'FOOD001', stock: 120, unit: 'kg', status: 'good', icon: '☕' },
+            { id: 5, name: 'Wireless Headphones', code: 'AUDIO001', stock: 7, unit: 'piece', status: 'low', icon: '🎧' },
+            { id: 6, name: 'Yoga Mat Premium', code: 'SPORT001', stock: 25, unit: 'piece', status: 'good', icon: '🧘' },
+            { id: 7, name: 'Smart Watch', code: 'WATCH001', stock: 15, unit: 'piece', status: 'good', icon: '⌚' },
+            { id: 8, name: 'Gaming Mouse', code: 'MOUSE001', stock: 2, unit: 'piece', status: 'low', icon: '🖱️' }
+        ];
+        
+        let currentFilter = 'all';
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStockData();
+            updateStats();
+            startRealTimeUpdates();
+        });
+        
+        // Load stock data
+        function loadStockData() {
+            displayStockItems(stockData);
+        }
+        
+        // Display stock items
+        function displayStockItems(items) {
+            const container = document.getElementById('stockTable');
+            
+            container.innerHTML = items.map(item => `
+                <div class="stock-item">
+                    <div class="item-icon">${item.icon}</div>
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-code">${item.code}</div>
+                    </div>
+                    <div class="item-stock">
+                        <div class="stock-number">${item.stock}</div>
+                        <div class="stock-unit">${item.unit}</div>
+                    </div>
+                    <div class="stock-status status-${item.status}">
+                        ${item.status === 'good' ? 'In Stock' : item.status === 'low' ? 'Low Stock' : 'Out of Stock'}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Filter stock items
+        function filterStock(filter) {
+            currentFilter = filter;
+            
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Filter items
+            let filteredItems = stockData;
+            if (filter !== 'all') {
+                filteredItems = stockData.filter(item => item.status === filter);
+            }
+            
+            displayStockItems(filteredItems);
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const total = stockData.length;
+            const lowStock = stockData.filter(item => item.status === 'low').length;
+            const outOfStock = stockData.filter(item => item.status === 'out').length;
+            
+            // Simulate some dynamic updates
+            document.getElementById('totalProducts').textContent = total.toLocaleString();
+            document.getElementById('lowStockCount').textContent = lowStock;
+            document.getElementById('outOfStockCount').textContent = outOfStock;
+        }
+        
+        // Start real-time updates simulation
+        function startRealTimeUpdates() {
+            setInterval(() => {
+                // Simulate random stock changes
+                const randomItem = stockData[Math.floor(Math.random() * stockData.length)];
+                const change = Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+                
+                if (randomItem.stock + change >= 0) {
+                    randomItem.stock += change;
+                    
+                    // Update status based on new stock
+                    if (randomItem.stock === 0) {
+                        randomItem.status = 'out';
+                    } else if (randomItem.stock <= 5) {
+                        randomItem.status = 'low';
+                    } else {
+                        randomItem.status = 'good';
+                    }
+                }
+                
+                // Refresh display if showing all items
+                if (currentFilter === 'all') {
+                    displayStockItems(stockData);
+                }
+                
+                updateStats();
+            }, 10000); // Update every 10 seconds
+        }
+        
+        // Quick action functions
+        function stockAdjustment() {
+            alert('Stock Adjustment: Manually adjust stock levels for damage, theft, or counting corrections.');
+        }
+        
+        function generateReports() {
+            alert('Generate Reports: Create comprehensive inventory reports and analytics.');
+        }
+        
+        function stockTransfer() {
+            alert('Stock Transfer: Move inventory between different locations or warehouses.');
+        }
+        
+        function reorderReport() {
+            alert('Reorder Report: View all items that need to be reordered based on minimum stock levels.');
+        }
+        
+        function viewAllActivity() {
+            alert('View All Activity: See complete stock movement history and transaction logs.');
+        }
+        
+        // Simulate real-time notifications
+        function addNotification(type, title, message) {
+            const alertsList = document.getElementById('alertsList');
+            const newAlert = document.createElement('div');
+            newAlert.className = 'alert-item';
+            newAlert.innerHTML = `
+                <div class="alert-icon ${type}">
+                    ${type === 'warning' ? '⚠️' : type === 'info' ? '📦' : '✅'}
+                </div>
+                <div class="alert-content">
+                    <div class="alert-title">${title}</div>
+                    <div class="alert-message">${message}</div>
+                </div>
+                <div class="alert-time">Just now</div>
+            `;
+            
+            alertsList.insertBefore(newAlert, alertsList.firstChild);
+            
+            // Remove old alerts (keep only 5)
+            const alerts = alertsList.children;
+            if (alerts.length > 5) {
+                alertsList.removeChild(alerts[alerts.length - 1]);
+            }
+        }
+        
+        // Simulate periodic notifications
+        setTimeout(() => {
+            addNotification('info', 'Stock Updated', 'Gaming Mouse - 10 units added');
+        }, 15000);
+        
+        setTimeout(() => {
+            addNotification('warning', 'Low Stock Alert', 'Smart Watch - Only 4 units left');
+        }, 30000);
+    </script>
+</body>
+</html>

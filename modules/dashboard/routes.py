@@ -153,7 +153,11 @@ def get_recent_sales():
         
         # Get user_id from session for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         
         from modules.shared.database import get_db_connection
         conn = get_db_connection()
@@ -363,7 +367,11 @@ def get_recent_orders():
         
         # Get user_id from session for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         
         from modules.shared.database import get_db_connection
         conn = get_db_connection()
@@ -763,7 +771,11 @@ def universal_search():
         
         # Add user filtering for data isolation
         from flask import session
-        user_id = session.get('user_id')
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')  # For employees, use client_id
+        else:
+            user_id = session.get('user_id')    # For clients, use user_id
         if user_id:
             bills_query += ' AND b.business_owner_id = ?'
             bills_params.append(user_id)

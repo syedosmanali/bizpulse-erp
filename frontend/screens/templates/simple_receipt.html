@@ -309,6 +309,9 @@
             // Totals section - CORRECT ORDER
             const subtotal = invoice.subtotal || 0;
             const gst = invoice.tax_amount || 0;
+            const gstRate = invoice.gst_rate || 18; // Get GST rate from database
+            const cgst = gst / 2; // Split GST equally
+            const sgst = gst / 2;
             const discount = invoice.discount_amount || 0;
             const total = invoice.total_amount || 0;
 
@@ -316,12 +319,17 @@
                 <div class="totals-section">
             `;
 
-            // Show GST first (if present)
+            // Show CGST and SGST separately (if present)
             if (gst > 0) {
+                const halfRate = (gstRate / 2).toFixed(1);
                 html += `
                     <div class="total-row">
-                        <span>GST (10%)</span>
-                        <span>${gst.toFixed(2)}</span>
+                        <span>CGST (${halfRate}%)</span>
+                        <span>${cgst.toFixed(2)}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>SGST (${halfRate}%)</span>
+                        <span>${sgst.toFixed(2)}</span>
                     </div>
                 `;
             }
