@@ -18,10 +18,10 @@ services:
     branch: main  # Git branch to deploy
     
     # Build configuration
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     
     # Start command
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120 --log-level debug
     
     # Health check
     healthCheckPath: /
@@ -29,7 +29,7 @@ services:
     # Environment variables
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: "3.11.0"
       
       - key: DATABASE_URL
         fromDatabase:
@@ -39,11 +39,14 @@ services:
       - key: FLASK_ENV
         value: production
       
+      - key: FLASK_APP
+        value: app.py
+      
       - key: SECRET_KEY
         generateValue: true  # Render will generate a secure random value
       
       - key: PORT
-        value: 5000
+        value: "10000"
     
     # Auto-deploy on git push
     autoDeploy: true

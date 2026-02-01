@@ -324,6 +324,12 @@ def print_startup_info():
     print("✅ All modules loaded successfully!")
     print()
 
+# Health check endpoint for Render
+@app.route('/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return {'status': 'healthy', 'service': 'BizPulse ERP'}, 200
+
 if __name__ == '__main__':
     initialize_database()
     print_startup_info()
