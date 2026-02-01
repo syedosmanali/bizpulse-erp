@@ -152,18 +152,31 @@ def refresh_sales():
 def export_sales():
     """Export sales data - for frontend compatibility"""
     try:
+        from flask import session
+        
         date_range = request.args.get('date_range', 'today')
         payment_method = request.args.get('payment_method', 'all')
         format_type = request.args.get('format', 'json')
         
+        # Get user_id from session for filtering
+        user_type = session.get('user_type')
+        if user_type == 'employee':
+            user_id = session.get('client_id')
+        else:
+            user_id = session.get('user_id')
+        
         # Map date_range to date_filter
         date_filter = date_range if date_range in ['today', 'yesterday', 'week', 'month'] else None
         
-        sales = sales_service.get_all_sales(date_filter)
+        sales = sales_service.get_all_sales(date_filter, user_id)
         
         # Filter by payment method if specified
         if payment_method and payment_method != 'all':
             sales = [s for s in sales if s.get('payment_method') == payment_method]
+        
+        # If WhatsApp format requested, generate Excel file and share
+        if format_type == 'whatsapp':
+            return handle_whatsapp_export(sales, date_range)
         
         return jsonify({
             "success": True,
@@ -176,6 +189,123 @@ def export_sales():
         return jsonify({
             "success": False,
             "error": f"Failed to export sales: {str(e)}"
+        }), 500
+
+
+def handle_whatsapp_export(sales, date_range):
+    """Generate Excel file and share via WhatsApp"""
+    try:
+        from datetime import datetime
+        import os
+        import csv
+        import io
+        
+        print(f"🔍 [WhatsApp Export] Processing {len(sales)} sales for {date_range}")
+        
+        # Calculate totals
+        total_amount = sum(float(sale.get('total_amount', 0)) for sale in sales)
+        total_sales = len(sales)
+        
+        print(f"📊 [WhatsApp Export] Total: {total_sales} sales, Amount: ₹{total_amount}")
+        
+        # Create CSV content (Excel compatible)
+        filename = f"sales_report_{date_range}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        filepath = os.path.join('static', 'temp', filename)
+        
+        # Create temp directory if it doesn't exist
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        
+        # Write CSV file
+        with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            
+            # Write header information
+            writer.writerow(['SALES REPORT'])
+            writer.writerow([f'Period: {date_range.title()}'])
+            writer.writerow([f'Generated: {datetime.now().strftime("%d/%m/%Y at %H:%M")}'])
+            writer.writerow([])  # Empty row
+            
+            # Write summary
+            writer.writerow(['SUMMARY'])
+            writer.writerow(['Total Sales', total_sales])
+            writer.writerow(['Total Amount', f'₹{total_amount:,.2f}'])
+            writer.writerow([])  # Empty row
+            
+            # Write table headers
+            writer.writerow(['SALES DETAILS'])
+            writer.writerow(['Bill No.', 'Customer', 'Amount', 'Payment Method', 'Date', 'Time'])
+            
+            # Write sales data
+            for sale in sales:
+                customer_name = sale.get('customer_name', 'Walk-in Customer')
+                
+                # Format date and time
+                created_at = sale.get('created_at', '')
+                if created_at:
+                    try:
+                        date_obj = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        formatted_date = date_obj.strftime('%d/%m/%Y')
+                        formatted_time = date_obj.strftime('%H:%M')
+                    except:
+                        formatted_date = 'N/A'
+                        formatted_time = 'N/A'
+                else:
+                    formatted_date = 'N/A'
+                    formatted_time = 'N/A'
+                
+                writer.writerow([
+                    sale.get('bill_number', 'N/A'),
+                    customer_name,
+                    f'₹{float(sale.get("total_amount", 0)):,.2f}',
+                    sale.get('payment_method', 'Cash').upper(),
+                    formatted_date,
+                    formatted_time
+                ])
+        
+        print(f"📄 [WhatsApp Export] Excel file created: {filepath}")
+        
+        # Generate URLs
+        file_url = f"{request.host_url}static/temp/{filename}"
+        
+        # Create WhatsApp message
+        whatsapp_text = f"""📊 *Sales Report - {date_range.title()}*
+
+📈 *Summary:*
+• Total Sales: {total_sales}
+• Total Amount: ₹{total_amount:,.2f}
+• Period: {date_range.title()}
+
+📄 *Download Excel File:*
+{file_url}
+
+Generated on {datetime.now().strftime('%d/%m/%Y at %H:%M')}
+
+_Open the file in Excel or Google Sheets_"""
+        
+        # URL encode the message
+        import urllib.parse
+        encoded_message = urllib.parse.quote(whatsapp_text)
+        whatsapp_url = f"https://wa.me/?text={encoded_message}"
+        
+        print(f"✅ [WhatsApp Export] Success! File URL: {file_url}")
+        
+        return jsonify({
+            "success": True,
+            "message": "Excel file generated successfully",
+            "file_url": file_url,
+            "whatsapp_url": whatsapp_url,
+            "total_sales": total_sales,
+            "total_amount": total_amount,
+            "filename": filename
+        })
+        
+    except Exception as e:
+        print(f"❌ [WhatsApp Export] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": f"Failed to generate Excel file: {str(e)}"
         }), 500
 
 @sales_bp.route('/api/sales/summary', methods=['GET'])

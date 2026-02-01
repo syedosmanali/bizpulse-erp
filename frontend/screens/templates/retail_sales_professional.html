@@ -1117,28 +1117,58 @@
         }
 
         function shareViaWhatsApp() {
-            console.log('Sharing sales via WhatsApp...');
+            console.log('Generating Excel file and sharing via WhatsApp...');
+            
+            // Show loading
+            const originalText = event.target.textContent;
+            event.target.textContent = 'Generating Excel...';
+            event.target.disabled = true;
+            
             const params = new URLSearchParams({
                 format: 'whatsapp',
-                filter: currentFilters.filter,
-                startDate: currentFilters.startDate,
-                endDate: currentFilters.endDate,
-                payment_method: currentFilters.payment_method,
-                limit: 100
+                date_range: currentFilters.filter || 'today',
+                payment_method: currentFilters.payment_method || 'all'
             });
             
             fetch(`/api/sales/export?${params.toString()}`)
                 .then(response => response.json())
                 .then(data => {
+                    // Reset button
+                    event.target.textContent = originalText;
+                    event.target.disabled = false;
+                    
                     if (data.success) {
-                        alert('📱 WhatsApp report sent successfully!');
+                        // Open WhatsApp with the Excel file link
+                        window.open(data.whatsapp_url, '_blank');
+                        
+                        // Show success message with option to download Excel directly
+                        const downloadOption = confirm(
+                            `📱 WhatsApp opened with Excel report!\n\n` +
+                            `📊 Total Sales: ${data.total_sales}\n` +
+                            `💰 Total Amount: ₹${data.total_amount.toLocaleString()}\n\n` +
+                            `Click OK to download Excel file directly, or Cancel to continue.`
+                        );
+                        
+                        if (downloadOption) {
+                            // Download Excel file directly
+                            const link = document.createElement('a');
+                            link.href = data.file_url;
+                            link.download = data.filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        }
                     } else {
-                        alert('❌ Error: ' + data.message);
+                        alert('❌ Error: ' + (data.error || data.message || 'Failed to generate Excel file'));
                     }
                 })
                 .catch(error => {
+                    // Reset button
+                    event.target.textContent = originalText;
+                    event.target.disabled = false;
+                    
                     console.error('WhatsApp export error:', error);
-                    alert('❌ Failed to send WhatsApp report');
+                    alert('❌ Failed to generate Excel report. Please try again.');
                 });
         }
 

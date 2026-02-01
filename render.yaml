@@ -1,16 +1,57 @@
+# Render Blueprint for BizPulse ERP
+# This file defines the infrastructure for deploying on Render
+
+databases:
+  - name: bizpulse-db
+    databaseName: bizpulse_erp
+    user: bizpulse_user
+    plan: free  # Free tier PostgreSQL
+    region: oregon  # Choose region closest to your users
+    ipAllowList: []  # Empty means accessible from anywhere
+
 services:
   - type: web
     name: bizpulse-erp
-    env: python
-    region: singapore
-    plan: free
-    branch: main
+    runtime: python
+    region: oregon  # Same region as database for low latency
+    plan: free  # Free tier web service
+    branch: main  # Git branch to deploy
+    
+    # Build configuration
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT app:app --workers 2 --timeout 120
+    
+    # Start command
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    
+    # Health check
+    healthCheckPath: /
+    
+    # Environment variables
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bizpulse-db
+          property: connectionString
+      
+      - key: FLASK_ENV
+        value: production
+      
+      - key: SECRET_KEY
+        generateValue: true  # Render will generate a secure random value
+      
       - key: PORT
         value: 5000
-    healthCheckPath: /
+    
+    # Auto-deploy on git push
     autoDeploy: true
+    
+    # Disk storage (optional - for file uploads)
+    # Note: Free tier doesn't include persistent disk
+    # Uncomment if you upgrade to paid plan
+    # disk:
+    #   name: bizpulse-uploads
+    #   mountPath: /opt/render/project/src/frontend/assets/static/uploads
+    #   sizeGB: 1

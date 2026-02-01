@@ -1,6 +1,6 @@
 """
 Database connection and initialization utilities
-COPIED AS-IS from app.py
+UPDATED: Now supports both SQLite (local) and PostgreSQL (production)
 """
 
 import sqlite3
@@ -9,16 +9,56 @@ import hashlib
 from datetime import datetime, timedelta
 import os
 import json
+from urllib.parse import urlparse
 
-# Get absolute path to database file
+# Get absolute path to database file (for SQLite)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(BASE_DIR, 'billing.db')
 
+def get_database_url():
+    """Get DATABASE_URL from environment variables"""
+    return os.environ.get('DATABASE_URL')
+
+def get_db_type():
+    """Determine database type based on environment"""
+    return 'postgresql' if get_database_url() else 'sqlite'
+
 def get_db_connection():
-    """Get database connection with absolute path to prevent file location issues"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    """
+    Get database connection based on environment.
+    - Production (DATABASE_URL set): PostgreSQL connection
+    - Local (no DATABASE_URL): SQLite connection
+    """
+    db_url = get_database_url()
+    
+    if db_url:
+        # PostgreSQL connection
+        try:
+            import psycopg2
+            from psycopg2 import pool
+            from psycopg2.extras import RealDictCursor
+            
+            # Parse DATABASE_URL
+            parsed = urlparse(db_url)
+            
+            conn = psycopg2.connect(
+                host=parsed.hostname,
+                port=parsed.port or 5432,
+                user=parsed.username,
+                password=parsed.password,
+                database=parsed.path[1:],  # Remove leading '/'
+                cursor_factory=RealDictCursor
+            )
+            conn.autocommit = False
+            return conn
+        except Exception as e:
+            print(f"❌ PostgreSQL connection failed: {e}")
+            raise
+    else:
+        # SQLite connection (local development)
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
 
 def generate_id():
     return str(uuid.uuid4())
@@ -36,68 +76,83 @@ def get_current_client_id():
         return session.get('user_id')    # For clients, use user_id
 
 def init_db():
-    """Initialize database with absolute path"""
-    print(f"📁 Using database: {DB_PATH}")
-    conn = sqlite3.connect(DB_PATH)
+    """Initialize database - supports both SQLite and PostgreSQL"""
+    db_type = get_db_type()
+    print(f"📁 Initializing {db_type.upper()} database...")
+    
+    conn = get_db_connection()
     cursor = conn.cursor()
     
+    # Helper function to get appropriate SQL syntax
+    def get_sql_type(sqlite_type, postgres_type):
+        return postgres_type if db_type == 'postgresql' else sqlite_type
+    
+    def get_autoincrement():
+        return 'SERIAL PRIMARY KEY' if db_type == 'postgresql' else 'INTEGER PRIMARY KEY AUTOINCREMENT'
+    
+    def get_text_pk():
+        return 'VARCHAR(255) PRIMARY KEY' if db_type == 'postgresql' else 'TEXT PRIMARY KEY'
+    
+    def get_boolean_default(value):
+        return str(value).upper() if db_type == 'postgresql' else str(int(value))
+    
     # Products table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS products (
-            id TEXT PRIMARY KEY,
-            code TEXT UNIQUE,
-            name TEXT NOT NULL,
-            category TEXT,
-            price REAL,
-            cost REAL,
+            id {get_text_pk()},
+            code VARCHAR(100) UNIQUE,
+            name VARCHAR(255) NOT NULL,
+            category VARCHAR(100),
+            price {get_sql_type('REAL', 'NUMERIC(10,2)')},
+            cost {get_sql_type('REAL', 'NUMERIC(10,2)')},
             stock INTEGER DEFAULT 0,
             min_stock INTEGER DEFAULT 0,
-            unit TEXT DEFAULT 'piece',
-            business_type TEXT DEFAULT 'both',
-            barcode_data TEXT UNIQUE,
+            unit VARCHAR(50) DEFAULT 'piece',
+            business_type VARCHAR(50) DEFAULT 'both',
+            barcode_data VARCHAR(255) UNIQUE,
             barcode_image TEXT,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Customers table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS customers (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            phone TEXT,
-            email TEXT,
+            id {get_text_pk()},
+            name VARCHAR(255) NOT NULL,
+            phone VARCHAR(20),
+            email VARCHAR(255),
             address TEXT,
-            credit_limit REAL DEFAULT 0,
-            current_balance REAL DEFAULT 0,
-            total_purchases REAL DEFAULT 0,
-            customer_type TEXT DEFAULT 'regular',
-            is_active BOOLEAN DEFAULT 1,
+            credit_limit {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            current_balance {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            total_purchases {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            customer_type VARCHAR(50) DEFAULT 'regular',
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Bills table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS bills (
-            id TEXT PRIMARY KEY,
-            bill_number TEXT UNIQUE,
-            customer_id TEXT,
-            customer_name TEXT,
-            business_type TEXT,
-            subtotal REAL,
-            tax_amount REAL,
-            discount_amount REAL DEFAULT 0,
-            total_amount REAL,
-            payment_status TEXT DEFAULT 'paid',
-            payment_method TEXT DEFAULT 'cash',
-            is_credit BOOLEAN DEFAULT 0,
+            id {get_text_pk()},
+            bill_number VARCHAR(100) UNIQUE,
+            customer_id VARCHAR(255),
+            customer_name VARCHAR(255),
+            business_type VARCHAR(50),
+            subtotal {get_sql_type('REAL', 'NUMERIC(10,2)')},
+            tax_amount {get_sql_type('REAL', 'NUMERIC(10,2)')},
+            discount_amount {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            total_amount {get_sql_type('REAL', 'NUMERIC(10,2)')},
+            payment_status VARCHAR(50) DEFAULT 'paid',
+            payment_method VARCHAR(50) DEFAULT 'cash',
+            is_credit BOOLEAN DEFAULT {get_boolean_default(False)},
             credit_due_date DATE,
-            credit_amount REAL DEFAULT 0,
-            credit_paid_amount REAL DEFAULT 0,
-            credit_balance REAL DEFAULT 0,
-            status TEXT DEFAULT 'completed',
+            credit_amount {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            credit_paid_amount {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            credit_balance {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
+            status VARCHAR(50) DEFAULT 'completed',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (customer_id) REFERENCES customers (id)
         )
@@ -325,11 +380,21 @@ def init_db():
     ''')
     
     # Add password_plain column if it doesn't exist (for existing databases)
-    try:
-        cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
+    if db_type == 'sqlite':
+        try:
+            cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+        except Exception:
+            # Table doesn't exist yet
+            pass
+    else:
+        try:
+            cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
+        except Exception:
+            # Column already exists or table doesn't exist
+            pass
     
     # Add tenant_id column to existing tables if they don't exist
     tables_to_add_tenant_id = [
@@ -340,21 +405,30 @@ def init_db():
     
     for table in tables_to_add_tenant_id:
         try:
-            cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id TEXT')
+            if db_type == 'sqlite':
+                cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id TEXT')
+            else:
+                cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id VARCHAR(255)')
             print(f"✅ Added tenant_id to {table}")
-        except sqlite3.OperationalError:
-            # Column already exists
+        except Exception:
+            # Column already exists or table doesn't exist
             pass
     
     # Add user_id column to existing tables if they don't exist (for backward compatibility)
     try:
-        cursor.execute('ALTER TABLE products ADD COLUMN user_id TEXT')
-    except sqlite3.OperationalError:
+        if db_type == 'sqlite':
+            cursor.execute('ALTER TABLE products ADD COLUMN user_id TEXT')
+        else:
+            cursor.execute('ALTER TABLE products ADD COLUMN user_id VARCHAR(255)')
+    except Exception:
         pass
     
     try:
-        cursor.execute('ALTER TABLE customers ADD COLUMN user_id TEXT')
-    except sqlite3.OperationalError:
+        if db_type == 'sqlite':
+            cursor.execute('ALTER TABLE customers ADD COLUMN user_id TEXT')
+        else:
+            cursor.execute('ALTER TABLE customers ADD COLUMN user_id VARCHAR(255)')
+    except Exception:
         pass
     
     # Add additional columns to clients table if they don't exist
@@ -746,15 +820,29 @@ def init_db():
         ''', ('default_company', 'BizPulse Demo Store', '7093635305', '7093635305', 'bizpulse.erp@gmail.com', 'Hyderabad, Telangana, India', 1, '23:55:00'))
     
     # Add BizPulse admin user if not exists
-    cursor.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('bizpulse.erp@gmail.com',))
+    if db_type == 'sqlite':
+        cursor.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('bizpulse.erp@gmail.com',))
+    else:
+        cursor.execute('SELECT COUNT(*) FROM users WHERE email = %s', ('bizpulse.erp@gmail.com',))
+    
     if cursor.fetchone()[0] == 0:
-        cursor.execute('''
-            INSERT INTO users (id, first_name, last_name, email, business_name, business_type, password_hash, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('admin-bizpulse', 'BizPulse', 'Admin', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), 1, datetime.now().isoformat()))
+        if db_type == 'sqlite':
+            cursor.execute('''
+                INSERT INTO users (id, first_name, last_name, email, business_name, business_type, password_hash, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', ('admin-bizpulse', 'BizPulse', 'Admin', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), 1, datetime.now().isoformat()))
+        else:
+            cursor.execute('''
+                INSERT INTO users (id, first_name, last_name, email, business_name, business_type, password_hash, is_active, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', ('admin-bizpulse', 'BizPulse', 'Admin', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), True, datetime.now().isoformat()))
     
     # Add sample data
-    cursor.execute('SELECT COUNT(*) FROM products')
+    if db_type == 'sqlite':
+        cursor.execute('SELECT COUNT(*) FROM products')
+    else:
+        cursor.execute('SELECT COUNT(*) FROM products')
+    
     if cursor.fetchone()[0] == 0:
         # Sample products
         sample_products = [
@@ -770,14 +858,19 @@ def init_db():
             ('prod-10', 'P010', 'Potatoes (1kg)', 'Vegetables', 25.0, 20.0, 60, 10, 'kg', 'retail')
         ]
         
+        placeholder = '?' if db_type == 'sqlite' else '%s'
         for product in sample_products:
-            cursor.execute('''
+            cursor.execute(f'''
                 INSERT INTO products (id, code, name, category, price, cost, stock, min_stock, unit, business_type)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', product)
     
     # Sample customers
-    cursor.execute('SELECT COUNT(*) FROM customers')
+    if db_type == 'sqlite':
+        cursor.execute('SELECT COUNT(*) FROM customers')
+    else:
+        cursor.execute('SELECT COUNT(*) FROM customers')
+        
     if cursor.fetchone()[0] == 0:
         sample_customers = [
             ('cust-1', 'Rajesh Kumar', '+91 9876543210', 'rajesh@email.com', '123 Main Street, City', 5000.0),
@@ -787,11 +880,14 @@ def init_db():
             ('cust-5', 'Vikram Patel', '+91 9876543214', 'vikram@email.com', '654 Commercial Area, City', 6000.0)
         ]
         
+        placeholder = '?' if db_type == 'sqlite' else '%s'
         for customer in sample_customers:
-            cursor.execute('''
+            cursor.execute(f'''
                 INSERT INTO customers (id, name, phone, email, address, credit_limit)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
             ''', customer)
     
     conn.commit()
     conn.close()
+    
+    print(f"✅ {db_type.upper()} database initialized successfully!")
