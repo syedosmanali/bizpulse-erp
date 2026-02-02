@@ -3,7 +3,7 @@
   "appName": "BizPulse ERP",
   "webDir": "frontend/assets/static",
   "server": {
-    "url": "https://bizpulse24.com",
+    "url": "https://www.bizpulse24.com/mobile-simple",
     "cleartext": true,
     "androidScheme": "https",
     "allowNavigation": [
@@ -18,7 +18,7 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
-      "backgroundColor": "#4F46E5",
+      "backgroundColor": "#732C3F",
       "showSpinner": false
     }
   }
