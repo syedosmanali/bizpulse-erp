@@ -46,22 +46,22 @@ def get_db_connection():
     
     if db_url:
         # Supabase PostgreSQL connection
+        # Parse DATABASE_URL first (outside try block)
+        parsed = urlparse(db_url)
+        
+        # Extract username - handle Supabase format (postgres.project-ref)
+        username = parsed.username
+        if username and '.' in username:
+            # Supabase format: postgres.dnflpvmertmioebhjzas
+            # We need the full username for Supabase
+            username = username
+        
+        # Extract database name from path
+        database = parsed.path[1:] if parsed.path else 'postgres'
+        
         try:
             import psycopg2
             from psycopg2.extras import RealDictCursor
-            
-            # Parse DATABASE_URL
-            parsed = urlparse(db_url)
-            
-            # Extract username - handle Supabase format (postgres.project-ref)
-            username = parsed.username
-            if username and '.' in username:
-                # Supabase format: postgres.dnflpvmertmioebhjzas
-                # We need the full username for Supabase
-                username = username
-            
-            # Extract database name from path
-            database = parsed.path[1:] if parsed.path else 'postgres'
             
             print(f"🔗 Connecting to Supabase: {parsed.hostname}:{parsed.port or 5432}")
             
