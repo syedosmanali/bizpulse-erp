@@ -727,7 +727,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📦 Inventory Management</h1>
+            <h1><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Inventory Management</h1>
             <p>Comprehensive asset and inventory tracking system</p>
         </div>
 
@@ -741,7 +741,7 @@
             </p>
             <div class="integration-buttons">
                 <a href="/api/stock/manage" target="_blank" class="integration-btn">
-                    📦 Product Stock Management
+                    <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Stock Management
                 </a>
                 <a href="/retail/products" target="_blank" class="integration-btn secondary">
                     🛍️ Products Module
@@ -754,19 +754,19 @@
 
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="showTab('dashboard')">
-                📊 Dashboard
+                <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Dashboard
             </button>
             <button class="nav-tab" onclick="showTab('items')">
-                📦 Items
+                <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Items
             </button>
             <button class="nav-tab" onclick="showTab('categories')">
                 🏷️ Categories
             </button>
             <button class="nav-tab" onclick="showTab('movements')">
-                📋 Movements
+                <img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Movements
             </button>
             <button class="nav-tab" onclick="showTab('reports')">
-                📈 Reports
+                <img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Reports
             </button>
         </div>
 
@@ -776,7 +776,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-title">Total Items</div>
-                        <div class="stat-icon">📦</div>
+                        <div class="stat-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                     </div>
                     <div class="stat-value" id="total-items">-</div>
                     <div class="stat-change">Active inventory items</div>
@@ -785,7 +785,7 @@
                 <div class="stat-card">
                     <div class="stat-header">
                         <div class="stat-title">Total Value</div>
-                        <div class="stat-icon">💰</div>
+                        <div class="stat-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                     </div>
                     <div class="stat-value" id="total-value">-</div>
                     <div class="stat-change">Current inventory value</div>
@@ -824,7 +824,7 @@
                         </button>
                     </div>
 
-                    <h3>📋 Recent Items</h3>
+                    <h3><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Recent Items</h3>
                     <div id="recent-items" class="recent-items">
                         <div class="loading">Loading recent items...</div>
                     </div>
@@ -851,7 +851,7 @@
         <!-- Other tabs will be loaded dynamically -->
         <div id="items-tab" class="tab-content" style="display: none;">
             <div class="main-content">
-                <h3>📦 Inventory Items Management</h3>
+                <h3><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Inventory Items Management</h3>
                 <p>Items management interface will be loaded here...</p>
             </div>
         </div>
@@ -865,14 +865,14 @@
 
         <div id="movements-tab" class="tab-content" style="display: none;">
             <div class="main-content">
-                <h3>📋 Inventory Movements</h3>
+                <h3><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Inventory Movements</h3>
                 <p>Movements tracking interface will be loaded here...</p>
             </div>
         </div>
 
         <div id="reports-tab" class="tab-content" style="display: none;">
             <div class="main-content">
-                <h3>📈 Inventory Reports</h3>
+                <h3><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Inventory Reports</h3>
                 <p>Reports and analytics interface will be loaded here...</p>
             </div>
         </div>
@@ -1021,7 +1021,7 @@
     <div id="stock-adjustment-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>📊 Stock Adjustment</h3>
+                <h3><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Stock Adjustment</h3>
                 <span class="close" onclick="closeModal('stock-adjustment-modal')">&times;</span>
             </div>
             <div class="modal-body">
@@ -1316,7 +1316,7 @@
             if (!items || items.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-state-icon">📦</div>
+                        <div class="empty-state-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                         <h3>No inventory items yet</h3>
                         <p>Start by adding your first inventory item</p>
                     </div>
@@ -1327,7 +1327,7 @@
             container.innerHTML = items.map(item => `
                 <div class="item-row">
                     <div class="item-info">
-                        <div class="item-icon">${item.category_icon || '📦'}</div>
+                        <div class="item-icon">${item.category_icon || '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;">'}</div>
                         <div class="item-details">
                             <h4>${item.name}</h4>
                             <p>${item.description || 'No description'}</p>
@@ -1370,10 +1370,10 @@
                             ➕ Add New Item
                         </button>
                         <button class="btn btn-secondary" onclick="showBulkActionsModal()">
-                            📋 Bulk Actions
+                            <img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Bulk Actions
                         </button>
                         <button class="btn btn-secondary" onclick="showStockAdjustmentModal()">
-                            📊 Stock Adjustment
+                            <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Stock Adjustment
                         </button>
                     </div>
 
@@ -1453,7 +1453,7 @@
         function loadMovementsTracking() {
             document.getElementById('movements-tab').innerHTML = `
                 <div class="main-content">
-                    <h3>📋 Inventory Movements</h3>
+                    <h3><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Inventory Movements</h3>
                     <p>Movements tracking interface coming soon...</p>
                 </div>
             `;
@@ -1462,7 +1462,7 @@
         function loadReportsAnalytics() {
             document.getElementById('reports-tab').innerHTML = `
                 <div class="main-content">
-                    <h3>📈 Inventory Reports</h3>
+                    <h3><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Inventory Reports</h3>
                     <p>Reports and analytics interface coming soon...</p>
                 </div>
             `;
@@ -1676,7 +1676,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="9" class="empty-state">
-                            <div class="empty-state-icon">📦</div>
+                            <div class="empty-state-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                             <h3>No items found</h3>
                             <p>Try adjusting your filters or add new items</p>
                         </td>

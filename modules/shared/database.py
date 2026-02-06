@@ -1,41 +1,44 @@
 """
 Database connection and initialization utilities
-UPDATED: Now supports both SQLite (local) and PostgreSQL (production)
+UPDATED: Now uses Supabase PostgreSQL for persistent cloud storage
 """
 
-import sqlite3
 import uuid
 import hashlib
 from datetime import datetime, timedelta
 import os
 import json
+import sqlite3
 from urllib.parse import urlparse
+from dotenv import load_dotenv
 
-# Get absolute path to database file (for SQLite)
+# Load environment variables from .env file
+load_dotenv()
+
+# Get absolute path to database file (for SQLite fallback only)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(BASE_DIR, 'billing.db')
 
 def get_database_url():
-    """Get DATABASE_URL from environment variables"""
+    """Get DATABASE_URL from environment variables (Supabase PostgreSQL)"""
     return os.environ.get('DATABASE_URL')
 
 def get_db_type():
-    """Determine database type based on environment"""
+    """Determine database type - always PostgreSQL for production"""
     return 'postgresql' if get_database_url() else 'sqlite'
 
 def get_db_connection():
     """
-    Get database connection based on environment.
-    - Production (DATABASE_URL set): PostgreSQL connection
-    - Local (no DATABASE_URL): SQLite connection
+    Get database connection to Supabase PostgreSQL.
+    - Production/Supabase: PostgreSQL connection (persistent cloud storage)
+    - Local fallback: SQLite (only for development without Supabase)
     """
     db_url = get_database_url()
     
     if db_url:
-        # PostgreSQL connection
+        # Supabase PostgreSQL connection
         try:
             import psycopg2
-            from psycopg2 import pool
             from psycopg2.extras import RealDictCursor
             
             # Parse DATABASE_URL
@@ -47,15 +50,19 @@ def get_db_connection():
                 user=parsed.username,
                 password=parsed.password,
                 database=parsed.path[1:],  # Remove leading '/'
-                cursor_factory=RealDictCursor
+                cursor_factory=RealDictCursor,
+                sslmode='require'  # Supabase requires SSL
             )
             conn.autocommit = False
+            print("✅ Connected to Supabase PostgreSQL")
             return conn
         except Exception as e:
-            print(f"❌ PostgreSQL connection failed: {e}")
+            print(f"❌ Supabase PostgreSQL connection failed: {e}")
             raise
     else:
-        # SQLite connection (local development)
+        # SQLite fallback (local development only)
+        import sqlite3
+        print("⚠️  Using SQLite fallback (local development)")
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn

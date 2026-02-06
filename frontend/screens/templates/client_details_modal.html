@@ -2,7 +2,7 @@
 <div id="clientDetailsModal" class="modal" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <h2>👤 Client Account Details</h2>
+            <h2><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Client Account Details</h2>
             <span class="close" onclick="closeClientModal()">&times;</span>
         </div>
         
@@ -424,7 +424,7 @@ async function viewClientDetails(clientId) {
                         <div class="detail-item">
                             <span class="detail-label">Contact Email:</span>
                             <span class="detail-value">${client.contact_email}</span>
-                            <button class="copy-btn-small" onclick="copyToClipboard('${client.contact_email}')">📋</button>
+                            <button class="copy-btn-small" onclick="copyToClipboard('${client.contact_email}')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                         </div>
                         
                         <div class="detail-item">
@@ -435,13 +435,13 @@ async function viewClientDetails(clientId) {
                         <div class="detail-item">
                             <span class="detail-label">Phone Number:</span>
                             <span class="detail-value">${client.phone_number || 'Not provided'}</span>
-                            ${client.phone_number ? `<button class="copy-btn-small" onclick="copyToClipboard('${client.phone_number}')">📋</button>` : ''}
+                            ${client.phone_number ? `<button class="copy-btn-small" onclick="copyToClipboard('${client.phone_number}')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>` : ''}
                         </div>
                         
                         <div class="detail-item">
                             <span class="detail-label">WhatsApp:</span>
                             <span class="detail-value">${client.whatsapp_number || 'Not provided'}</span>
-                            ${client.whatsapp_number ? `<button class="copy-btn-small" onclick="copyToClipboard('${client.whatsapp_number}')">📋</button>` : ''}
+                            ${client.whatsapp_number ? `<button class="copy-btn-small" onclick="copyToClipboard('${client.whatsapp_number}')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>` : ''}
                         </div>
                         
                         <div class="detail-item">
@@ -464,7 +464,7 @@ async function viewClientDetails(clientId) {
                         <div class="detail-item">
                             <span class="detail-label">Username:</span>
                             <span class="detail-value">${client.username}</span>
-                            <button class="copy-btn-small" onclick="copyToClipboard('${client.username}')">📋</button>
+                            <button class="copy-btn-small" onclick="copyToClipboard('${client.username}')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                         </div>
                         
                         <div class="detail-item">
@@ -472,13 +472,13 @@ async function viewClientDetails(clientId) {
                             <span class="detail-value password-field" id="client-password-${clientId}" onclick="revealClientPassword('${clientId}')">
                                 ••••••••
                             </span>
-                            <button class="copy-btn-small" id="copy-client-pwd-${clientId}" onclick="copyClientPassword('${clientId}')" style="display:none;">📋</button>
+                            <button class="copy-btn-small" id="copy-client-pwd-${clientId}" onclick="copyClientPassword('${clientId}')" style="display:none;"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                         </div>
                         
                         <div class="detail-item">
                             <span class="detail-label">Login URL:</span>
                             <span class="detail-value">http://localhost:5000/login</span>
-                            <button class="copy-btn-small" onclick="copyToClipboard('http://localhost:5000/login')">📋</button>
+                            <button class="copy-btn-small" onclick="copyToClipboard('http://localhost:5000/login')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                         </div>
                         
                         <div class="detail-item">
@@ -500,7 +500,7 @@ async function viewClientDetails(clientId) {
                 
                 <!-- Users Created by Client -->
                 <div class="detail-section" style="grid-column: 1 / -1;">
-                    <h3>👥 Users Created by This Client (${totalUsers})</h3>
+                    <h3><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Users Created by This Client (${totalUsers})</h3>
                     
                     ${totalUsers > 0 ? `
                         <table class="users-table">
@@ -523,13 +523,13 @@ async function viewClientDetails(clientId) {
                                         <td>${user.email}</td>
                                         <td>
                                             <span style="font-family: monospace;">${user.username}</span>
-                                            <button class="copy-btn-small" onclick="copyToClipboard('${user.username}')">📋</button>
+                                            <button class="copy-btn-small" onclick="copyToClipboard('${user.username}')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                                         </td>
                                         <td>
                                             <span class="password-field" id="user-password-${user.id}" onclick="revealUserPassword('${user.id}')">
                                                 ••••••••
                                             </span>
-                                            <button class="copy-btn-small" id="copy-user-pwd-${user.id}" onclick="copyUserPassword('${user.id}')" style="display:none;">📋</button>
+                                            <button class="copy-btn-small" id="copy-user-pwd-${user.id}" onclick="copyUserPassword('${user.id}')" style="display:none;"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></button>
                                         </td>
                                         <td>
                                             <span style="text-transform: capitalize; background: #e9ecef; padding: 4px 8px; border-radius: 4px;">
@@ -549,7 +549,7 @@ async function viewClientDetails(clientId) {
                         </table>
                     ` : `
                         <div class="no-users">
-                            <p>👤 No users have been created by this client yet.</p>
+                            <p><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> No users have been created by this client yet.</p>
                             <p>Users will appear here when the client creates employee accounts.</p>
                         </div>
                     `}
@@ -568,7 +568,7 @@ async function viewClientDetails(clientId) {
                         ${client.is_active ? '🚫 Deactivate Account' : '✅ Activate Account'}
                     </button>
                     <button class="btn-modal btn-danger" onclick="exportClientData('${clientId}')">
-                        📊 Export Data
+                        <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Export Data
                     </button>
                 </div>
             `;

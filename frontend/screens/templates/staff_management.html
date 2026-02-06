@@ -442,7 +442,7 @@
 <body>
     <div class="header">
         <a href="/retail/dashboard" class="back-btn">← Back to Dashboard</a>
-        <h1>👥 Staff Management</h1>
+        <h1><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Staff Management</h1>
         <p>Add and manage your business staff members</p>
     </div>
 
@@ -450,7 +450,7 @@
         <!-- Statistics -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-number" id="totalStaff">0</div>
                 <div class="stat-label">Total Staff</div>
             </div>
@@ -460,7 +460,7 @@
                 <div class="stat-label">Active Staff</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-number" id="cashiers">0</div>
                 <div class="stat-label">Cashiers</div>
             </div>
@@ -512,7 +512,7 @@
                         <label for="staffPassword">Password (Auto-generated) *</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="text" id="staffPassword" name="staffPassword" readonly placeholder="Will be generated automatically" style="flex: 1;">
-                            <button type="button" class="btn-copy" onclick="copyCredentials()" title="Copy Credentials">📋 Copy</button>
+                            <button type="button" class="btn-copy" onclick="copyCredentials()" title="Copy Credentials"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Copy</button>
                         </div>
                     </div>
                 </div>
@@ -535,7 +535,7 @@
             
             <div id="staffContainer">
                 <div class="empty-state">
-                    <div class="empty-icon">👥</div>
+                    <div class="empty-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                     <h3>No Staff Members Yet</h3>
                     <p>Add your first staff member using the form above.</p>
                 </div>
@@ -653,7 +653,7 @@
                 } else {
                     document.getElementById('staffContainer').innerHTML = `
                         <div class="empty-state">
-                            <div class="empty-icon">👥</div>
+                            <div class="empty-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                             <h3>No Staff Members Yet</h3>
                             <p>Add your first staff member using the form above.</p>
                         </div>
@@ -682,7 +682,7 @@
             if (staff.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">👥</div>
+                        <div class="empty-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                         <h3>No Staff Members Found</h3>
                         <p>No staff members match your search criteria.</p>
                     </div>
@@ -720,7 +720,7 @@
                                 </div>
                             ` : ''}
                             <div class="detail-item">
-                                <span class="detail-icon">👤</span>
+                                <span class="detail-icon"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></span>
                                 <span>Username: ${member.username}</span>
                             </div>
                             <div class="detail-item">

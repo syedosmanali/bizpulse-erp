@@ -3,9 +3,9 @@ Report Generation Service for Daily Sales Reports
 Handles data collection, PDF generation, and WhatsApp delivery
 """
 
-import sqlite3
 import logging
 from datetime import datetime, date, timedelta
+from modules.shared.database import get_db_connection
 from .pdf_generator import PDFGenerator
 from .whatsapp_service import WhatsAppService
 import uuid

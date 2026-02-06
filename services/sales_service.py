@@ -4,7 +4,7 @@ Clean sales data management and reporting
 """
 
 from datetime import datetime, timedelta
-import sqlite3
+from modules.shared.database import get_db_connection
 from typing import Dict, List, Optional, Tuple
 
 
@@ -14,14 +14,14 @@ class SalesService:
     Sales are auto-created from invoices - this service is read-only for sales data
     """
     
-    def __init__(self, db_path: str = 'billing.db'):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        # db_path parameter kept for backward compatibility but not used
+        # Connection is now managed by get_db_connection()
+        pass
     
-    def _get_connection(self) -> sqlite3.Connection:
-        """Get database connection with row factory"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    def _get_connection(self):
+        """Get database connection - supports both SQLite and PostgreSQL"""
+        return get_db_connection()
     
     def get_sales(self, filters: Dict = None) -> Tuple[bool, Dict]:
         """

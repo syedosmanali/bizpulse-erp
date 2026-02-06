@@ -866,7 +866,7 @@
     <div class="top-header">
         <button class="menu-btn" onclick="toggleMenu()">☰</button>
         <div class="logo">BizPulse Mobile</div>
-        <button class="profile-btn" onclick="showProfile()">👤</button>
+        <button class="profile-btn" onclick="showProfile()"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></button>
     </div>
     
     <!-- Side Menu -->
@@ -884,15 +884,15 @@
                 <span>Dashboard</span>
             </div>
             <div class="menu-item" onclick="showModule('billing')">
-                <span class="menu-item-icon">🧾</span>
+                <span class="menu-item-icon"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"></span>
                 <span>Billing</span>
             </div>
             <div class="menu-item" onclick="showModule('sales')">
-                <span class="menu-item-icon">💰</span>
+                <span class="menu-item-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
                 <span>Sales</span>
             </div>
             <div class="menu-item" onclick="showModule('invoices')">
-                <span class="menu-item-icon">📄</span>
+                <span class="menu-item-icon"><img src="/static/iconss/invoices.png" style="width: 24px; height: 24px;"></span>
                 <span>Invoices</span>
             </div>
         </div>
@@ -901,11 +901,11 @@
         <div class="menu-section">
             <div class="menu-section-title">Inventory</div>
             <div class="menu-item" onclick="showModule('products')">
-                <span class="menu-item-icon">📦</span>
+                <span class="menu-item-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span>
                 <span>Products</span>
             </div>
             <div class="menu-item" onclick="showModule('inventory')">
-                <span class="menu-item-icon">📊</span>
+                <span class="menu-item-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                 <span>Inventory</span>
             </div>
             <div class="menu-item" onclick="showModule('barcode')">
@@ -918,7 +918,7 @@
         <div class="menu-section">
             <div class="menu-section-title">Customer</div>
             <div class="menu-item" onclick="showModule('customers')">
-                <span class="menu-item-icon">👥</span>
+                <span class="menu-item-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span>
                 <span>Customers</span>
             </div>
         </div>
@@ -931,7 +931,7 @@
                 <span>Earnings & Profit</span>
             </div>
             <div class="menu-item" onclick="showModule('reports')">
-                <span class="menu-item-icon">📈</span>
+                <span class="menu-item-icon"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></span>
                 <span>Reports</span>
             </div>
         </div>
@@ -940,7 +940,7 @@
         <div class="menu-section">
             <div class="menu-section-title">Advanced</div>
             <div class="menu-item" onclick="showModule('user-management')">
-                <span class="menu-item-icon">👥</span>
+                <span class="menu-item-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span>
                 <span>User Management</span>
             </div>
             <div class="menu-item" onclick="showModule('staff-management')">
@@ -957,7 +957,7 @@
         <div class="menu-section">
             <div class="menu-section-title">System</div>
             <div class="menu-item" onclick="showModule('settings')">
-                <span class="menu-item-icon">⚙️</span>
+                <span class="menu-item-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                 <span>Settings</span>
             </div>
             <div class="menu-item logout-item" onclick="logout()">
@@ -983,28 +983,28 @@
             <!-- Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card" onclick="showModule('sales')">
-                    <span class="stat-icon">💰</span>
+                    <span class="stat-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
                     <div class="stat-value" id="totalSales">₹0</div>
                     <div class="stat-label">Today's Sales</div>
                     <div class="stat-change">+12% from yesterday</div>
                 </div>
                 
                 <div class="stat-card" onclick="showModule('billing')">
-                    <span class="stat-icon">🧾</span>
+                    <span class="stat-icon"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"></span>
                     <div class="stat-value" id="totalBills">0</div>
                     <div class="stat-label">Bills Created</div>
                     <div class="stat-change">+5 new today</div>
                 </div>
                 
                 <div class="stat-card" onclick="showModule('products')">
-                    <span class="stat-icon">📦</span>
+                    <span class="stat-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span>
                     <div class="stat-value" id="totalProducts">0</div>
                     <div class="stat-label">Products</div>
                     <div class="stat-change">2 low stock</div>
                 </div>
                 
                 <div class="stat-card" onclick="showModule('customers')">
-                    <span class="stat-icon">👥</span>
+                    <span class="stat-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span>
                     <div class="stat-value" id="totalCustomers">0</div>
                     <div class="stat-label">Customers</div>
                     <div class="stat-change">3 new this week</div>
@@ -1015,27 +1015,27 @@
             <h3 class="section-title">⚡ Quick Actions</h3>
             <div class="quick-actions">
                 <button class="action-btn" onclick="showModule('billing')">
-                    <span class="action-icon">🧾</span>
+                    <span class="action-icon"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"></span>
                     <div class="action-label">New Bill</div>
                 </button>
                 
                 <button class="action-btn" onclick="showModule('products')">
-                    <span class="action-icon">📦</span>
+                    <span class="action-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span>
                     <div class="action-label">Products</div>
                 </button>
                 
                 <button class="action-btn" onclick="showModule('customers')">
-                    <span class="action-icon">👥</span>
+                    <span class="action-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span>
                     <div class="action-label">Customers</div>
                 </button>
                 
                 <button class="action-btn" onclick="showModule('sales')">
-                    <span class="action-icon">💰</span>
+                    <span class="action-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
                     <div class="action-label">Sales</div>
                 </button>
                 
                 <button class="action-btn" onclick="showModule('inventory')">
-                    <span class="action-icon">📊</span>
+                    <span class="action-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                     <div class="action-label">Inventory</div>
                 </button>
                 
@@ -1049,7 +1049,7 @@
         <!-- Products Module -->
         <div class="module-container" id="productsModule">
             <div class="module-header">
-                <div class="module-title">📦 Products</div>
+                <div class="module-title"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Products</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1061,7 +1061,7 @@
         <!-- Billing Module -->
         <div class="module-container" id="billingModule">
             <div class="module-header">
-                <div class="module-title">🧾 Billing</div>
+                <div class="module-title"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"> Billing</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1073,7 +1073,7 @@
         <!-- Customers Module -->
         <div class="module-container" id="customersModule">
             <div class="module-header">
-                <div class="module-title">👥 Customers</div>
+                <div class="module-title"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customers</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1085,7 +1085,7 @@
         <!-- Sales Module -->
         <div class="module-container" id="salesModule">
             <div class="module-header">
-                <div class="module-title">💰 Sales</div>
+                <div class="module-title"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1097,7 +1097,7 @@
         <!-- Invoices Module -->
         <div class="module-container" id="invoicesModule">
             <div class="module-header">
-                <div class="module-title">📄 Invoices</div>
+                <div class="module-title"><img src="/static/iconss/invoices.png" style="width: 24px; height: 24px;"> Invoices</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1109,7 +1109,7 @@
         <!-- Inventory Module -->
         <div class="module-container" id="inventoryModule">
             <div class="module-header">
-                <div class="module-title">📊 Inventory</div>
+                <div class="module-title"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Inventory</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1145,7 +1145,7 @@
         <!-- Reports Module -->
         <div class="module-container" id="reportsModule">
             <div class="module-header">
-                <div class="module-title">📈 Reports</div>
+                <div class="module-title"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Reports</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1157,7 +1157,7 @@
         <!-- Settings Module -->
         <div class="module-container" id="settingsModule">
             <div class="module-header">
-                <div class="module-title">⚙️ Settings</div>
+                <div class="module-title"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Settings</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1180,7 +1180,7 @@
         
         <div class="module-container" id="userManagementModule">
             <div class="module-header">
-                <div class="module-title">👥 User Management</div>
+                <div class="module-title"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> User Management</div>
                 <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
             </div>
             <div class="loading">
@@ -1220,17 +1220,17 @@
         </div>
         
         <div class="nav-item" onclick="showModule('products')">
-            <span class="nav-icon">📦</span>
+            <span class="nav-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span>
             <span class="nav-label">Products</span>
         </div>
         
         <div class="nav-item billing-btn" onclick="showModule('billing')">
-            <span class="nav-icon">🧾</span>
+            <span class="nav-icon"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"></span>
             <span class="nav-label">BILLING</span>
         </div>
         
         <div class="nav-item" onclick="showModule('sales')">
-            <span class="nav-icon">💰</span>
+            <span class="nav-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
             <span class="nav-label">Sales</span>
         </div>
         
@@ -1414,7 +1414,7 @@
         
         // Load individual modules (placeholder functions)
         async function loadProductsModule() {
-            console.log('📦 Loading Products Module...');
+            console.log('<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Loading Products Module...');
             
             try {
                 const products = await apiCall('/api/products');
@@ -1422,7 +1422,7 @@
                 const productsModule = document.getElementById('productsModule');
                 productsModule.innerHTML = `
                     <div class="module-header">
-                        <div class="module-title">📦 Products (${products.length})</div>
+                        <div class="module-title"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Products (${products.length})</div>
                         <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
                     </div>
                     
@@ -1442,7 +1442,7 @@
                     <div id="productsList">
                         ${products.map(product => `
                             <div class="product-card" data-name="${product.name.toLowerCase()}" data-code="${product.code.toLowerCase()}">
-                                <div class="product-icon">📦</div>
+                                <div class="product-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                                 <div class="product-info">
                                     <div class="product-name">${product.name}</div>
                                     <div class="product-details">Code: ${product.code} | Category: ${product.category || 'General'}</div>
@@ -1517,12 +1517,12 @@
         }
         
         async function loadBillingModule() {
-            console.log('🧾 Loading Mobile Billing Module...');
+            console.log('<img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"> Loading Mobile Billing Module...');
             
             const billingModule = document.getElementById('billingModule');
             billingModule.innerHTML = `
                 <div class="module-header">
-                    <div class="module-title">🧾 Mobile Billing</div>
+                    <div class="module-title"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"> Mobile Billing</div>
                     <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
                 </div>
                 
@@ -1530,7 +1530,7 @@
                 <div class="billing-interface">
                     <!-- Customer Selection -->
                     <div class="billing-section">
-                        <h3 class="section-title">👤 Customer</h3>
+                        <h3 class="section-title"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Customer</h3>
                         <div class="customer-selector">
                             <select id="customerSelect" class="form-select">
                                 <option value="">Select Customer</option>
@@ -1541,7 +1541,7 @@
                     
                     <!-- Product Search & Add -->
                     <div class="billing-section">
-                        <h3 class="section-title">📦 Add Products</h3>
+                        <h3 class="section-title"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Add Products</h3>
                         <div class="product-search">
                             <input type="text" id="productSearch" placeholder="Search products..." class="form-input">
                             <button class="barcode-btn" onclick="openBarcodeScanner()">📷</button>
@@ -1551,7 +1551,7 @@
                     
                     <!-- Bill Items -->
                     <div class="billing-section">
-                        <h3 class="section-title">🧾 Bill Items</h3>
+                        <h3 class="section-title"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"> Bill Items</h3>
                         <div id="billItems" class="bill-items">
                             <div class="empty-bill">
                                 <div class="empty-icon">🛒</div>
@@ -1583,13 +1583,13 @@
                     <div class="billing-section">
                         <div class="payment-methods">
                             <button class="payment-btn active" data-method="cash">💵 Cash</button>
-                            <button class="payment-btn" data-method="card">💳 Card</button>
+                            <button class="payment-btn" data-method="card"><img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> Card</button>
                             <button class="payment-btn" data-method="upi">📱 UPI</button>
                         </div>
                         
                         <div class="billing-actions">
                             <button class="action-btn secondary" onclick="clearBill()">🗑️ Clear</button>
-                            <button class="action-btn primary" onclick="processBill()">💰 Process Bill</button>
+                            <button class="action-btn primary" onclick="processBill()"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Process Bill</button>
                         </div>
                     </div>
                 </div>
@@ -1932,7 +1932,7 @@
         }
         
         async function loadCustomersModule() {
-            console.log('👥 Loading Customers Module...');
+            console.log('<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Loading Customers Module...');
             
             try {
                 const customers = await apiCall('/api/customers');
@@ -1940,7 +1940,7 @@
                 const customersModule = document.getElementById('customersModule');
                 customersModule.innerHTML = `
                     <div class="module-header">
-                        <div class="module-title">👥 Customers (${customers.length})</div>
+                        <div class="module-title"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customers (${customers.length})</div>
                         <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
                     </div>
                     
@@ -2022,7 +2022,7 @@
         }
         
         async function loadSalesModule() {
-            console.log('💰 Loading Sales Module...');
+            console.log('<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Loading Sales Module...');
             
             try {
                 const sales = await apiCall('/api/sales');
@@ -2031,24 +2031,24 @@
                 const salesModule = document.getElementById('salesModule');
                 salesModule.innerHTML = `
                     <div class="module-header">
-                        <div class="module-title">💰 Sales (${sales.length})</div>
+                        <div class="module-title"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales (${sales.length})</div>
                         <button class="back-btn" onclick="showModule('dashboard')">← Back</button>
                     </div>
                     
                     <!-- Sales Summary Cards -->
                     <div class="stats-grid" style="margin-bottom: 20px;">
                         <div class="stat-card">
-                            <span class="stat-icon">💰</span>
+                            <span class="stat-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
                             <div class="stat-value">₹${salesSummary.today?.total || 0}</div>
                             <div class="stat-label">Today's Sales</div>
                         </div>
                         <div class="stat-card">
-                            <span class="stat-icon">📊</span>
+                            <span class="stat-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                             <div class="stat-value">${salesSummary.today?.count || 0}</div>
                             <div class="stat-label">Total Bills</div>
                         </div>
                         <div class="stat-card">
-                            <span class="stat-icon">📈</span>
+                            <span class="stat-icon"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></span>
                             <div class="stat-value">₹${salesSummary.week?.total || 0}</div>
                             <div class="stat-label">This Week</div>
                         </div>
@@ -2075,8 +2075,8 @@
                             <div class="sale-card">
                                 <div class="sale-header">
                                     <div class="sale-bill-info">
-                                        <div class="sale-bill-number">🧾 ${sale.bill_number || 'N/A'}</div>
-                                        <div class="sale-customer">👤 ${sale.customer_name || 'Walk-in Customer'}</div>
+                                        <div class="sale-bill-number"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"> ${sale.bill_number || 'N/A'}</div>
+                                        <div class="sale-customer"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> ${sale.customer_name || 'Walk-in Customer'}</div>
                                     </div>
                                     <div class="sale-amount">
                                         <div class="sale-total">₹${(sale.total_amount || 0).toFixed(0)}</div>
@@ -2109,7 +2109,7 @@
                 const loadingElement = moduleElement.querySelector('.loading');
                 loadingElement.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">📄</div>
+                        <div style="font-size: 48px; margin-bottom: 15px;"><img src="/static/iconss/invoices.png" style="width: 24px; height: 24px;"></div>
                         <h3>Invoices Module</h3>
                         <p>Invoice management coming soon!</p>
                         <button onclick="alert('🚧 Invoices module under development!')" style="background: #732C3F; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
@@ -2126,7 +2126,7 @@
                 const loadingElement = moduleElement.querySelector('.loading');
                 loadingElement.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">📊</div>
+                        <div style="font-size: 48px; margin-bottom: 15px;"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                         <h3>Inventory Module</h3>
                         <p>Stock management coming soon!</p>
                         <button onclick="alert('🚧 Inventory module under development!')" style="background: #732C3F; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
@@ -2177,7 +2177,7 @@
                 const loadingElement = moduleElement.querySelector('.loading');
                 loadingElement.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">📈</div>
+                        <div style="font-size: 48px; margin-bottom: 15px;"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></div>
                         <h3>Reports Module</h3>
                         <p>Business reports coming soon!</p>
                         <button onclick="alert('🚧 Reports module under development!')" style="background: #732C3F; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
@@ -2194,7 +2194,7 @@
                 const loadingElement = moduleElement.querySelector('.loading');
                 loadingElement.innerHTML = `
                     <div style="text-align: center; padding: 40px;">
-                        <div style="font-size: 48px; margin-bottom: 15px;">⚙️</div>
+                        <div style="font-size: 48px; margin-bottom: 15px;"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                         <h3>Settings Module</h3>
                         <p>App settings coming soon!</p>
                         <button onclick="alert('🚧 Settings module under development!')" style="background: #732C3F; color: white; border: none; padding: 12px 24px; border-radius: 8px; margin-top: 15px; cursor: pointer;">
@@ -2212,7 +2212,7 @@
             
             const loadingElement = moduleElement.querySelector('.loading');
             const moduleNames = {
-                'user-management': { icon: '👥', name: 'User Management' },
+                'user-management': { icon: '<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;">', name: 'User Management' },
                 'staff-management': { icon: '👨‍💼', name: 'Staff Management' },
                 'whatsapp-reports': { icon: '📱', name: 'WhatsApp Reports' }
             };
@@ -2247,7 +2247,7 @@
         
         // Profile Function
         function showProfile() {
-            alert('👤 Profile module coming soon!');
+            alert('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Profile module coming soon!');
         }
         
         // Logout Function
@@ -2437,12 +2437,12 @@
         
         // Remaining Module Loaders
         async function loadInvoicesModule() {
-            console.log('📄 Loading Invoices Module...');
+            console.log('<img src="/static/iconss/invoices.png" style="width: 24px; height: 24px;"> Loading Invoices Module...');
             showComingSoon('invoices');
         }
         
         async function loadInventoryModule() {
-            console.log('📊 Loading Inventory Module...');
+            console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Loading Inventory Module...');
             showComingSoon('inventory');
         }
         
@@ -2457,17 +2457,17 @@
         }
         
         async function loadReportsModule() {
-            console.log('📈 Loading Reports Module...');
+            console.log('<img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Loading Reports Module...');
             showComingSoon('reports');
         }
         
         async function loadSettingsModule() {
-            console.log('⚙️ Loading Settings Module...');
+            console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Loading Settings Module...');
             showComingSoon('settings');
         }
         
         async function loadUserManagementModule() {
-            console.log('👥 Loading User Management Module...');
+            console.log('<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Loading User Management Module...');
             showComingSoon('user-management');
         }
         

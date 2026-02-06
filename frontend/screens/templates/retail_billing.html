@@ -182,7 +182,7 @@
         .product-image-placeholder {
             font-size: 3rem;
             color: #732C3F;
-            opacity: 0.3;
+            opacity: 1;
         }
 
         .product-name {
@@ -568,7 +568,7 @@
     <div class="container">
         <div class="header">
             <a href="/retail/dashboard" class="back-btn">← {{ t('back') }}</a>
-            <h1>🛒 {{ t('kirana_billing') }}</h1>
+            <h1><img src="/static/iconss/kirana trolly.png" style="width: 32px; height: 32px; vertical-align: middle;"> {{ t('kirana_billing') }}</h1>
             <div></div>
         </div>
 
@@ -576,7 +576,7 @@
             
             <!-- Products Section -->
             <div class="products-section" id="productsSection">
-                <h2>📦 {{ t('select_products') }}</h2>
+                <h2><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> {{ t('select_products') }}</h2>
                 
                 <!-- Category Filter -->
                 <div class="search-box">
@@ -597,7 +597,7 @@
 
             <!-- Cart Section -->
             <div class="cart-section" id="cartSection">
-                <h2>🛍️ {{ t('bill') }}</h2>
+                <h2><img src="/static/iconss/bill.png" style="width: 24px; height: 24px; vertical-align: middle;"> {{ t('bill') }}</h2>
                 
                 <!-- Add Customer Button -->
                 <button onclick="toggleCustomerDetails()" id="customerToggleBtn" style="width: 100%; padding: 12px; background: #732C3F; border: none; color: white; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s;">
@@ -698,10 +698,10 @@
                         <label style="display: block; font-weight: 600; color: #732C3F; font-size: 13px; margin-bottom: 8px;">Payment Mode:</label>
                         <select id="paymentMode" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px;" onchange="handlePaymentModeChange()">
                             <option value="">Select Payment Mode</option>
-                            <option value="cash">💵 Cash</option>
-                            <option value="upi">📱 UPI</option>
-                            <option value="card">💳 Card</option>
-                            <option value="credit">🕐 Credit (Full)</option>
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI</option>
+                            <option value="card">Card</option>
+                            <option value="credit">Credit (Full)</option>
                             <option value="partial">⚡ Partial Payment</option>
                         </select>
                     </div>
@@ -724,15 +724,15 @@
                         
                         <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-top: 10px; margin-bottom: 6px;">Payment Method:</label>
                         <select id="partialPaymentMethod" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
-                            <option value="cash">💵 Cash</option>
-                            <option value="upi">📱 UPI</option>
-                            <option value="card">💳 Card</option>
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI</option>
+                            <option value="card">Card</option>
                         </select>
                     </div>
                 </div>
 
                 <button class="checkout-btn" id="checkoutBtn" disabled data-i18n-btn="create_bill">
-                    💳 {{ t('create_bill') }}
+                    <img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> {{ t('create_bill') }}
                 </button>
             </div>
         </div>
@@ -825,8 +825,8 @@
                         <div class="product-image-container">
                             ${product.image_url ? 
                                 `<img src="${product.image_url}?v=${Date.now()}" alt="${product.name}" class="product-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                 <div class="product-image-placeholder" style="display:none;">📦</div>` : 
-                                `<div class="product-image-placeholder">📦</div>`
+                                 <div class="product-image-placeholder" style="display:none;"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>` : 
+                                `<div class="product-image-placeholder"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>`
                             }
                         </div>
                         <div class="product-name">${product.name}</div>
@@ -1197,7 +1197,7 @@
 
             const checkoutBtn = document.getElementById('checkoutBtn');
             checkoutBtn.disabled = true;
-            checkoutBtn.textContent = `💳 ${t('creating_bill')}`;
+            checkoutBtn.textContent = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('creating_bill')}`;
 
             try {
                 const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -1374,7 +1374,7 @@
                 }
             } finally {
                 checkoutBtn.disabled = false;
-                checkoutBtn.textContent = `💳 ${t('create_bill')}`;
+                checkoutBtn.textContent = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
             }
         }
 

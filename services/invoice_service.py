@@ -4,7 +4,7 @@ Clean invoice management with proper business logic
 """
 
 from datetime import datetime
-import sqlite3
+from modules.shared.database import get_db_connection
 import uuid
 from typing import Dict, List, Optional, Tuple
 from .billing_service import BillingService
@@ -16,15 +16,15 @@ class InvoiceService:
     Invoice is the source of truth for all transactions
     """
     
-    def __init__(self, db_path: str = 'billing.db'):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        # db_path parameter kept for backward compatibility but not used
+        # Connection is now managed by get_db_connection()
+        pass
         self.billing_service = BillingService(db_path)
     
-    def _get_connection(self) -> sqlite3.Connection:
-        """Get database connection with row factory"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    def _get_connection(self):
+        """Get database connection - supports both SQLite and PostgreSQL"""
+        return get_db_connection()
     
     def _generate_id(self) -> str:
         """Generate unique ID"""

@@ -478,7 +478,7 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <h1>📊 Inventory Dashboard</h1>
+                <h1><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Inventory Dashboard</h1>
                 <p>Real-time inventory monitoring and management</p>
             </div>
             <div class="header-actions">
@@ -486,7 +486,7 @@
                     ← Dashboard
                 </a>
                 <a href="/inventory/product-master" class="btn btn-primary">
-                    📦 Product Master
+                    <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Master
                 </a>
                 <a href="/inventory/purchase-entry" class="btn btn-primary">
                     📥 Purchase Entry
@@ -498,7 +498,7 @@
         <div class="quick-stats">
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon total">📦</div>
+                    <div class="stat-icon total"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-change positive">+5.2%</div>
                 </div>
                 <div class="stat-value" id="totalProducts">1,247</div>
@@ -525,7 +525,7 @@
             
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon value">💰</div>
+                    <div class="stat-icon value"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-change positive">+8.7%</div>
                 </div>
                 <div class="stat-value" id="totalValue">₹2.4L</div>
@@ -534,7 +534,7 @@
             
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon movement">📈</div>
+                    <div class="stat-icon movement"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-change positive">+15</div>
                 </div>
                 <div class="stat-value" id="todayMovements">47</div>
@@ -586,7 +586,7 @@
                     </div>
                     
                     <div class="alert-item">
-                        <div class="alert-icon info">📦</div>
+                        <div class="alert-icon info"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                         <div class="alert-content">
                             <div class="alert-title">Stock Received</div>
                             <div class="alert-message">Samsung Galaxy Phone - 20 units added</div>
@@ -678,7 +678,7 @@
                 </div>
                 
                 <div class="action-card" onclick="generateReports()">
-                    <div class="action-icon low">📊</div>
+                    <div class="action-icon low"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                     <div class="action-title">Generate Reports</div>
                     <div class="action-description">Inventory reports</div>
                 </div>
@@ -690,7 +690,7 @@
                 </div>
                 
                 <div class="action-card" onclick="reorderReport()">
-                    <div class="action-icon warning">📋</div>
+                    <div class="action-icon warning"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></div>
                     <div class="action-title">Reorder Report</div>
                     <div class="action-description">Items to reorder</div>
                 </div>
@@ -833,7 +833,7 @@
             newAlert.className = 'alert-item';
             newAlert.innerHTML = `
                 <div class="alert-icon ${type}">
-                    ${type === 'warning' ? '⚠️' : type === 'info' ? '📦' : '✅'}
+                    ${type === 'warning' ? '⚠️' : type === 'info' ? '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;">' : '✅'}
                 </div>
                 <div class="alert-content">
                     <div class="alert-title">${title}</div>

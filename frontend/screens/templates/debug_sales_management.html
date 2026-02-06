@@ -37,7 +37,7 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                console.log('📊 Response:', data);
+                console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Response:', data);
                 
                 if (data.success) {
                     resultDiv.innerHTML = `

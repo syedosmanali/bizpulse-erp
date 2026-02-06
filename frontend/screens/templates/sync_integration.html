@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle products sync
         window.syncClient.on('products_synced', function(products) {
-            console.log('📦 Products synced:', products.length);
+            console.log('<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Products synced:', products.length);
             
             // Refresh products table/list if it exists
             if (typeof loadProducts === 'function') {
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle sales sync
         window.syncClient.on('sales_synced', function(sales) {
-            console.log('💰 Sales synced:', sales.length);
+            console.log('<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales synced:', sales.length);
             
             // Refresh sales data if function exists
             if (typeof loadSales === 'function') {
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle customers sync
         window.syncClient.on('customers_synced', function(customers) {
-            console.log('👥 Customers synced:', customers.length);
+            console.log('<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customers synced:', customers.length);
             
             // Refresh customers data if function exists
             if (typeof loadCustomers === 'function') {

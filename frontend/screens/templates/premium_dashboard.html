@@ -1045,7 +1045,7 @@
             if (!section.data || section.data.length === 0) {
                 content.innerHTML = `
                     <div class="no-data">
-                        <div class="no-data-icon">💰</div>
+                        <div class="no-data-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                         <div class="no-data-text">No recent sales found</div>
                     </div>
                 `;
@@ -1082,7 +1082,7 @@
             if (!section.data) {
                 content.innerHTML = `
                     <div class="no-data">
-                        <div class="no-data-icon">📦</div>
+                        <div class="no-data-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                         <div class="no-data-text">${section.message || 'No products found'}</div>
                     </div>
                 `;
@@ -1131,7 +1131,7 @@
             if (!section.data) {
                 content.innerHTML = `
                     <div class="no-data">
-                        <div class="no-data-icon">👤</div>
+                        <div class="no-data-icon"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></div>
                         <div class="no-data-text">${section.message || 'No customers found'}</div>
                     </div>
                 `;

@@ -2,13 +2,19 @@
 Reports routes - Handle all report generation
 """
 
-from flask import Blueprint, request, jsonify, session, send_file
+from flask import Blueprint, request, jsonify, session, send_file, render_template
 from modules.shared.database import get_db_connection
 from datetime import datetime, timedelta
 import io
 import csv
 
 reports_bp = Blueprint('reports', __name__)
+
+@reports_bp.route('/reports')
+@reports_bp.route('/retail/reports')
+def reports_dashboard():
+    """Reports Dashboard Page"""
+    return render_template('reports_dashboard.html')
 
 def get_user_id_from_session():
     """Get user_id from session for filtering data"""

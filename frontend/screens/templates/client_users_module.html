@@ -323,7 +323,7 @@
 <body>
     <div class="header">
         <a href="/retail/dashboard" class="back-btn">← Back to Dashboard</a>
-        <h1>👥 Team Members</h1>
+        <h1><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Team Members</h1>
         <p>View team members and users in your organization</p>
     </div>
 
@@ -337,7 +337,7 @@
         <!-- Statistics -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-number" id="totalUsers">0</div>
                 <div class="stat-label">Team Members</div>
             </div>
@@ -352,7 +352,7 @@
                 <div class="stat-label">Recent Activity</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">📊</div>
+                <div class="stat-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-number" id="totalAccess">0</div>
                 <div class="stat-label">Total Access</div>
             </div>
@@ -499,7 +499,7 @@
             if (users.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">👥</div>
+                        <div class="empty-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                         <h3>No Team Members Found</h3>
                         <p>No team members match your search criteria.</p>
                     </div>

@@ -478,7 +478,7 @@
                     🎯 Demo & trial<br>
                     📞 Support & contact<br>
                     📱 Mobile app<br>
-                    📊 Reports & more<br><br>
+                    <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Reports & more<br><br>
                     Ask me anything about BizPulse or call us at <strong>+91 7093635305</strong>!
                 </div>
                 <div class="message-time">Just now</div>
@@ -489,7 +489,7 @@
     <!-- Quick Replies -->
     <div class="quick-replies" id="quickReplies">
         <button class="quick-reply-btn" onclick="sendQuickReply('Features')">✨ Features</button>
-        <button class="quick-reply-btn" onclick="sendQuickReply('Pricing')">💰 Pricing</button>
+        <button class="quick-reply-btn" onclick="sendQuickReply('Pricing')"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Pricing</button>
         <button class="quick-reply-btn" onclick="sendQuickReply('Demo')">🎯 Request Demo</button>
         <button class="quick-reply-btn" onclick="sendQuickReply('Support')">💬 Support</button>
     </div>
@@ -812,8 +812,8 @@
             hideTypingIndicator();
             
             const responses = {
-                'Features': '✨ BizPulse Complete Features:\n\n📦 Product Management\n   • Inventory tracking\n   • Barcode scanning\n   • Low stock alerts\n   • Category management\n\n👥 Customer Management\n   • Customer profiles\n   • Purchase history\n   • VIP/Regular tags\n\n💰 Sales & Billing\n   • Quick invoicing\n   • Payment tracking\n   • Sales reports\n\n📊 Analytics\n   • Profit analysis\n   • Revenue tracking\n   • Visual charts\n\n📱 Mobile App\n   • Access anywhere\n   • Real-time sync\n\nWant a detailed demo? Call +91 7093635305',
-                'Pricing': '💰 BizPulse Pricing Plans:\n\n🆓 Free Trial - 14 days\n   • Full feature access\n   • No credit card required\n\n📦 Basic - ₹999/month\n   • Up to 1000 products\n   • Basic reports\n   • Email support\n\n⭐ Pro - ₹1,999/month\n   • Unlimited products\n   • Advanced analytics\n   • Priority support\n   • Mobile app\n\n🏢 Enterprise - Custom\n   • Custom features\n   • Dedicated support\n   • API access\n\nAll plans: 24/7 support!\n📞 Call: +91 7093635305',
+                'Features': '✨ BizPulse Complete Features:\n\n<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Management\n   • Inventory tracking\n   • Barcode scanning\n   • Low stock alerts\n   • Category management\n\n<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customer Management\n   • Customer profiles\n   • Purchase history\n   • VIP/Regular tags\n\n<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales & Billing\n   • Quick invoicing\n   • Payment tracking\n   • Sales reports\n\n<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Analytics\n   • Profit analysis\n   • Revenue tracking\n   • Visual charts\n\n📱 Mobile App\n   • Access anywhere\n   • Real-time sync\n\nWant a detailed demo? Call +91 7093635305',
+                'Pricing': '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> BizPulse Pricing Plans:\n\n🆓 Free Trial - 14 days\n   • Full feature access\n   • No credit card required\n\n<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Basic - ₹999/month\n   • Up to 1000 products\n   • Basic reports\n   • Email support\n\n⭐ Pro - ₹1,999/month\n   • Unlimited products\n   • Advanced analytics\n   • Priority support\n   • Mobile app\n\n🏢 Enterprise - Custom\n   • Custom features\n   • Dedicated support\n   • API access\n\nAll plans: 24/7 support!\n📞 Call: +91 7093635305',
                 'Demo': '🎯 Great! Let\'s get you started:\n\n1️⃣ Free Trial (14 days)\n   • No credit card needed\n   • Full access\n   • Sample data included\n\n2️⃣ Live Demo\n   • Personalized walkthrough\n   • Q&A session\n   • Setup help\n\n📞 Call us: +91 7093635305\n📧 Email: support@bizpulse.com\n💬 WhatsApp: +91 7093635305\n\nOr share your details and we\'ll reach out within 2 hours!',
                 'Support': '💬 BizPulse Support:\n\n📞 Phone: +91 7093635305\n📧 Email: support@bizpulse.com\n💬 WhatsApp: +91 7093635305\n\n⏰ Available: 24/7\n⚡ Response: < 2 hours\n\nYou can:\n• Call for immediate help\n• Email for detailed queries\n• WhatsApp for quick questions\n\nHow can we help you today?'
             };
@@ -829,7 +829,7 @@
         
         const messageHTML = `
             <div class="chat-message user">
-                <div class="message-avatar user">👤</div>
+                <div class="message-avatar user"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></div>
                 <div>
                     <div class="message-bubble user">${text}</div>
                     <div class="message-time" style="text-align: right;">${time}</div>
@@ -878,9 +878,9 @@
         
         // Pricing & Cost
         else if (lowerMessage.match(/\b(price|pricing|cost|charge|fee|plan|subscription|package)\b/)) {
-            response = '💰 BizPulse Pricing Plans:\n\n' +
+            response = '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> BizPulse Pricing Plans:\n\n' +
                        '🆓 Free Trial - 14 days (Full access)\n' +
-                       '📦 Basic - ₹999/month\n' +
+                       '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Basic - ₹999/month\n' +
                        '   • Up to 1000 products\n' +
                        '   • Basic reports\n' +
                        '   • Email support\n\n' +
@@ -899,21 +899,21 @@
         // Features & Capabilities
         else if (lowerMessage.match(/\b(feature|capability|function|what does|what can|how does|module)\b/)) {
             response = '✨ BizPulse Features:\n\n' +
-                       '📦 Product Management\n' +
+                       '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Management\n' +
                        '   • Inventory tracking\n' +
                        '   • Barcode scanning\n' +
                        '   • Low stock alerts\n' +
                        '   • Category management\n\n' +
-                       '👥 Customer Management\n' +
+                       '<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customer Management\n' +
                        '   • Customer profiles\n' +
                        '   • Purchase history\n' +
                        '   • VIP/Regular/Wholesale tags\n\n' +
-                       '💰 Sales & Billing\n' +
+                       '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales & Billing\n' +
                        '   • Quick invoicing\n' +
                        '   • Payment tracking\n' +
                        '   • Sales reports\n' +
                        '   • Date filters\n\n' +
-                       '📊 Analytics & Reports\n' +
+                       '<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Analytics & Reports\n' +
                        '   • Profit analysis\n' +
                        '   • Revenue tracking\n' +
                        '   • Top products\n' +
@@ -984,7 +984,7 @@
                        '   • Bank-level encryption\n' +
                        '   • Daily backups\n' +
                        '   • GDPR compliant\n\n' +
-                       '💳 Payment Methods:\n' +
+                       '<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> Payment Methods:\n' +
                        '   • Credit/Debit cards\n' +
                        '   • UPI\n' +
                        '   • Net banking\n' +
@@ -1009,7 +1009,7 @@
                        '   • Webhook support\n' +
                        '   • Real-time sync\n' +
                        '   • Developer docs\n\n' +
-                       '📊 Data Export:\n' +
+                       '<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Data Export:\n' +
                        '   • Excel/CSV\n' +
                        '   • PDF reports\n' +
                        '   • Automated backups\n\n' +
@@ -1035,8 +1035,8 @@
         
         // Reports & Analytics
         else if (lowerMessage.match(/\b(report|analytics|analysis|chart|graph|dashboard|insight)\b/)) {
-            response = '📊 Reports & Analytics:\n\n' +
-                       '📈 Available Reports:\n' +
+            response = '<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Reports & Analytics:\n\n' +
+                       '<img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"> Available Reports:\n' +
                        '   • Sales reports (daily/weekly/monthly)\n' +
                        '   • Profit analysis\n' +
                        '   • Inventory reports\n' +
@@ -1130,10 +1130,10 @@
             response = '🤔 I understand you\'re asking about "' + (keywordText || userMessage) + '".\n\n' +
                        'While I may not have a specific answer for that, I can help you with:\n\n' +
                        '💼 Business Management\n' +
-                       '📦 Inventory & Products\n' +
-                       '💰 Sales & Billing\n' +
-                       '👥 Customer Management\n' +
-                       '📊 Reports & Analytics\n\n' +
+                       '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Inventory & Products\n' +
+                       '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales & Billing\n' +
+                       '<img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Customer Management\n' +
+                       '<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Reports & Analytics\n\n' +
                        'Or connect with our team for personalized help:\n' +
                        '📞 +91 7093635305\n' +
                        '📧 support@bizpulse.com\n\n' +

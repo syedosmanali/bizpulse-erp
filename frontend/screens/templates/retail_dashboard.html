@@ -144,58 +144,52 @@
             z-index: -1;
         }
         
-        /* Premium Sidebar - Optimized for Performance */
+        /* Premium Sidebar - Always Visible and Frozen */
         .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 280px;
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 220px;
             height: 100vh;
             background: linear-gradient(180deg, var(--wine-primary) 0%, #8B4A5C 100%);
             backdrop-filter: blur(20px);
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            z-index: 1000;
-            transition: transform 0.2s ease-out;
-            will-change: transform;
-            transform: translateX(0);
-            /* Optimize for smooth scrolling */
+            z-index: 1001;
+            transition: none;
+            transform: translateX(0) !important;
             contain: layout style paint;
             -webkit-overflow-scrolling: touch;
-            /* Fix position to prevent movement during main content scroll */
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
         }
         
         .sidebar.collapsed {
-            transform: translateX(-100%);
+            transform: translateX(-220px) !important;
         }
         
         .sidebar-header {
-            padding: 32px 24px;
+            padding: 24px 16px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
         
         .logo {
-            width: 48px;
-            height: 48px;
+            width: 40px;
+            height: 40px;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: var(--radius-md);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .sidebar-title {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 600;
             letter-spacing: -0.025em;
         }
@@ -255,37 +249,33 @@
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 12px 24px;
-            margin: 2px 16px;
+            padding: 8px 16px;
+            margin: 2px 12px;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-            border-radius: var(--radius-md);
+            transition: all 0.15s ease;
+            border-radius: 8px;
             position: relative;
-            /* Optimize for smooth scrolling */
-            will-change: transform, background-color;
-            transform: translateZ(0);
+            background: transparent;
         }
         
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(4px) translateZ(0);
+            background: rgba(255, 255, 255, 0.06);
         }
         
         .nav-item.active {
-            background: rgba(255, 255, 255, 0.15);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .nav-item.active::before {
             content: '';
             position: absolute;
-            left: -16px;
+            left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 4px;
-            height: 24px;
+            width: 3px;
+            height: 50%;
             background: white;
-            border-radius: 2px;
+            border-radius: 0 2px 2px 0;
         }
         
         /* Modules will be shown/hidden by JavaScript based on permissions */
@@ -294,17 +284,40 @@
         }
         
         .nav-icon {
-            font-size: 1.1rem;
-            width: 20px;
-            text-align: center;
-            margin-right: 15px;
-            width: 20px;
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .nav-icon img {
+            width: 22px;
+            height: 22px;
+            filter: none;
+            opacity: 0.8;
+        }
+        
+        .nav-item:hover .nav-icon img {
+            opacity: 0.95;
+        }
+        
+        .nav-item.active .nav-icon img {
+            opacity: 1;
         }
         
         .nav-text {
+            font-weight: 400;
+            font-size: 0.8rem;
+            letter-spacing: 0;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .nav-item.active .nav-text {
             font-weight: 500;
-            font-size: 0.95rem;
-            letter-spacing: -0.01em;
+            color: #fff;
         }
         
         /* Special Nav Items - Subtle Wine Accent */
@@ -353,7 +366,7 @@
         .top-header {
             position: fixed;
             top: 0;
-            left: 280px;
+            left: 220px;
             right: 0;
             height: 70px;
             background: rgba(255, 255, 255, 0.95);
@@ -914,19 +927,24 @@
         
         /* Premium Main Content - Optimized Performance */
         .main-content {
-            margin-left: 280px;
+            margin-left: 220px;
             padding-top: 70px;
             min-height: 100vh;
             transition: margin-left 0.2s ease-out;
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(10px);
             position: relative;
-            width: calc(100vw - 280px);
+            width: calc(100vw - 220px);
             will-change: margin-left, width;
-            /* Ensure main content scrolls independently */
-            overflow-y: auto;
-            overflow-x: hidden;
+            overflow: hidden;
             height: 100vh;
+        }
+        
+        .content-area {
+            width: 100%;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+            padding: 0;
         }
         
         .sidebar.collapsed ~ .main-content {
@@ -1195,11 +1213,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            background: linear-gradient(135deg, var(--wine-lightest), rgba(255, 255, 255, 0.9));
-            border-radius: 10px;
-            border: 1px solid var(--border-light);
-            box-shadow: 0 2px 6px rgba(115, 44, 63, 0.08);
+            background: transparent;
+        }
+        
+        .stat-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
         
         .stat-icon.revenue {
@@ -1320,16 +1340,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, var(--wine-lightest), rgba(255, 255, 255, 0.8));
+            background: transparent;
             border-radius: var(--radius-sm);
-            border: 1px solid var(--border-light);
             transition: all 0.3s ease;
         }
         
+        .action-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
         .action-btn:hover .action-icon {
-            background: linear-gradient(135deg, var(--wine-primary), var(--wine-light));
-            color: white;
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
         
         .action-text {
@@ -1886,59 +1909,59 @@
         
         <nav class="nav-menu">
             <div class="nav-item module-dashboard active" onclick="showModule('dashboard')">
-                <span class="nav-icon">📊</span>
+                <span class="nav-icon"><img src="/static/iconss/dashboard.png" alt="Dashboard"></span>
                 <span class="nav-text">{{ t('dashboard') }}</span>
             </div>
             <div class="nav-item module-sales" onclick="showModule('sales')">
-                <span class="nav-icon">💰</span>
+                <span class="nav-icon"><img src="/static/iconss/sales.png" alt="Sales"></span>
                 <span class="nav-text">{{ t('sales') }}</span>
             </div>
             <div class="nav-item module-credit" onclick="showModule('credit')">
-                <span class="nav-icon">💳</span>
+                <span class="nav-icon"><img src="/static/iconss/credit.png" alt="Credit"></span>
                 <span class="nav-text">Credit Management</span>
             </div>
             <div class="nav-item module-billing" onclick="showModule('billing')">
-                <span class="nav-icon">🧾</span>
+                <span class="nav-icon"><img src="/static/iconss/billing.png" alt="Billing"></span>
                 <span class="nav-text">{{ t('billing') }}</span>
             </div>
             <div class="nav-item module-invoices" onclick="showModule('invoices')">
-                <span class="nav-icon">📄</span>
+                <span class="nav-icon"><img src="/static/iconss/invoices.png" alt="Invoices"></span>
                 <span class="nav-text">{{ t('invoices') }}</span>
             </div>
             <div class="nav-item module-eway" onclick="window.open('/api/eway/manage', '_blank')">
-                <span class="nav-icon">📋</span>
+                <span class="nav-icon"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">E-Way Bills</span>
             </div>
             <div class="nav-item module-products" onclick="showModule('products')">
-                <span class="nav-icon">📦</span>
+                <span class="nav-icon"><img src="/static/iconss/products.png" alt="Products"></span>
                 <span class="nav-text">{{ t('products') }}</span>
             </div>
             <div class="nav-item module-inventory" onclick="showModule('inventory')">
-                <span class="nav-icon">📦</span>
+                <span class="nav-icon"><img src="/static/iconss/inventory_18546441.png" alt="Inventory"></span>
                 <span class="nav-text">{{ t('inventory') }}</span>
             </div>
             <div class="nav-item module-customers" onclick="showModule('customers')">
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon"><img src="/static/iconss/customers.png" alt="Customers"></span>
                 <span class="nav-text">{{ t('customers') }}</span>
             </div>
             
             <!-- User Management for clients -->
             <div id="user-management-nav" class="nav-item module-users" onclick="openUserManagement()" style="display: none;">
-                <span class="nav-icon">👤</span>
+                <span class="nav-icon"><img src="/static/iconss/user management.png" alt="User Management"></span>
                 <span class="nav-text">User Management</span>
             </div>
             
             <div class="nav-item" onclick="openStaffManagement()">
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon"><img src="/static/iconss/user management.png" alt="Staff"></span>
                 <span class="nav-text">Staff</span>
             </div>
             <div class="nav-item module-reports" onclick="showModule('reports')">
-                <span class="nav-icon">📈</span>
+                <span class="nav-icon"><img src="/static/iconss/increase_8879595.png" alt="Reports"></span>
                 <span class="nav-text">{{ t('reports') }}</span>
             </div>
             <!-- Advanced modules - only for super admin -->
             <div id="users-nav" class="nav-item nav-item-special" onclick="openUsers()" style="display: none;">
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon"><img src="/static/iconss/user management.png" alt="Users"></span>
                 <span class="nav-text">Client Users</span>
             </div>
             <div id="whatsapp-reports-nav" class="nav-item nav-item-special" onclick="openWhatsAppReports()" style="display: none;">
@@ -1950,7 +1973,7 @@
                 <span class="nav-text">Client Management</span>
             </div>
             <div class="nav-item module-settings" onclick="showModule('settings')">
-                <span class="nav-icon">⚙️</span>
+                <span class="nav-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">{{ t('settings') }}</span>
             </div>
             
@@ -1962,7 +1985,7 @@
             
             <!-- User Management for clients -->
             <div class="nav-item nav-item-special" onclick="openUserManagement()" style="display: none;">
-                <span class="nav-icon">👤</span>
+                <span class="nav-icon"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">User Management</span>
             </div>
             
@@ -2137,7 +2160,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-title">Today's Sales</div>
-                            <div class="stat-icon revenue">💰</div>
+                            <div class="stat-icon revenue"><img src="/static/iconss/total sales.png" style="width: 24px; height: 24px;"></div>
                         </div>
                         <div class="stat-value" id="todaySales">₹0</div>
                         <div class="stat-change positive" id="salesChange">+0% from yesterday</div>
@@ -2146,7 +2169,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-title">Today's Revenue</div>
-                            <div class="stat-icon orders">💰</div>
+                            <div class="stat-icon orders"><img src="/static/iconss/total revenue.png" style="width: 24px; height: 24px;"></div>
                         </div>
                         <div class="stat-value" id="todayRevenue">₹0</div>
                         <div class="stat-change positive" id="revenueChange">Today's earnings</div>
@@ -2156,7 +2179,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-title">Total Orders</div>
-                            <div class="stat-icon products">🛍️</div>
+                            <div class="stat-icon products"><img src="/static/iconss/total orders.png" style="width: 24px; height: 24px;"></div>
                         </div>
                         <div class="stat-value" id="totalOrders">0</div>
                         <div class="stat-change positive" id="ordersChange">+0% this week</div>
@@ -2165,7 +2188,7 @@
                     <div class="stat-card">
                         <div class="stat-header">
                             <div class="stat-title">Net Profit</div>
-                            <div class="stat-icon customers">💎</div>
+                            <div class="stat-icon customers"><img src="/static/iconss/net profit.png" style="width: 24px; height: 24px;"></div>
                         </div>
                         <div class="stat-value" id="netProfit">₹0</div>
                         <div class="stat-change positive" id="profitMargin">+0% margin</div>
@@ -2178,27 +2201,27 @@
                     <h2 class="section-title">Quick Actions</h2>
                     <div class="actions-grid">
                         <button class="action-btn" onclick="showModule('billing')">
-                            <div class="action-icon">🧾</div>
+                            <div class="action-icon"><img src="/static/iconss/bill.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Create New Bill</div>
                         </button>
                         <button class="action-btn" onclick="showModule('products')">
-                            <div class="action-icon">📦</div>
+                            <div class="action-icon"><img src="/static/iconss/kirana trolly.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Add Product</div>
                         </button>
                         <button class="action-btn" onclick="showModule('customers')">
-                            <div class="action-icon">👤</div>
+                            <div class="action-icon"><img src="/static/iconss/customers.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">New Customer</div>
                         </button>
                         <button class="action-btn" onclick="showModule('inventory')">
-                            <div class="action-icon">📋</div>
+                            <div class="action-icon"><img src="/static/iconss/inventory_18546441.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Update Stock</div>
                         </button>
                         <button class="action-btn" onclick="showModule('reports')">
-                            <div class="action-icon">📊</div>
+                            <div class="action-icon"><img src="/static/iconss/increase_8879595.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">View Reports</div>
                         </button>
                         <button class="action-btn" onclick="showModule('settings')">
-                            <div class="action-icon">⚙️</div>
+                            <div class="action-icon"><img src="/static/iconss/dashboard.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Settings</div>
                         </button>
                     </div>
@@ -2214,7 +2237,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon sale">💰</div>
+                        <div class="activity-icon sale"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                         <div class="activity-content">
                             <div class="activity-title">Sale completed successfully</div>
                             <div class="activity-time">2 minutes ago</div>
@@ -2223,7 +2246,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon product">📦</div>
+                        <div class="activity-icon product"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                         <div class="activity-content">
                             <div class="activity-title">New product added: Premium Rice 5kg</div>
                             <div class="activity-time">15 minutes ago</div>
@@ -2231,7 +2254,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon customer">👤</div>
+                        <div class="activity-icon customer"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></div>
                         <div class="activity-content">
                             <div class="activity-title">New customer registered</div>
                             <div class="activity-time">1 hour ago</div>
@@ -2239,7 +2262,7 @@
                     </div>
                     
                     <div class="activity-item">
-                        <div class="activity-icon sale">💰</div>
+                        <div class="activity-icon sale"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                         <div class="activity-content">
                             <div class="activity-title">Bulk order processed</div>
                             <div class="activity-time">2 hours ago</div>
@@ -2337,29 +2360,46 @@
                     const sidebar = document.getElementById('sidebar');
                     if (sidebar) { sidebar.classList.remove('open'); document.body.style.overflow = 'auto'; }
                 }
+                
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 if (evt && evt.target) {
                     const item = evt.target.closest('.nav-item');
-                    if (item) document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active')) , item.classList.add('active');
+                    if (item) item.classList.add('active');
+                } else {
+                    // If no event, find and activate by module class
+                    const moduleItem = document.querySelector(`.nav-item.module-${module}`);
+                    if (moduleItem) moduleItem.classList.add('active');
                 }
+                
                 const titles = {
                     dashboard: 'Dashboard', sales: 'Sales Management', credit: 'Credit Management', billing: 'Billing & POS', invoices: 'Invoices',
                     products: 'Product Management', inventory: 'Inventory Management', customers: 'Customer Management',
                     reports: 'Reports & Analytics', settings: 'Settings'
                 };
-                const pageTitle = document.getElementById('pageTitle'); if (pageTitle) pageTitle.textContent = titles[module] || 'Dashboard';
-                // Route to full pages for heavy modules
-                if (module === 'sales') return window.location.href = '/sales-management';
-                if (module === 'credit') return window.location.href = '/retail/credit';
-                if (module === 'products') return window.location.href = '/retail/products';
-                if (module === 'customers') return window.location.href = '/retail/customers';
-                if (module === 'billing') return window.location.href = '/retail/billing';
-                if (module === 'invoices') return window.location.href = '/retail/invoices';
-                if (module === 'inventory') return window.location.href = '/retail/inventory';
-                if (module === 'settings') return window.location.href = '/retail/settings';
-                if (module === 'reports') return window.location.href = '/retail/reports';
-                // otherwise show placeholder
-                const contentArea = document.getElementById('contentArea');
-                if (contentArea) contentArea.innerHTML = `<div style="text-align:center;padding:50px;"><h2>🚧 ${module.charAt(0).toUpperCase()+module.slice(1)} Module</h2><p>Coming soon.</p><button onclick="showModule('dashboard')" style="margin-top:20px;padding:10px 20px;background:#732C3F;color:#fff;border:none;border-radius:5px;">Back</button></div>`;
+                
+                // For dashboard, stay on same page
+                if (module === 'dashboard') {
+                    window.location.href = '/retail/dashboard';
+                    return;
+                }
+                
+                // For other modules, redirect to their pages (they will have sidebar already)
+                const moduleUrls = {
+                    'sales': '/sales-management',
+                    'credit': '/retail/credit',
+                    'products': '/retail/products',
+                    'customers': '/retail/customers',
+                    'billing': '/retail/billing',
+                    'invoices': '/retail/invoices',
+                    'inventory': '/retail/inventory',
+                    'settings': '/retail/settings',
+                    'reports': '/retail/reports'
+                };
+                
+                if (moduleUrls[module]) {
+                    window.location.href = moduleUrls[module];
+                }
             }
 
             function loadModuleContent(module){ showModule(module); }
@@ -2704,7 +2744,7 @@
                         sections.recent_sales.data.slice(0, 2).forEach(sale => {
                             activitiesHtml += `
                                 <div class="activity-item">
-                                    <div class="activity-icon sale">💰</div>
+                                    <div class="activity-icon sale"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                                     <div class="activity-content">
                                         <div class="activity-title">${sale.sale_type} completed</div>
                                         <div class="activity-desc">₹${sale.amount.toLocaleString()} - ${sale.customer_name}</div>
@@ -2721,7 +2761,7 @@
                         const product = sections.last_product.data;
                         activitiesHtml += `
                             <div class="activity-item">
-                                <div class="activity-icon product">📦</div>
+                                <div class="activity-icon product"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                                 <div class="activity-content">
                                     <div class="activity-title">New product added: ${product.name}</div>
                                     <div class="activity-desc">${product.category} - ₹${product.price.toLocaleString()}</div>
@@ -2736,7 +2776,7 @@
                         const customer = sections.last_customer.data;
                         activitiesHtml += `
                             <div class="activity-item">
-                                <div class="activity-icon customer">👤</div>
+                                <div class="activity-icon customer"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></div>
                                 <div class="activity-content">
                                     <div class="activity-title">${customer.customer_type} registered</div>
                                     <div class="activity-desc">${customer.name} - ${customer.phone || 'No phone'}</div>
@@ -2775,7 +2815,7 @@
                                 <h2 class="section-title" style="margin: 0;">Recent Activity</h2>
                             </div>
                             <div class="activity-item">
-                                <div class="activity-icon">📊</div>
+                                <div class="activity-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                                 <div class="activity-content">
                                     <div class="activity-title">No recent activity</div>
                                     <div class="activity-desc">Start making sales to see activity here</div>
@@ -2793,7 +2833,7 @@
                 try{ 
                     if (!stats) return; 
                     
-                    console.log('📊 All Stats Debug:', {
+                    console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> All Stats Debug:', {
                         today_sales: stats.today_sales,
                         today_revenue: stats.today_revenue,
                         today_profit: stats.today_profit,
@@ -2904,20 +2944,20 @@
                         const dropdownType = a.metadata && a.metadata.dropdown_type;
                         
                         // Different icons for different activity types
-                        let icon = '📋';
+                        let icon = '<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;">';
                         let iconClass = 'activity-icon';
                         
                         switch(activityType) {
                             case 'sale':
-                                icon = '💰';
+                                icon = '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;">';
                                 iconClass = 'activity-icon sale';
                                 break;
                             case 'product':
-                                icon = '📦';
+                                icon = '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;">';
                                 iconClass = 'activity-icon product';
                                 break;
                             case 'customer':
-                                icon = '👤';
+                                icon = '<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;">';
                                 iconClass = 'activity-icon customer';
                                 break;
                             case 'order':
@@ -2929,7 +2969,7 @@
                                 iconClass = 'activity-icon warning';
                                 break;
                             default:
-                                icon = '📋';
+                                icon = '<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;">';
                                 iconClass = 'activity-icon';
                         }
                         
@@ -3080,7 +3120,7 @@
                 switch(type) {
                     case 'sales':
                         if (data.sales && data.sales.length > 0) {
-                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;">💰 Recent Sales</div>';
+                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #28a745;"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Recent Sales</div>';
                             data.sales.forEach((sale, index) => {
                                 html += `
                                     <div style="padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.9em;">
@@ -3097,7 +3137,7 @@
                         
                     case 'products':
                         if (data.products && data.products.length > 0) {
-                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #007bff;">📦 Recent Products</div>';
+                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #007bff;"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Recent Products</div>';
                             data.products.forEach((product, index) => {
                                 html += `
                                     <div style="padding: 5px 0; border-bottom: 1px solid #eee; font-size: 0.9em;">
@@ -3114,7 +3154,7 @@
                         
                     case 'customers':
                         if (data.customers && data.customers.length > 0) {
-                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #6f42c1;">👤 Recent Customers</div>';
+                            html = '<div style="font-weight: bold; margin-bottom: 8px; color: #6f42c1;"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Recent Customers</div>';
                             data.customers.forEach((customer, index) => {
                                 const phone = customer.phone ? ` - ${customer.phone}` : '';
                                 html += `
@@ -3237,7 +3277,7 @@
                     
                     // Display Sales (if any)
                     if (results.sales && results.sales.length > 0) {
-                        html += '<div class="search-category">💰 Sales</div>';
+                        html += '<div class="search-category"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Sales</div>';
                         results.sales.forEach(item => {
                             html += createSearchItem(item);
                         });
@@ -3245,7 +3285,7 @@
                     
                     // Display Customers (if any)
                     if (results.customers && results.customers.length > 0) {
-                        html += '<div class="search-category">👤 Customers</div>';
+                        html += '<div class="search-category"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Customers</div>';
                         results.customers.forEach(item => {
                             html += createSearchItem(item);
                         });
@@ -3253,7 +3293,7 @@
                     
                     // Display Products (if any)
                     if (results.products && results.products.length > 0) {
-                        html += '<div class="search-category">📦 Products</div>';
+                        html += '<div class="search-category"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Products</div>';
                         results.products.forEach(item => {
                             html += createSearchItem(item);
                         });
@@ -3442,7 +3482,7 @@
             
             function getNotificationIcon(type) {
                 switch (type) {
-                    case 'sale': return '💰';
+                    case 'sale': return '<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;">';
                     case 'alert': case 'warning': return '⚠️';
                     case 'info': case 'report': return 'ℹ️';
                     default: return '🔔';
@@ -3598,7 +3638,7 @@
                         <div class="alert-popup-message">${alert.message}</div>
                         <div class="alert-popup-actions">
                             <button class="alert-popup-btn primary" onclick="goToProducts(); closeStockAlert(this);">
-                                📦 View Products
+                                <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> View Products
                             </button>
                             <button class="alert-popup-btn secondary" onclick="markAlertAsRead('${alert.id}'); closeStockAlert(this);">
                                 ✓ Mark as Read
@@ -3819,7 +3859,7 @@
                         <div class="alert-popup-message">${alert.message}</div>
                         <div class="alert-popup-actions">
                             <button class="alert-popup-btn primary" onclick="goToProducts(); closeStockAlert(this);">
-                                📦 View Products
+                                <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> View Products
                             </button>
                             <button class="alert-popup-btn secondary" onclick="markAlertAsRead('${alert.id}'); closeStockAlert(this);">
                                 ✓ Mark as Read
@@ -3898,7 +3938,7 @@
                     }
                     
                     const userInfo = await response.json();
-                    console.log('👤 User info loaded:', userInfo);
+                    console.log('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> User info loaded:', userInfo);
                     
                     // Show/hide modules based on user type
                     if (userInfo.is_super_admin || 
@@ -3927,7 +3967,7 @@
                     } else if (userInfo.user_type === 'client') {
                         // 🔥 CLIENTS - SHOW ALL MODULES INCLUDING USER MANAGEMENT
                         console.log('🏢 Client detected - showing all modules including user management');
-                        console.log('📋 Calling showAllModules()...');
+                        console.log('<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Calling showAllModules()...');
                         showAllModules();
                         
                         // Hide admin-only modules but show user management
@@ -3939,7 +3979,7 @@
                         console.log('✅ Client modules should now be visible');
                     } else if (userInfo.user_type === 'staff' || userInfo.user_type === 'client_user' || userInfo.user_type === 'employee') {
                         // 🔥 EMPLOYEES - DO NOT SHOW ALL MODULES, ONLY SHOW BASED ON PERMISSIONS
-                        console.log('👤 Employee detected - applying permission-based access');
+                        console.log('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Employee detected - applying permission-based access');
                         
                         // Hide management modules for employees/clients
                         document.getElementById('users-nav').style.display = 'none';
@@ -4108,7 +4148,7 @@
                 const modules = ['dashboard', 'sales', 'credit', 'products', 'inventory', 'customers', 'users', 'reports', 'billing', 'invoices', 'eway', 'settings'];
                 modules.forEach(module => {
                     const moduleElement = getModuleElement(module);
-                    console.log(`📋 Module ${module}:`, moduleElement ? 'found' : 'NOT FOUND');
+                    console.log(`<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Module ${module}:`, moduleElement ? 'found' : 'NOT FOUND');
                     if (moduleElement) {
                         moduleElement.classList.add('module-visible');
                         console.log(`✅ ${module} module shown`);
@@ -4133,7 +4173,7 @@
                     
                     // Only apply permissions for employees/staff/client_user
                     if (['employee','staff','client_user'].indexOf(normalizedUserType) === -1) {
-                        console.log('👤 Not an employee - showing all modules');
+                        console.log('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Not an employee - showing all modules');
                         // For non-employees (admin, client), show all modules
                         document.querySelectorAll('.module-dashboard, .module-sales, .module-credit, .module-billing, .module-invoices, .module-eway, .module-products, .module-inventory, .module-customers, .module-reports, .module-settings').forEach(el => {
                             el.classList.add('module-visible');
@@ -4149,7 +4189,7 @@
                         credentials: 'include'
                     });
                     
-                    console.log('📊 Permission API response status:', response.status);
+                    console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Permission API response status:', response.status);
                     
                     if (!response.ok) {
                         console.error('❌ Could not load permissions - keeping all modules HIDDEN');
@@ -4157,7 +4197,7 @@
                     }
                     
                     const data = await response.json();
-                    console.log('📋 Permission API response:', data);
+                    console.log('<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Permission API response:', data);
                     
                     if (data.success && data.permissions) {
                         console.log('✅ User permissions loaded:', data.permissions);
@@ -4288,7 +4328,7 @@
                         credentials: 'include'
                     });
                     const userInfo = await response.json();
-                    console.log('👤 Current User Info:', userInfo);
+                    console.log('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Current User Info:', userInfo);
                     console.log('📧 Current Email:', userInfo.email);
                     console.log('🔍 Is BizPulse User?', isBizPulseUser(userInfo));
                     console.log('🎯 Should show Client Management?', userInfo.email === 'bizpulse.erp@gmail.com');
@@ -4350,7 +4390,7 @@
                     // Animate today's sales (including credit)
                     const todaySales = document.getElementById('todaySales');
                     if (todaySales) {
-                        console.log('📊 Sales Debug:', {
+                        console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Sales Debug:', {
                             today_sales: stats.today_sales,
                             sales_value: stats.today_sales || 0
                         });
@@ -4369,7 +4409,7 @@
                     // Animate today's revenue
                     const todayRevenue = document.getElementById('todayRevenue');
                     if (todayRevenue) {
-                        console.log('📊 Revenue Debug:', {
+                        console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Revenue Debug:', {
                             today_revenue: stats.today_revenue,
                             revenue_value: stats.today_revenue || 0
                         });
@@ -4378,7 +4418,7 @@
                     
                     // Show receivable amount in red below revenue
                     const revenueReceivable = document.getElementById('revenueReceivable');
-                    console.log('📊 Receivable Debug:', {
+                    console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Receivable Debug:', {
                         today_receivable: stats.today_receivable,
                         today_receivable_profit: stats.today_receivable_profit,
                         element_exists: !!revenueReceivable
@@ -4421,7 +4461,7 @@
                     // Animate net profit (use actual profit from stats)
                     const netProfit = document.getElementById('netProfit');
                     if (netProfit) {
-                        console.log('📊 Net Profit Debug:', {
+                        console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Net Profit Debug:', {
                             today_profit: stats.today_profit,
                             profit_value: stats.today_profit || 0
                         });
@@ -4607,7 +4647,7 @@
             }
             
             const userInfo = await response.json();
-            console.log('👤 Profile data loaded:', userInfo);
+            console.log('<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Profile data loaded:', userInfo);
             
             // Update the internal profile button with real data
             if (typeof createInternalProfileButton === 'function') {
@@ -4817,7 +4857,7 @@
                 roleDisplay = 'Employee';
             }
             
-            console.log(`👤 Updating internal profile: ${userName}, Letter: ${firstLetter}, Role: ${roleDisplay}`);
+            console.log(`<img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> Updating internal profile: ${userName}, Letter: ${firstLetter}, Role: ${roleDisplay}`);
             
             // Update the internal profile button
             updateInternalProfileButton(firstLetter, userName, roleDisplay, userInfo);

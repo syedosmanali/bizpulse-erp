@@ -135,12 +135,19 @@
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
+            background: transparent;
+        }
+        
+        .stat-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
-        .stat-icon.sales { background: linear-gradient(135deg, #10b981, #059669); }
-        .stat-icon.revenue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-        .stat-icon.profit { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-        .stat-icon.avg { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .stat-icon.sales { }
+        .stat-icon.revenue { }
+        .stat-icon.profit { }
+        .stat-icon.avg { }
 
         .stat-title {
             font-size: 0.875rem;
@@ -319,31 +326,36 @@
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: transparent;
+        }
+        
+        .export-btn img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
         }
 
         .export-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .pdf-btn { 
-            background: linear-gradient(135deg, #e53e3e, #c53030); 
+            background: transparent; 
             color: white; 
         }
         
         .excel-btn { 
-            background: linear-gradient(135deg, #38a169, #2f855a); 
+            background: transparent; 
             color: white; 
         }
         
         .csv-btn { 
-            background: linear-gradient(135deg, #3182ce, #2c5282); 
+            background: transparent; 
             color: white; 
         }
         
         .whatsapp-btn { 
-            background: linear-gradient(135deg, #25d366, #128c7e); 
+            background: transparent; 
             color: white; 
         }
 
@@ -483,21 +495,21 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon sales">📊</div>
+                    <div class="stat-icon sales"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-title">Total Sales</div>
                 </div>
                 <div class="stat-value" id="totalSales">0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon revenue">💰</div>
+                    <div class="stat-icon revenue"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-title">Total Revenue</div>
                 </div>
                 <div class="stat-value" id="totalRevenue">₹0</div>
             </div>
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon profit">💵</div>
+                    <div class="stat-icon profit"><img src="/static/iconss/net profit.png"></div>
                     <div class="stat-title">Net Profit</div>
                 </div>
                 <div class="stat-value" id="totalProfit">₹0</div>
@@ -508,7 +520,7 @@
             </div>
             <div class="stat-card">
                 <div class="stat-header">
-                    <div class="stat-icon avg">📈</div>
+                    <div class="stat-icon avg"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></div>
                     <div class="stat-title">Average Order</div>
                 </div>
                 <div class="stat-value" id="avgOrder">₹0</div>
@@ -553,7 +565,7 @@
 
                 <div class="filter-group">
                     <button class="btn btn-primary" onclick="resetFilters()">
-                        🔄 Reset Filters
+                        Reset Filters
                     </button>
                 </div>
             </div>
@@ -565,25 +577,16 @@
                 <h3 class="table-title">Recent Sales</h3>
                 <div class="export-buttons">
                     <button class="export-btn pdf-btn" onclick="exportToPDF()" title="Export to PDF">
-                        <svg width="20" height="20" viewBox="0 0 240 234" fill="white">
-                            <path d="M42.5 0h155C221 0 240 19 240 42.5v149c0 23.5-19 42.5-42.5 42.5h-155C19 234 0 215 0 191.5v-149C0 19 19 0 42.5 0z"/>
-                            <path d="M59.5 142.5c4.5 0 8.5-1.5 11.5-4.5s4.5-7 4.5-11.5-1.5-8.5-4.5-11.5-7-4.5-11.5-4.5h-7v32h7zm0-24c2.5 0 4.5.5 6 2s2.5 3.5 2.5 6-.5 4.5-2.5 6-3.5 2-6 2h-1v-16h1z" fill="#DC143C"/>
-                            <path d="M95.5 142.5c4.5 0 8.5-1.5 11.5-4.5s4.5-7 4.5-11.5-1.5-8.5-4.5-11.5-7-4.5-11.5-4.5h-7v32h7zm0-24c2.5 0 4.5.5 6 2s2.5 3.5 2.5 6-.5 4.5-2.5 6-3.5 2-6 2h-1v-16h1z" fill="#DC143C"/>
-                            <path d="M131.5 142.5h6v-16h8v-6h-8v-4h10v-6h-16v32z" fill="#DC143C"/>
-                        </svg>
+                        <img src="/static/iconss/PDF.png">
                     </button>
                     <button class="export-btn excel-btn" onclick="exportToExcel()" title="Export to Excel">
-                        <svg width="20" height="20" viewBox="0 0 2080 2080" fill="white">
-                            <path d="M1920 0H160C72 0 0 72 0 160v1760c0 88 72 160 160 160h1760c88 0 160-72 160-160V160c0-88-72-160-160-160z"/>
-                            <path d="M1280 640h480v160h-480V640zm0 240h480v160h-480V880zm0 240h480v160h-480v-160zm0 240h480v160h-480v-160z" fill="#107C41"/>
-                            <path d="M320 640h800v800H320V640z" fill="#107C41"/>
-                            <path d="M480 800l160 160-160 160 80 80 160-160 160 160 80-80-160-160 160-160-80-80-160 160-160-160-80 80z" fill="white"/>
-                        </svg>
+                        <img src="/static/iconss/xcel.png">
                     </button>
                     <button class="export-btn csv-btn" onclick="exportToCSV()" title="Export to CSV">
-                        <svg width="20" height="20" viewBox="0 0 384 512" fill="white">
-                            <path d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm-96 144c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm96-128c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm96-128c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"/>
-                        </svg>
+                        <img src="/static/iconss/CSV.png">
+                    </button>
+                    <button class="export-btn whatsapp-btn" onclick="shareViaWhatsApp()" title="Share via WhatsApp">
+                        <img src="/static/iconss/wtsp.png">
                     </button>
                     <button class="export-btn whatsapp-btn" onclick="shareViaWhatsApp()" title="Share via WhatsApp">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
@@ -697,7 +700,7 @@
                 const response = await fetch(url);
                 const data = await response.json();
                 
-                console.log('📊 API Response:', data);
+                console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> API Response:', data);
                 
                 if (data.success && data.bills) {
                     currentBills = data.bills;
@@ -737,7 +740,7 @@
                 <tr>
                     <td colspan="9">
                         <div class="empty-state">
-                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                             <div class="empty-state-text">No Sales Found</div>
                             <div class="empty-state-desc">${message}</div>
                         </div>
@@ -809,9 +812,9 @@
         function getPaymentBadge(paymentMethod) {
             const method = paymentMethod.toLowerCase();
             switch(method) {
-                case 'cash': return '💵 CASH';
-                case 'card': return '💳 CARD';
-                case 'upi': return '📱 UPI';
+                case 'cash': return 'CASH';
+                case 'card': return '<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> CARD';
+                case 'upi': return 'UPI';
                 case 'credit': return '🏦 CREDIT';
                 default: return method.toUpperCase();
             }
@@ -820,7 +823,7 @@
         function updateStats(summary) {
             if (!summary) return;
             
-            console.log('📊 Updating stats:', summary);
+            console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Updating stats:', summary);
             
             document.getElementById('totalSales').textContent = summary.total_bills || 0;
             document.getElementById('totalRevenue').textContent = '₹' + formatNumber(summary.total_sales || 0);

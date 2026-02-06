@@ -320,7 +320,7 @@
 <body>
     <div class="header">
         <a href="/retail/dashboard" class="back-btn">← Back to Dashboard</a>
-        <h1>👥 Client Users</h1>
+        <h1><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"> Client Users</h1>
         <p>View and manage all client accounts</p>
     </div>
 
@@ -328,7 +328,7 @@
         <!-- Statistics -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-number" id="totalUsers">0</div>
                 <div class="stat-label">Total Users</div>
             </div>
@@ -440,7 +440,7 @@
             if (users.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">👥</div>
+                        <div class="empty-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></div>
                         <h3>No Users Found</h3>
                         <p>No users match your search criteria.</p>
                     </div>
@@ -471,7 +471,7 @@
                         
                         <div class="user-details">
                             <div class="detail-item">
-                                <span class="detail-icon">👤</span>
+                                <span class="detail-icon"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></span>
                                 <span>${user.username}</span>
                             </div>
                             ${user.phone ? `
@@ -502,7 +502,7 @@
                                 👁️ View Details
                             </button>
                             <button class="btn btn-secondary" onclick="manageClient('${user.id}')">
-                                ⚙️ Manage
+                                <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Manage
                             </button>
                         </div>
                     </div>

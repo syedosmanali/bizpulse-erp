@@ -602,7 +602,7 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                <h1>📦 Product Management</h1>
+                <h1><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Management</h1>
                 <p>Manage your inventory with modern tools</p>
             </div>
             <div class="header-actions">
@@ -622,7 +622,7 @@
         <!-- Stats Cards -->
         <div class="stats-grid">
             <div class="stat-card" onclick="filterByStock('all')">
-                <div class="stat-icon total">📦</div>
+                <div class="stat-icon total"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-value" id="totalProducts">0</div>
                 <div class="stat-label">Total Products</div>
             </div>
@@ -637,7 +637,7 @@
                 <div class="stat-label">Out of Stock</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon value">💰</div>
+                <div class="stat-icon value"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></div>
                 <div class="stat-value" id="totalValue">₹0</div>
                 <div class="stat-label">Total Value</div>
             </div>
@@ -670,7 +670,7 @@
                 </select>
                 
                 <button class="btn btn-secondary" onclick="exportProducts()">
-                    📊 Export
+                    <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Export
                 </button>
                 
                 <button class="btn btn-secondary" onclick="bulkImport()">
@@ -691,7 +691,7 @@
                 <h2>Products Inventory</h2>
                 <div class="view-toggle">
                     <button class="view-btn active" onclick="switchView('grid')">🔲 Grid</button>
-                    <button class="view-btn" onclick="switchView('table')">📋 Table</button>
+                    <button class="view-btn" onclick="switchView('table')"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Table</button>
                 </div>
             </div>
 
@@ -974,7 +974,7 @@
             if (products.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 60px; color: #718096;">
-                        <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                        <div style="font-size: 48px; margin-bottom: 16px;"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></div>
                         <h3>No products found</h3>
                         <p>Add your first product to get started</p>
                         <button class="btn btn-primary" onclick="openAddModal()" style="margin-top: 16px;">
@@ -993,7 +993,7 @@
                 return `
                     <div class="product-card">
                         <div class="product-image">
-                            ${product.image || '📦'}
+                            ${product.image || '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;">'}
                         </div>
                         <div class="product-info">
                             <h3>${product.name}</h3>
@@ -1027,7 +1027,7 @@
                                     ✏️ Edit
                                 </button>
                                 <button class="action-btn btn-stock" onclick="openStockModal('${product.id}')">
-                                    📦 Stock
+                                    <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Stock
                                 </button>
                                 <button class="action-btn btn-delete" onclick="deleteProduct('${product.id}')">
                                     🗑️ Delete
@@ -1050,7 +1050,7 @@
                     <tr>
                         <td>
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <div style="font-size: 24px;">${product.image || '📦'}</div>
+                                <div style="font-size: 24px;">${product.image || '<img src="/static/iconss/products.png" style="width: 24px; height: 24px;">'}</div>
                                 <div>
                                     <div style="font-weight: 600;">${product.name}</div>
                                     <div style="color: #718096; font-size: 12px;">${product.code}</div>

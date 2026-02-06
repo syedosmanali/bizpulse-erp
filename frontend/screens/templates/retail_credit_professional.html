@@ -189,13 +189,14 @@
             align-items: center;
             justify-content: center;
             font-size: 1.5rem;
-            color: white;
+            background: transparent;
         }
 
-        .stat-icon.total { background: linear-gradient(135deg, var(--info), #60a5fa); }
-        .stat-icon.pending { background: linear-gradient(135deg, var(--warning), #fbbf24); }
-        .stat-icon.amount { background: linear-gradient(135deg, var(--success), #34d399); }
-        .stat-icon.received { background: linear-gradient(135deg, var(--success), #10b981); }
+        .stat-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
 
         .stat-label {
             font-size: 0.875rem;
@@ -301,37 +302,23 @@
             border-radius: 10px;
             border: none;
             cursor: pointer;
-            font-size: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            background: transparent;
+            padding: 8px;
         }
 
         .export-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 0.8;
         }
 
-        .pdf-btn { 
-            background: linear-gradient(135deg, #e53e3e, #c53030); 
-            color: white; 
-        }
-        
-        .excel-btn { 
-            background: linear-gradient(135deg, #38a169, #2f855a); 
-            color: white; 
-        }
-        
-        .csv-btn { 
-            background: linear-gradient(135deg, #3182ce, #2c5282); 
-            color: white; 
-        }
-        
-        .whatsapp-btn { 
-            background: linear-gradient(135deg, #25d366, #128c7e); 
-            color: white; 
+        .export-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
 
         table {
@@ -496,14 +483,14 @@
                 <a href="/retail/dashboard" class="back-btn">
                     ← Dashboard
                 </a>
-                <h1 class="page-title">💳 Credit Management</h1>
+                <h1 class="page-title"><img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> Credit Management</h1>
             </div>
             <div class="header-actions">
                 <button class="btn btn-outline" onclick="refreshData()">
-                    🔄 Refresh
+                    <img src="/static/iconss/reset filters.png" style="width: 16px; height: 16px;"> Refresh
                 </button>
                 <a href="/retail/billing" class="btn btn-white">
-                    ➕ New Credit Sale
+                    <img src="/static/iconss/add customer.png" style="width: 16px; height: 16px;"> New Credit Sale
                 </a>
             </div>
         </div>
@@ -520,7 +507,7 @@
                         <div class="stat-value" id="totalCreditBills">0</div>
                         <div class="stat-change positive">All credit transactions</div>
                     </div>
-                    <div class="stat-icon total">📋</div>
+                    <div class="stat-icon"><img src="/static/iconss/total credit sales.png"></div>
                 </div>
             </div>
 
@@ -531,7 +518,7 @@
                         <div class="stat-value" id="totalCreditSales">₹0</div>
                         <div class="stat-change positive">Total credit sales</div>
                     </div>
-                    <div class="stat-icon amount">💰</div>
+                    <div class="stat-icon"><img src="/static/iconss/total sales.png"></div>
                 </div>
             </div>
 
@@ -542,7 +529,7 @@
                         <div class="stat-value" id="pendingAmount">₹0</div>
                         <div class="stat-change negative">Outstanding dues</div>
                     </div>
-                    <div class="stat-icon pending">⏳</div>
+                    <div class="stat-icon"><img src="/static/iconss/credit.png"></div>
                 </div>
             </div>
 
@@ -553,7 +540,7 @@
                         <div class="stat-value" id="receivedAmount">₹0</div>
                         <div class="stat-change positive">Total payments received</div>
                     </div>
-                    <div class="stat-icon received">✅</div>
+                    <div class="stat-icon"><img src="/static/iconss/total revenue.png"></div>
                 </div>
             </div>
         </div>
@@ -592,7 +579,7 @@
 
                 <div class="filter-group" style="justify-content: flex-end;">
                     <label class="filter-label">&nbsp;</label>
-                    <button class="btn btn-white" onclick="resetFilters()">Reset Filters</button>
+                    <button class="btn btn-white" onclick="resetFilters()"><img src="/static/iconss/increase_8879595.png" style="width: 16px; height: 16px;"> Reset Filters</button>
                 </div>
             </div>
         </div>
@@ -605,31 +592,17 @@
                     <span id="toggleText">Credit History</span>
                 </button>
                 <div class="export-buttons" style="display: flex; gap: 8px;">
-                    <button class="export-btn pdf-btn" onclick="exportToPDF()" title="Export to PDF">
-                        <svg width="20" height="20" viewBox="0 0 240 234" fill="white">
-                            <path d="M42.5 0h155C221 0 240 19 240 42.5v149c0 23.5-19 42.5-42.5 42.5h-155C19 234 0 215 0 191.5v-149C0 19 19 0 42.5 0z"/>
-                            <path d="M59.5 142.5c4.5 0 8.5-1.5 11.5-4.5s4.5-7 4.5-11.5-1.5-8.5-4.5-11.5-7-4.5-11.5-4.5h-7v32h7zm0-24c2.5 0 4.5.5 6 2s2.5 3.5 2.5 6-.5 4.5-2.5 6-3.5 2-6 2h-1v-16h1z" fill="#DC143C"/>
-                            <path d="M95.5 142.5c4.5 0 8.5-1.5 11.5-4.5s4.5-7 4.5-11.5-1.5-8.5-4.5-11.5-7-4.5-11.5-4.5h-7v32h7zm0-24c2.5 0 4.5.5 6 2s2.5 3.5 2.5 6-.5 4.5-2.5 6-3.5 2-6 2h-1v-16h1z" fill="#DC143C"/>
-                            <path d="M131.5 142.5h6v-16h8v-6h-8v-4h10v-6h-16v32z" fill="#DC143C"/>
-                        </svg>
+                    <button class="export-btn" onclick="exportToPDF()" title="Export to PDF">
+                        <img src="/static/iconss/PDF.png" alt="PDF">
                     </button>
-                    <button class="export-btn excel-btn" onclick="exportToExcel()" title="Export to Excel">
-                        <svg width="20" height="20" viewBox="0 0 2080 2080" fill="white">
-                            <path d="M1920 0H160C72 0 0 72 0 160v1760c0 88 72 160 160 160h1760c88 0 160-72 160-160V160c0-88-72-160-160-160z"/>
-                            <path d="M1280 640h480v160h-480V640zm0 240h480v160h-480V880zm0 240h480v160h-480v-160zm0 240h480v160h-480v-160z" fill="#107C41"/>
-                            <path d="M320 640h800v800H320V640z" fill="#107C41"/>
-                            <path d="M480 800l160 160-160 160 80 80 160-160 160 160 80-80-160-160 160-160-80-80-160 160-160-160-80 80z" fill="white"/>
-                        </svg>
+                    <button class="export-btn" onclick="exportToExcel()" title="Export to Excel">
+                        <img src="/static/iconss/xcel.png" alt="Excel">
                     </button>
-                    <button class="export-btn csv-btn" onclick="exportToCSV()" title="Export to CSV">
-                        <svg width="20" height="20" viewBox="0 0 384 512" fill="white">
-                            <path d="M224 136V0H24C10.7 0 0 10.7 0 24v464c0 13.3 10.7 24 24 24h336c13.3 0 24-10.7 24-24V160H248c-13.2 0-24-10.8-24-24zm-96 144c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm96-128c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm96-128c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zm0 64c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8 8 3.58 8 8zM377 105L279.1 7c-4.5-4.5-10.6-7-17-7H256v128h128v-6.1c0-6.3-2.5-12.4-7-16.9z"/>
-                        </svg>
+                    <button class="export-btn" onclick="exportToCSV()" title="Export to CSV">
+                        <img src="/static/iconss/CSV.png" alt="CSV">
                     </button>
-                    <button class="export-btn whatsapp-btn" onclick="shareViaWhatsApp()" title="Share via WhatsApp">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516"/>
-                        </svg>
+                    <button class="export-btn" onclick="shareViaWhatsApp()" title="Share via WhatsApp">
+                        <img src="/static/iconss/wtsp.png" alt="WhatsApp">
                     </button>
                 </div>
             </div>
@@ -691,8 +664,8 @@
                 
                 const data = await response.json();
                 console.log('✅ Credit bills data loaded:', data);
-                console.log('📊 Bills count:', data.bills ? data.bills.length : 0);
-                console.log('📊 Stats:', data.stats);
+                console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Bills count:', data.bills ? data.bills.length : 0);
+                console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Stats:', data.stats);
                 
                 // Handle the response immediately
                 if (data.success) {
@@ -793,10 +766,10 @@
         }
 
         function getStatusIcon(bill, isOverdue) {
-            if (isOverdue) return '⚠️';
-            if (bill.balance_due <= 0) return '✅';
-            if (bill.paid_amount > 0) return '⏳';
-            return '⏰';
+            if (isOverdue) return '<img src="/static/iconss/credit.png" style="width: 14px; height: 14px; vertical-align: middle;">';
+            if (bill.balance_due <= 0) return '<img src="/static/iconss/total revenue.png" style="width: 14px; height: 14px; vertical-align: middle;">';
+            if (bill.paid_amount > 0) return '<img src="/static/iconss/credit.png" style="width: 14px; height: 14px; vertical-align: middle;">';
+            return '<img src="/static/iconss/credit.png" style="width: 14px; height: 14px; vertical-align: middle;">';
         }
 
         function getStatusClass(bill, isOverdue) {
@@ -836,29 +809,29 @@
             const tbody = document.getElementById('creditTable');
             const dateRange = currentFilters.date_range;
             let message = 'No credit bills found';
-            let icon = '💳';
+            let icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
             
             // Customize message based on date filter
             switch(dateRange) {
                 case 'today':
                     message = 'No credit bills for today';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'yesterday':
                     message = 'No credit bills for yesterday';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'week':
                     message = 'No credit bills for this week';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'month':
                     message = 'No credit bills for this month';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 default:
                     message = 'No credit bills found';
-                    icon = '💳';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
             }
             
             tbody.innerHTML = `
@@ -878,7 +851,7 @@
             document.getElementById('creditTable').innerHTML = `
                 <tr><td colspan="8">
                     <div class="empty-state">
-                        <div class="empty-icon">⚠️</div>
+                        <div class="empty-icon"><img src="/static/iconss/credit.png" style="width: 64px; height: 64px;"></div>
                         <div class="empty-text">Failed to load credit bills</div>
                     </div>
                 </td></tr>
@@ -1031,18 +1004,18 @@
             tbody.innerHTML = bills.map(bill => {
                 const statusClass = bill.payment_status === 'paid' ? 'paid' : 'partial';
                 const statusText = bill.payment_status === 'paid' ? 'Fully Paid' : 'Partially Paid';
-                const statusIcon = bill.payment_status === 'paid' ? '✅' : '⏳';
+                const statusIcon = bill.payment_status === 'paid' ? '<img src="/static/iconss/total revenue.png" style="width: 14px; height: 14px; vertical-align: middle;">' : '<img src="/static/iconss/credit.png" style="width: 14px; height: 14px; vertical-align: middle;">';
                 
                 return `
                     <tr>
                         <td>
                             <div style="font-weight: 600; color: var(--wine);">${bill.bill_number || bill.id}</div>
                             <div style="font-size: 0.7rem; color: #6b7280; margin-top: 2px;">
-                                📅 Bill: ${formatDate(bill.created_at)}
+                                Bill: ${formatDate(bill.created_at)}
                             </div>
                             ${bill.last_payment_date ? `
                                 <div style="font-size: 0.7rem; color: #10b981; margin-top: 2px;">
-                                    💰 Last Payment: ${formatDate(bill.last_payment_date)} ${formatTime(bill.last_payment_date)}
+                                    Last Payment: ${formatDate(bill.last_payment_date)} ${formatTime(bill.last_payment_date)}
                                 </div>
                             ` : ''}
                             ${bill.paid_amount > 0 ? `
@@ -1093,28 +1066,28 @@
             const tbody = document.getElementById('creditTable');
             const dateRange = currentFilters.date_range;
             let message = 'No payment history found';
-            let icon = '📜';
+            let icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
             
             switch(dateRange) {
                 case 'today':
                     message = 'No payments received today';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'yesterday':
                     message = 'No payments received yesterday';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'week':
                     message = 'No payments received this week';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 case 'month':
                     message = 'No payments received this month';
-                    icon = '📅';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
                     break;
                 default:
                     message = 'No payment history found';
-                    icon = '📜';
+                    icon = '<img src="/static/iconss/credit.png" style="width: 64px; height: 64px;">';
             }
             
             tbody.innerHTML = `
@@ -1173,11 +1146,11 @@
                                     <div style="font-weight: 700; font-size: 18px; color: var(--success);">₹${payment.amount.toFixed(2)}</div>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">
-                                    <span>📅 Date:</span>
+                                    <span>Date:</span>
                                     <span>${formatDate(payment.processed_at)} ${formatTime(payment.processed_at)}</span>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; font-size: 0.875rem; color: #6b7280; margin-bottom: 4px;">
-                                    <span>💳 Method:</span>
+                                    <span>Method:</span>
                                     <span>${payment.method}</span>
                                 </div>
                                 ${payment.reference ? `
@@ -1198,11 +1171,11 @@
                     // Show modal
                     document.getElementById('paymentDetailsModal').style.display = 'flex';
                 } else {
-                    alert('❌ Error loading payment details: ' + data.error);
+                    alert('Error loading payment details: ' + data.error);
                 }
             } catch (error) {
                 console.error('Error loading payment details:', error);
-                alert('❌ Error loading payment details');
+                alert('Error loading payment details');
             }
         }
         
@@ -1245,14 +1218,14 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        alert('📱 WhatsApp report sent successfully!');
+                        alert('WhatsApp report sent successfully!');
                     } else {
-                        alert('❌ Error: ' + data.message);
+                        alert('Error: ' + data.message);
                     }
                 })
                 .catch(error => {
                     console.error('WhatsApp export error:', error);
-                    alert('❌ Failed to send WhatsApp report');
+                    alert('Failed to send WhatsApp report');
                 });
         }
 
@@ -1267,7 +1240,7 @@
             
             // 🔥 ENSURE FILTERS ARE APPLIED - Add small delay to ensure DOM is ready
             setTimeout(() => {
-                console.log('📋 Applying filters:', currentFilters);
+                console.log('<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Applying filters:', currentFilters);
                 loadCreditBills();
             }, 100);
         });
@@ -1379,7 +1352,7 @@
             document.getElementById('paymentError').style.display = 'none';
             
             const modal = document.getElementById('paymentModal');
-            console.log('📦 Modal element:', modal);
+            console.log('<img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Modal element:', modal);
             modal.style.display = 'flex';
             console.log('✅ Modal should be visible now');
         }
@@ -1439,7 +1412,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`✅ Payment Received!\n\nBill: ${data.bill_number}\nAmount: ₹${data.payment_amount}\nNew Balance: ₹${data.new_balance}\nStatus: ${data.new_status.toUpperCase()}`);
+                    alert(`Payment Received!\n\nBill: ${data.bill_number}\nAmount: ₹${data.payment_amount}\nNew Balance: ₹${data.new_balance}\nStatus: ${data.new_status.toUpperCase()}`);
                     closePaymentModal();
                     
                     // Refresh based on current view
@@ -1449,11 +1422,11 @@
                         loadPaymentHistory();
                     }
                 } else {
-                    alert('❌ Error: ' + (data.error || 'Failed to record payment'));
+                    alert('Error: ' + (data.error || 'Failed to record payment'));
                 }
             } catch (error) {
                 console.error('Error submitting payment:', error);
-                alert('❌ Error: ' + error.message);
+                alert('Error: ' + error.message);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Receive Payment';

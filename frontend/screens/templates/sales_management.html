@@ -220,15 +220,20 @@
             align-items: center;
             justify-content: center;
             font-size: 2rem;
-            background: linear-gradient(135deg, rgba(115, 44, 63, 0.1) 0%, rgba(166, 107, 122, 0.1) 100%);
+            background: transparent;
             border-radius: 16px;
             color: var(--primary);
             transition: all 0.3s ease;
         }
+        
+        .stat-icon img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
 
         .stat-card:hover .stat-icon {
-            transform: scale(1.1) rotate(5deg);
-            background: linear-gradient(135deg, rgba(115, 44, 63, 0.15) 0%, rgba(166, 107, 122, 0.15) 100%);
+            transform: scale(1.1);
         }
 
         .stat-content {
@@ -760,7 +765,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-shopping-cart"></i>
+                        <img src="/static/iconss/total sales.png" alt="Total Sales">
                     </div>
                 </div>
             </div>
@@ -776,7 +781,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-rupee-sign"></i>
+                        <img src="/static/iconss/total revenue.png" alt="Total Revenue">
                     </div>
                 </div>
             </div>
@@ -792,7 +797,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-hand-holding-usd"></i>
+                        <img src="/static/iconss/net profit.png" alt="Total Profit">
                     </div>
                 </div>
             </div>
@@ -808,7 +813,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-chart-bar"></i>
+                        <img src="/static/iconss/increase_8879595.png" alt="Profit Margin">
                     </div>
                 </div>
             </div>
@@ -824,7 +829,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-trophy"></i>
+                        <img src="/static/iconss/products.png" alt="Top Product">
                     </div>
                 </div>
             </div>
@@ -840,7 +845,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-layer-group"></i>
+                        <img src="/static/iconss/inventory_18546441.png" alt="Top Category">
                     </div>
                 </div>
             </div>
@@ -856,7 +861,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-percentage"></i>
+                        <img src="/static/iconss/average order.png" alt="Avg Margin">
                     </div>
                 </div>
             </div>
@@ -872,7 +877,7 @@
                         </div>
                     </div>
                     <div class="stat-icon">
-                        <i class="fas fa-boxes"></i>
+                        <img src="/static/iconss/total orders.png" alt="Items Sold">
                     </div>
                 </div>
             </div>
@@ -974,7 +979,7 @@
             <div class="section-header">
                 <h2 class="section-title"><i class="fas fa-list"></i> Sales Records</h2>
                 <button class="btn btn-primary" onclick="exportSales()">
-                    <i class="fas fa-download"></i> Export
+                    <img src="/static/iconss/CSV.png" style="width: 20px; height: 20px; margin-right: 8px;"> Export CSV
                 </button>
             </div>
 

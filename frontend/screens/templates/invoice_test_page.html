@@ -29,7 +29,7 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-12">
-                <h2 class="mb-4">📋 Invoice System Test</h2>
+                <h2 class="mb-4"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Invoice System Test</h2>
                 
                 <!-- Filters Section -->
                 <div class="filter-section">
@@ -220,7 +220,7 @@
                             </div>
                             
                             <p class="card-text text-muted mb-2">
-                                <small>👤 ${invoice.customer_name || 'Walk-in Customer'}</small>
+                                <small><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"> ${invoice.customer_name || 'Walk-in Customer'}</small>
                             </p>
                             
                             <p class="card-text mb-2">
@@ -303,7 +303,7 @@
             
             if (pagination) {
                 summary.innerHTML = `
-                    📊 Showing ${data.invoices.length} of ${pagination.total_records} invoices 
+                    <img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Showing ${data.invoices.length} of ${pagination.total_records} invoices 
                     (Page ${pagination.current_page} of ${pagination.total_pages})
                 `;
                 summary.classList.remove('d-none');

@@ -1,27 +1,29 @@
 """
 Production-Grade Billing Service
 Clean, scalable, and error-free billing backend
+UPDATED: Now supports both SQLite and PostgreSQL
 """
 
 from datetime import datetime
-import sqlite3
 import uuid
 from typing import Dict, List, Optional, Tuple
+from modules.shared.database import get_db_connection
 
 
 class BillingService:
     """
     Professional billing service with atomic transactions and proper error handling
+    Supports both SQLite (local) and PostgreSQL (production)
     """
     
-    def __init__(self, db_path: str = 'billing.db'):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        # db_path parameter kept for backward compatibility but not used
+        # Connection is now managed by get_db_connection()
+        pass
     
-    def _get_connection(self) -> sqlite3.Connection:
-        """Get database connection with row factory"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        return conn
+    def _get_connection(self):
+        """Get database connection - supports both SQLite and PostgreSQL"""
+        return get_db_connection()
     
     def _generate_id(self) -> str:
         """Generate unique ID"""

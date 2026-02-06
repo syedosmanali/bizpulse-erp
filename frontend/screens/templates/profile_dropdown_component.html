@@ -241,7 +241,7 @@
             
             <!-- Personal Details -->
             <a href="#" class="profile-dropdown-item" onclick="openPersonalDetails()">
-                <div class="profile-dropdown-icon">👤</div>
+                <div class="profile-dropdown-icon"><img src="/static/iconss/user management.png" style="width: 24px; height: 24px;"></div>
                 <div class="profile-dropdown-text">
                     <div class="profile-dropdown-label">Personal Details</div>
                     <div class="profile-dropdown-desc">Update your personal information</div>
@@ -302,7 +302,7 @@ async function loadProfileData() {
         
         if (response.ok) {
             const userInfo = await response.json();
-            console.log('📊 User info received:', userInfo);
+            console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> User info received:', userInfo);
             
             if (userInfo && userInfo.user_id) {
                 updateProfileDisplay(userInfo);

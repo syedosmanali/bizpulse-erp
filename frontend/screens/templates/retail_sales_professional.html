@@ -440,19 +440,19 @@
         </div>
         <nav>
             <a href="/retail/dashboard" class="nav-item">
-                <span>📊</span> Dashboard
+                <span><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span> Dashboard
             </a>
             <a href="/retail/sales" class="nav-item active">
-                <span>💰</span> Sales
+                <span><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span> Sales
             </a>
             <a href="/retail/products" class="nav-item">
-                <span>📦</span> Products
+                <span><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span> Products
             </a>
             <a href="/retail/customers" class="nav-item">
-                <span>👥</span> Customers
+                <span><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span> Customers
             </a>
             <a href="/retail/reports" class="nav-item">
-                <span>📈</span> Reports
+                <span><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></span> Reports
             </a>
         </nav>
     </div>
@@ -601,7 +601,7 @@
                     <tr>
                         <td colspan="8">
                             <div class="empty-state">
-                                <div class="empty-state-icon">📊</div>
+                                <div class="empty-state-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                                 <div class="empty-state-text">Loading sales data...</div>
                             </div>
                         </td>
@@ -727,7 +727,7 @@
                 <tr>
                     <td colspan="8">
                         <div class="empty-state">
-                            <div class="empty-state-icon">📊</div>
+                            <div class="empty-state-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></div>
                             <div class="empty-state-text">${message}</div>
                         </div>
                     </td>
@@ -1144,8 +1144,8 @@
                         // Show success message with option to download Excel directly
                         const downloadOption = confirm(
                             `📱 WhatsApp opened with Excel report!\n\n` +
-                            `📊 Total Sales: ${data.total_sales}\n` +
-                            `💰 Total Amount: ₹${data.total_amount.toLocaleString()}\n\n` +
+                            `<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Total Sales: ${data.total_sales}\n` +
+                            `<img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Total Amount: ₹${data.total_amount.toLocaleString()}\n\n` +
                             `Click OK to download Excel file directly, or Cancel to continue.`
                         );
                         

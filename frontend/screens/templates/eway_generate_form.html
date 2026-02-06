@@ -234,7 +234,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>📋 Generate E-Way Bill</h1>
+            <h1><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Generate E-Way Bill</h1>
             <p>Create E-Way Bill for goods transportation</p>
         </div>
         
@@ -243,7 +243,7 @@
         
         <!-- Invoice Selection -->
         <div class="form-section">
-            <div class="section-title">📄 Invoice Selection</div>
+            <div class="section-title"><img src="/static/iconss/invoices.png" style="width: 24px; height: 24px;"> Invoice Selection</div>
             <div class="form-grid">
                 <div class="form-group">
                     <label for="invoiceSelect" class="required">Select Invoice</label>
@@ -256,7 +256,7 @@
         
         <!-- Invoice Information -->
         <div id="invoiceInfo" class="invoice-info" style="display: none;">
-            <div class="section-title">📊 Invoice Information</div>
+            <div class="section-title"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Invoice Information</div>
             <div class="info-grid" id="invoiceDetails"></div>
         </div>
         
@@ -270,7 +270,7 @@
         <form id="ewayForm" style="display: none;">
             <!-- Document Details -->
             <div class="form-section">
-                <div class="section-title">📋 Document Details</div>
+                <div class="section-title"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Document Details</div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="supplyType" class="required">Supply Type</label>
@@ -379,7 +379,7 @@
             
             <!-- Product Details -->
             <div class="form-section">
-                <div class="section-title">📦 Product Details</div>
+                <div class="section-title"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Product Details</div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="hsnCode">HSN Code</label>
@@ -409,7 +409,7 @@
             
             <!-- Tax Details -->
             <div class="form-section">
-                <div class="section-title">💰 Tax Details</div>
+                <div class="section-title"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"> Tax Details</div>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="cgstRate">CGST Rate (%)</label>
@@ -435,7 +435,7 @@
         <div class="form-actions">
             <a href="/api/eway/manage" class="btn secondary">← Back to List</a>
             <button type="button" class="btn" onclick="generateEwayBill()" id="generateBtn" disabled>
-                📋 Generate E-Way Bill
+                <img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Generate E-Way Bill
             </button>
         </div>
     </div>
@@ -698,7 +698,7 @@
             } finally {
                 const generateBtn = document.getElementById('generateBtn');
                 generateBtn.disabled = false;
-                generateBtn.textContent = '📋 Generate E-Way Bill';
+                generateBtn.textContent = '<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Generate E-Way Bill';
             }
         }
         

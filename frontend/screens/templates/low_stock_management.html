@@ -417,35 +417,35 @@
         
         <nav class="nav-menu">
             <div class="nav-item" onclick="navigateToModule('/retail/dashboard')">
-                <span class="nav-icon">📊</span>
+                <span class="nav-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Dashboard</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/sales-management')">
-                <span class="nav-icon">💰</span>
+                <span class="nav-icon"><img src="/static/iconss/sales.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Sales</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/retail/billing')">
-                <span class="nav-icon">🧾</span>
+                <span class="nav-icon"><img src="/static/iconss/billing.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Billing</span>
             </div>
             <div class="nav-item active" onclick="navigateToModule('/inventory/low-stock')">
-                <span class="nav-icon">📋</span>
+                <span class="nav-icon"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Low Stock</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/retail/products')">
-                <span class="nav-icon">📦</span>
+                <span class="nav-icon"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Products</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/retail/customers')">
-                <span class="nav-icon">👥</span>
+                <span class="nav-icon"><img src="/static/iconss/customers.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Customers</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/retail/reports')">
-                <span class="nav-icon">📈</span>
+                <span class="nav-icon"><img src="/static/iconss/increase_8879595.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Reports</span>
             </div>
             <div class="nav-item" onclick="navigateToModule('/retail/settings')">
-                <span class="nav-icon">⚙️</span>
+                <span class="nav-icon"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"></span>
                 <span class="nav-text">Settings</span>
             </div>
             
@@ -507,9 +507,9 @@
             </div>
             <div>
                 <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
-                <button class="btn" onclick="bulkRestock()">📦 Bulk Restock</button>
-                <button class="btn" onclick="generatePurchaseOrder()">📋 Generate Purchase Order</button>
-                <button class="btn" onclick="exportLowStock()">📊 Export Report</button>
+                <button class="btn" onclick="bulkRestock()"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Bulk Restock</button>
+                <button class="btn" onclick="generatePurchaseOrder()"><img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Generate Purchase Order</button>
+                <button class="btn" onclick="exportLowStock()"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Export Report</button>
             </div>
         </div>
 
@@ -678,7 +678,7 @@
                 }
                 
                 const data = await response.json();
-                console.log('📊 Data received:', data);
+                console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Data received:', data);
                 
                 lowStockData = data.low_stock_items || [];
                 filteredData = [...lowStockData];
@@ -706,7 +706,7 @@
         }
 
         function updateStatistics(summary) {
-            console.log('📊 Updating statistics:', summary);
+            console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Updating statistics:', summary);
             
             document.getElementById('totalLowStock').textContent = summary.total_low_stock || 0;
             document.getElementById('criticalItems').textContent = summary.critical_items || 0;
@@ -715,7 +715,7 @@
         }
 
         function renderTable() {
-            console.log('📋 Rendering table with data:', filteredData);
+            console.log('<img src="/static/iconss/inventory_18546441.png" style="width: 24px; height: 24px;"> Rendering table with data:', filteredData);
             const tbody = document.getElementById('stockTableBody');
             
             if (!tbody) {
@@ -727,7 +727,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 40px; color: #8B4A5C;">
-                            📦 No low stock items found
+                            <img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> No low stock items found
                         </td>
                     </tr>
                 `;
@@ -759,8 +759,8 @@
                     </td>
                     <td style="color: #8B4A5C; font-weight: 500;">₹${item.reorder_cost.toFixed(2)}</td>
                     <td>
-                        <button class="btn" style="font-size: 0.65rem; padding: 3px 6px; margin: 1px;" onclick="openRestockModal('${item.id}')">📦 Restock</button>
-                        <button class="btn" style="font-size: 0.65rem; padding: 3px 6px; margin: 1px;" onclick="openMinStockModal('${item.id}')">⚙️ Min Stock</button>
+                        <button class="btn" style="font-size: 0.65rem; padding: 3px 6px; margin: 1px;" onclick="openRestockModal('${item.id}')"><img src="/static/iconss/products.png" style="width: 24px; height: 24px;"> Restock</button>
+                        <button class="btn" style="font-size: 0.65rem; padding: 3px 6px; margin: 1px;" onclick="openMinStockModal('${item.id}')"><img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Min Stock</button>
                     </td>
                 </tr>
             `).join('');
