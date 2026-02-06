@@ -3,13 +3,14 @@ Inventory Management Database Schema
 Creates tables for comprehensive inventory management
 """
 
-from modules.shared.database import get_db_connection, generate_id
+from modules.shared.database import get_db_connection, generate_id, get_db_type
 from datetime import datetime
 
 def init_inventory_tables():
     """Initialize all inventory management tables"""
     conn = get_db_connection()
     cursor = conn.cursor()
+    db_type = get_db_type()
     
     # Inventory Categories Table
     cursor.execute('''
@@ -126,11 +127,20 @@ def init_inventory_tables():
     ]
     
     for cat_id, name, desc, icon, color in default_categories:
-        cursor.execute('''
-            INSERT OR IGNORE INTO inventory_categories 
-            (id, name, description, icon, color, user_id, is_default, created_at)
-            VALUES (?, ?, ?, ?, ?, NULL, 1, ?)
-        ''', (cat_id, name, desc, icon, color, datetime.now().isoformat()))
+        placeholder = '%s' if db_type == 'postgresql' else '?'
+        if db_type == 'postgresql':
+            cursor.execute(f'''
+                INSERT INTO inventory_categories 
+                (id, name, description, created_at)
+                VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder})
+                ON CONFLICT (id) DO NOTHING
+            ''', (cat_id, name, desc, datetime.now().isoformat()))
+        else:
+            cursor.execute('''
+                INSERT OR IGNORE INTO inventory_categories 
+                (id, name, description, icon, color, user_id, is_default, created_at)
+                VALUES (?, ?, ?, ?, ?, NULL, 1, ?)
+            ''', (cat_id, name, desc, icon, color, datetime.now().isoformat()))
     
     # Insert default locations
     default_locations = [

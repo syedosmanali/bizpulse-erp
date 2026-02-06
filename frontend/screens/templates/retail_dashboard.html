@@ -300,12 +300,75 @@
             opacity: 0.8;
         }
         
+        /* Colorful sidebar icons - DARKER */
+        .module-dashboard .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(99%) contrast(119%);
+            opacity: 1;
+        }
+        
+        .module-sales .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(35%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(98%) contrast(119%);
+            opacity: 1;
+        }
+        
+        .module-credit .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(50%) sepia(57%) saturate(3612%) hue-rotate(360deg) brightness(90%) contrast(101%);
+            opacity: 1;
+        }
+        
+        .module-billing .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(15%) sepia(45%) saturate(1847%) hue-rotate(314deg) brightness(81%) contrast(90%);
+            opacity: 1;
+        }
+        
+        .module-invoices .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(25%) sepia(89%) saturate(1529%) hue-rotate(246deg) brightness(84%) contrast(94%);
+            opacity: 1;
+        }
+        
+        .module-eway .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(50%) sepia(57%) saturate(3612%) hue-rotate(360deg) brightness(90%) contrast(101%);
+            opacity: 1;
+        }
+        
+        .module-products .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(35%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(98%) contrast(119%);
+            opacity: 1;
+        }
+        
+        .module-inventory .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(50%) sepia(57%) saturate(3612%) hue-rotate(360deg) brightness(90%) contrast(101%);
+            opacity: 1;
+        }
+        
+        .module-customers .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(99%) contrast(119%);
+            opacity: 1;
+        }
+        
+        .module-users .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(25%) sepia(89%) saturate(1529%) hue-rotate(246deg) brightness(84%) contrast(94%);
+            opacity: 1;
+        }
+        
+        .module-reports .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(25%) sepia(89%) saturate(1529%) hue-rotate(246deg) brightness(84%) contrast(94%);
+            opacity: 1;
+        }
+        
+        .module-settings .nav-icon img {
+            filter: brightness(0) saturate(100%) invert(37%) sepia(8%) saturate(495%) hue-rotate(179deg) brightness(83%) contrast(86%);
+            opacity: 1;
+        }
+        
         .nav-item:hover .nav-icon img {
             opacity: 0.95;
+            filter: brightness(1.1) saturate(110%) !important;
         }
         
         .nav-item.active .nav-icon img {
             opacity: 1;
+            filter: brightness(1.2) saturate(120%) !important;
         }
         
         .nav-text {
@@ -943,8 +1006,28 @@
         .content-area {
             width: 100%;
             height: calc(100vh - 70px);
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             padding: 0;
+        }
+        
+        /* Custom scrollbar for content area */
+        .content-area::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .content-area::-webkit-scrollbar-track {
+            background: rgba(115, 44, 63, 0.05);
+            border-radius: 4px;
+        }
+        
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(115, 44, 63, 0.3);
+            border-radius: 4px;
+        }
+        
+        .content-area::-webkit-scrollbar-thumb:hover {
+            background: rgba(115, 44, 63, 0.5);
         }
         
         .sidebar.collapsed ~ .main-content {
@@ -1208,34 +1291,49 @@
         }
         
         .stat-icon {
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 12px;
+            padding: 10px;
+            transition: all 0.3s ease;
             background: transparent;
+            position: relative;
         }
         
         .stat-icon img {
             width: 100%;
             height: 100%;
             object-fit: contain;
+            position: relative;
+            z-index: 1;
         }
         
-        .stat-icon.revenue {
-            color: var(--wine-primary);
+        /* Colorful icon effects using multiple filters - DARKER COLORS */
+        .stat-icon.revenue img {
+            filter: brightness(0) saturate(100%) invert(35%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(98%) contrast(119%);
         }
         
-        .stat-icon.orders {
-            color: var(--wine-light);
+        .stat-icon.orders img {
+            filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(99%) contrast(119%);
         }
         
-        .stat-icon.products {
-            color: #A66B7A;
+        .stat-icon.products img {
+            filter: brightness(0) saturate(100%) invert(50%) sepia(57%) saturate(3612%) hue-rotate(360deg) brightness(90%) contrast(101%);
         }
         
-        .stat-icon.customers {
-            color: var(--wine-primary);
+        .stat-icon.customers img {
+            filter: brightness(0) saturate(100%) invert(25%) sepia(89%) saturate(1529%) hue-rotate(246deg) brightness(84%) contrast(94%);
+        }
+        
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1);
+        }
+        
+        .stat-card:hover .stat-icon img {
+            filter: brightness(1.2) saturate(120%);
         }
         
         .stat-value {
@@ -1335,14 +1433,15 @@
         
         .action-icon {
             font-size: 1.4rem;
-            width: 36px;
-            height: 36px;
+            width: 48px;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: transparent;
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             transition: all 0.3s ease;
+            padding: 10px;
+            background: transparent;
         }
         
         .action-icon img {
@@ -1351,8 +1450,37 @@
             object-fit: contain;
         }
         
+        /* Colorful action icons - DARKER COLORS */
+        .action-icon.bill-icon img {
+            filter: brightness(0) saturate(100%) invert(15%) sepia(45%) saturate(1847%) hue-rotate(314deg) brightness(81%) contrast(90%);
+        }
+        
+        .action-icon.product-icon img {
+            filter: brightness(0) saturate(100%) invert(35%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(98%) contrast(119%);
+        }
+        
+        .action-icon.customer-icon img {
+            filter: brightness(0) saturate(100%) invert(32%) sepia(93%) saturate(1352%) hue-rotate(187deg) brightness(99%) contrast(119%);
+        }
+        
+        .action-icon.inventory-icon img {
+            filter: brightness(0) saturate(100%) invert(50%) sepia(57%) saturate(3612%) hue-rotate(360deg) brightness(90%) contrast(101%);
+        }
+        
+        .action-icon.report-icon img {
+            filter: brightness(0) saturate(100%) invert(25%) sepia(89%) saturate(1529%) hue-rotate(246deg) brightness(84%) contrast(94%);
+        }
+        
+        .action-icon.settings-icon img {
+            filter: brightness(0) saturate(100%) invert(37%) sepia(8%) saturate(495%) hue-rotate(179deg) brightness(83%) contrast(86%);
+        }
+        
         .action-btn:hover .action-icon {
-            transform: scale(1.1);
+            transform: scale(1.15);
+        }
+        
+        .action-btn:hover .action-icon img {
+            filter: brightness(1.2) saturate(120%);
         }
         
         .action-text {
@@ -2201,27 +2329,27 @@
                     <h2 class="section-title">Quick Actions</h2>
                     <div class="actions-grid">
                         <button class="action-btn" onclick="showModule('billing')">
-                            <div class="action-icon"><img src="/static/iconss/bill.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon bill-icon"><img src="/static/iconss/bill.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Create New Bill</div>
                         </button>
                         <button class="action-btn" onclick="showModule('products')">
-                            <div class="action-icon"><img src="/static/iconss/kirana trolly.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon product-icon"><img src="/static/iconss/kirana trolly.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Add Product</div>
                         </button>
                         <button class="action-btn" onclick="showModule('customers')">
-                            <div class="action-icon"><img src="/static/iconss/customers.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon customer-icon"><img src="/static/iconss/customers.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">New Customer</div>
                         </button>
                         <button class="action-btn" onclick="showModule('inventory')">
-                            <div class="action-icon"><img src="/static/iconss/inventory_18546441.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon inventory-icon"><img src="/static/iconss/inventory_18546441.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Update Stock</div>
                         </button>
                         <button class="action-btn" onclick="showModule('reports')">
-                            <div class="action-icon"><img src="/static/iconss/increase_8879595.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon report-icon"><img src="/static/iconss/increase_8879595.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">View Reports</div>
                         </button>
                         <button class="action-btn" onclick="showModule('settings')">
-                            <div class="action-icon"><img src="/static/iconss/dashboard.png" style="width: 32px; height: 32px;"></div>
+                            <div class="action-icon settings-icon"><img src="/static/iconss/dashboard.png" style="width: 32px; height: 32px;"></div>
                             <div class="action-text">Settings</div>
                         </button>
                     </div>

@@ -4,7 +4,7 @@ Database operations for the new user management system
 """
 
 import sqlite3
-from modules.shared.database import get_db_connection, generate_id, hash_password
+from modules.shared.database import get_db_connection, get_db_type, generate_id, hash_password
 from datetime import datetime
 import json
 import logging
@@ -18,19 +18,27 @@ class UserManagementModels:
         """Create all user management tables"""
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        
+        # Helper functions for database compatibility
+        def get_text_pk():
+            return 'VARCHAR(255) PRIMARY KEY' if db_type == 'postgresql' else 'TEXT PRIMARY KEY'
+        
+        def get_boolean_default(value):
+            return str(value).upper() if db_type == 'postgresql' else str(int(value))
         
         try:
             # Roles table - Define available roles and permissions
-            cursor.execute('''
+            cursor.execute(f'''
                 CREATE TABLE IF NOT EXISTS user_roles (
-                    id TEXT PRIMARY KEY,
-                    client_id TEXT NOT NULL,
-                    role_name TEXT NOT NULL,
-                    display_name TEXT NOT NULL,
-                    permissions TEXT NOT NULL DEFAULT '{}',
-                    is_system_role BOOLEAN DEFAULT 0,
-                    is_active BOOLEAN DEFAULT 1,
-                    created_by TEXT NOT NULL,
+                    id {get_text_pk()},
+                    client_id VARCHAR(255) NOT NULL,
+                    role_name VARCHAR(100) NOT NULL,
+                    display_name VARCHAR(255) NOT NULL,
+                    permissions TEXT NOT NULL DEFAULT '{{}}',
+                    is_system_role BOOLEAN DEFAULT {get_boolean_default(False)},
+                    is_active BOOLEAN DEFAULT {get_boolean_default(True)},
+                    created_by VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     UNIQUE(client_id, role_name)
@@ -38,26 +46,26 @@ class UserManagementModels:
             ''')
             
             # User management table - All users under clients
-            cursor.execute('''
+            cursor.execute(f'''
                 CREATE TABLE IF NOT EXISTS user_accounts (
-                    id TEXT PRIMARY KEY,
-                    client_id TEXT NOT NULL,
-                    user_id TEXT UNIQUE NOT NULL,
-                    full_name TEXT NOT NULL,
-                    email TEXT,
-                    mobile TEXT NOT NULL,
-                    username TEXT UNIQUE NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    temp_password TEXT,
-                    role_id TEXT NOT NULL,
-                    department TEXT,
-                    status TEXT DEFAULT 'active',
-                    force_password_change BOOLEAN DEFAULT 1,
+                    id {get_text_pk()},
+                    client_id VARCHAR(255) NOT NULL,
+                    user_id VARCHAR(255) UNIQUE NOT NULL,
+                    full_name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255),
+                    mobile VARCHAR(20) NOT NULL,
+                    username VARCHAR(255) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    temp_password VARCHAR(255),
+                    role_id VARCHAR(255) NOT NULL,
+                    department VARCHAR(100),
+                    status VARCHAR(50) DEFAULT 'active',
+                    force_password_change BOOLEAN DEFAULT {get_boolean_default(True)},
                     last_login TIMESTAMP,
                     login_count INTEGER DEFAULT 0,
                     failed_attempts INTEGER DEFAULT 0,
                     locked_until TIMESTAMP,
-                    created_by TEXT NOT NULL,
+                    created_by VARCHAR(255) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (client_id) REFERENCES clients (id),
@@ -67,15 +75,15 @@ class UserManagementModels:
             ''')
             
             # User activity log - Track all user actions
-            cursor.execute('''
+            cursor.execute(f'''
                 CREATE TABLE IF NOT EXISTS user_activity_log (
-                    id TEXT PRIMARY KEY,
-                    client_id TEXT NOT NULL,
-                    user_id TEXT NOT NULL,
-                    module TEXT NOT NULL,
-                    action TEXT NOT NULL,
+                    id {get_text_pk()},
+                    client_id VARCHAR(255) NOT NULL,
+                    user_id VARCHAR(255) NOT NULL,
+                    module VARCHAR(100) NOT NULL,
+                    action VARCHAR(100) NOT NULL,
                     details TEXT,
-                    ip_address TEXT,
+                    ip_address VARCHAR(50),
                     user_agent TEXT,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (client_id) REFERENCES clients (id),
@@ -84,16 +92,16 @@ class UserManagementModels:
             ''')
             
             # User sessions table - Track active sessions
-            cursor.execute('''
+            cursor.execute(f'''
                 CREATE TABLE IF NOT EXISTS user_sessions (
-                    id TEXT PRIMARY KEY,
-                    client_id TEXT NOT NULL,
-                    user_id TEXT NOT NULL,
-                    session_token TEXT UNIQUE NOT NULL,
-                    ip_address TEXT,
+                    id {get_text_pk()},
+                    client_id VARCHAR(255) NOT NULL,
+                    user_id VARCHAR(255) NOT NULL,
+                    session_token VARCHAR(255) UNIQUE NOT NULL,
+                    ip_address VARCHAR(50),
                     user_agent TEXT,
                     expires_at TIMESTAMP NOT NULL,
-                    is_active BOOLEAN DEFAULT 1,
+                    is_active BOOLEAN DEFAULT {get_boolean_default(True)},
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (client_id) REFERENCES clients (id),
                     FOREIGN KEY (user_id) REFERENCES user_accounts (id)
@@ -634,13 +642,23 @@ class UserManagementModels:
         """Add module_permissions column to user_accounts table if it doesn't exist"""
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
         
         try:
-            # Check if column exists
-            cursor.execute("PRAGMA table_info(user_accounts)")
-            columns = [row[1] for row in cursor.fetchall()]
+            # Check if column exists (database-agnostic way)
+            if db_type == 'postgresql':
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name='user_accounts' AND column_name='module_permissions'
+                """)
+                column_exists = cursor.fetchone() is not None
+            else:
+                cursor.execute("PRAGMA table_info(user_accounts)")
+                columns = [row[1] for row in cursor.fetchall()]
+                column_exists = 'module_permissions' in columns
             
-            if 'module_permissions' not in columns:
+            if not column_exists:
                 cursor.execute('''
                     ALTER TABLE user_accounts 
                     ADD COLUMN module_permissions TEXT DEFAULT '{}'

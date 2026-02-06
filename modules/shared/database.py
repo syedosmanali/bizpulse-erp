@@ -44,12 +44,24 @@ def get_db_connection():
             # Parse DATABASE_URL
             parsed = urlparse(db_url)
             
+            # Extract username - handle Supabase format (postgres.project-ref)
+            username = parsed.username
+            if username and '.' in username:
+                # Supabase format: postgres.dnflpvmertmioebhjzas
+                # We need the full username for Supabase
+                username = username
+            
+            # Extract database name from path
+            database = parsed.path[1:] if parsed.path else 'postgres'
+            
+            print(f"🔗 Connecting to Supabase: {parsed.hostname}:{parsed.port or 5432}")
+            
             conn = psycopg2.connect(
                 host=parsed.hostname,
                 port=parsed.port or 5432,
-                user=parsed.username,
+                user=username,
                 password=parsed.password,
-                database=parsed.path[1:],  # Remove leading '/'
+                database=database,
                 cursor_factory=RealDictCursor,
                 sslmode='require'  # Supabase requires SSL
             )
@@ -58,6 +70,10 @@ def get_db_connection():
             return conn
         except Exception as e:
             print(f"❌ Supabase PostgreSQL connection failed: {e}")
+            print(f"   Host: {parsed.hostname}")
+            print(f"   Port: {parsed.port or 5432}")
+            print(f"   User: {username}")
+            print(f"   Database: {database}")
             raise
     else:
         # SQLite fallback (local development only)
@@ -261,31 +277,31 @@ def init_db():
     ''')
     
     # Hotel services table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS hotel_services (
-            id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            category TEXT,
-            rate REAL,
+            id {get_text_pk()},
+            name VARCHAR(255) NOT NULL,
+            category VARCHAR(100),
+            rate {get_sql_type('REAL', 'NUMERIC(10,2)')},
             description TEXT,
-            tax_rate REAL DEFAULT 18,
-            is_active BOOLEAN DEFAULT 1,
+            tax_rate {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 18,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Users table for authentication
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            business_name TEXT,
+            id {get_text_pk()},
+            email VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            business_name VARCHAR(255),
             business_address TEXT,
-            business_type TEXT DEFAULT 'retail',
-            gst_number TEXT,
-            phone TEXT,
-            is_active BOOLEAN DEFAULT 1,
+            business_type VARCHAR(50) DEFAULT 'retail',
+            gst_number VARCHAR(100),
+            phone VARCHAR(20),
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -293,7 +309,7 @@ def init_db():
     # ==================== CLIENT MANAGEMENT TABLES ====================
     
     # Tenants table - Main client accounts managed by super admin
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS tenants (
             id TEXT PRIMARY KEY,
             tenant_id TEXT UNIQUE NOT NULL,
@@ -308,7 +324,7 @@ def init_db():
             plan_expiry_date DATE,
             subscription_status TEXT DEFAULT 'active',
             status TEXT DEFAULT 'active',
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_by TEXT,
             last_login TIMESTAMP,
             login_count INTEGER DEFAULT 0,
@@ -319,21 +335,21 @@ def init_db():
     ''')
     
     # Tenant Users table - Users created by tenant admins
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS tenant_users (
-            id TEXT PRIMARY KEY,
-            tenant_id TEXT NOT NULL,
-            full_name TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT DEFAULT 'USER',
-            department TEXT,
-            phone TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            permissions TEXT DEFAULT '{}',
+            id {get_text_pk()},
+            tenant_id VARCHAR(255) NOT NULL,
+            full_name VARCHAR(255) NOT NULL,
+            email VARCHAR(255) UNIQUE NOT NULL,
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            role VARCHAR(50) DEFAULT 'USER',
+            department VARCHAR(100),
+            phone VARCHAR(20),
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
+            permissions TEXT DEFAULT '{{}}',
             last_login TIMESTAMP,
-            created_by TEXT NOT NULL,
+            created_by VARCHAR(255) NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (tenant_id) REFERENCES tenants (tenant_id)
@@ -341,7 +357,7 @@ def init_db():
     ''')
     
     # Super Admin Users table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS super_admins (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
@@ -349,7 +365,7 @@ def init_db():
             password_hash TEXT NOT NULL,
             full_name TEXT NOT NULL,
             role TEXT DEFAULT 'SUPER_ADMIN',
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             last_login TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -358,50 +374,47 @@ def init_db():
     
     # ==================== NEW USER MANAGEMENT SYSTEM ====================
     
-    # Initialize user management tables
-    from modules.user_management.models import UserManagementModels
-    UserManagementModels.create_user_tables()
-    
-    # Add permissions column if it doesn't exist
-    UserManagementModels.add_permissions_column()
-    
-    # Clients table - for client management system
-    cursor.execute('''
+    # Clients table - for client management system (MUST be created before user_accounts)
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS clients (
-            id TEXT PRIMARY KEY,
-            company_name TEXT NOT NULL,
-            contact_email TEXT UNIQUE NOT NULL,
-            contact_name TEXT,
-            phone_number TEXT,
-            whatsapp_number TEXT,
+            id {get_text_pk()},
+            company_name VARCHAR(255) NOT NULL,
+            contact_email VARCHAR(255) UNIQUE NOT NULL,
+            contact_name VARCHAR(255),
+            phone_number VARCHAR(20),
+            whatsapp_number VARCHAR(20),
             business_address TEXT,
-            business_type TEXT DEFAULT 'retail',
-            gst_number TEXT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            is_active BOOLEAN DEFAULT 1,
+            business_type VARCHAR(50) DEFAULT 'retail',
+            gst_number VARCHAR(100),
+            username VARCHAR(255) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             last_login TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
+    # Commit clients table before creating user management tables
+    conn.commit()
+    
+    # Initialize user management tables (AFTER clients table)
+    from modules.user_management.models import UserManagementModels
+    UserManagementModels.create_user_tables()
+    
+    # Add permissions column if it doesn't exist
+    UserManagementModels.add_permissions_column()
+    
     # Add password_plain column if it doesn't exist (for existing databases)
-    if db_type == 'sqlite':
-        try:
+    try:
+        if db_type == 'sqlite':
             cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
-        except sqlite3.OperationalError:
-            # Column already exists
-            pass
-        except Exception:
-            # Table doesn't exist yet
-            pass
-    else:
-        try:
+        else:
             cursor.execute('ALTER TABLE client_users ADD COLUMN password_plain TEXT')
-        except Exception:
-            # Column already exists or table doesn't exist
-            pass
+        conn.commit()
+    except Exception:
+        # Column already exists or table doesn't exist
+        conn.rollback()
     
     # Add tenant_id column to existing tables if they don't exist
     tables_to_add_tenant_id = [
@@ -439,150 +452,166 @@ def init_db():
         pass
     
     # Add additional columns to clients table if they don't exist
-    try:
-        cursor.execute('ALTER TABLE clients ADD COLUMN city TEXT')
-        cursor.execute('ALTER TABLE clients ADD COLUMN state TEXT')
-        cursor.execute('ALTER TABLE clients ADD COLUMN country TEXT DEFAULT "India"')
-        cursor.execute('ALTER TABLE clients ADD COLUMN login_count INTEGER DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Columns already exist
-        pass
-        pass
-    
-    # Add profile_picture column to clients table if it doesn't exist
-    try:
-        cursor.execute('ALTER TABLE clients ADD COLUMN profile_picture TEXT')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
-    
-    # Add additional profile columns to clients table if they don't exist
     additional_client_columns = [
         ('city', 'TEXT'),
         ('state', 'TEXT'),
         ('pincode', 'TEXT'),
-        ('country', 'TEXT DEFAULT "India"'),
+        ('country', 'TEXT DEFAULT \'India\''),
         ('pan_number', 'TEXT'),
         ('website', 'TEXT'),
         ('date_of_birth', 'TEXT'),
-        ('language', 'TEXT DEFAULT "en"'),
-        ('timezone', 'TEXT DEFAULT "Asia/Kolkata"'),
-        ('currency', 'TEXT DEFAULT "INR"'),
-        ('date_format', 'TEXT DEFAULT "DD/MM/YYYY"'),
+        ('language', 'TEXT DEFAULT \'en\''),
+        ('timezone', 'TEXT DEFAULT \'Asia/Kolkata\''),
+        ('currency', 'TEXT DEFAULT \'INR\''),
+        ('date_format', 'TEXT DEFAULT \'DD/MM/YYYY\''),
         ('last_login', 'TIMESTAMP'),
-        ('login_count', 'INTEGER DEFAULT 0')
+        ('login_count', 'INTEGER DEFAULT 0'),
+        ('profile_picture', 'TEXT')
     ]
     
     for column_name, column_type in additional_client_columns:
         try:
             cursor.execute(f'ALTER TABLE clients ADD COLUMN {column_name} {column_type}')
-        except sqlite3.OperationalError:
-            # Column already exists
-            pass
+            conn.commit()
+        except Exception:
+            # Column already exists or table doesn't exist
+            conn.rollback()
     
     # Add missing columns to existing tables if they don't exist
     try:
         cursor.execute('ALTER TABLE bills ADD COLUMN customer_name TEXT')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     try:
         cursor.execute('ALTER TABLE bills ADD COLUMN gst_rate REAL DEFAULT 18')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     try:
         cursor.execute('ALTER TABLE sales ADD COLUMN balance_due REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     try:
         cursor.execute('ALTER TABLE sales ADD COLUMN paid_amount REAL DEFAULT 0')
-    except sqlite3.OperationalError:
-        # Column already exists
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     # Add barcode fields to products table if they don't exist
     try:
         cursor.execute('ALTER TABLE products ADD COLUMN barcode_data TEXT UNIQUE')
-    except sqlite3.OperationalError:
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     try:
         cursor.execute('ALTER TABLE products ADD COLUMN barcode_image TEXT')
-    except sqlite3.OperationalError:
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     # Create index on barcode_data for fast lookups
     try:
         cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode_data)')
-    except sqlite3.OperationalError:
-        pass
+        conn.commit()
+    except Exception:
+        conn.rollback()
     
     # CMS Tables for Content Management
     
     # Site Settings table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS cms_site_settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            site_name TEXT DEFAULT 'BizPulse ERP',
-            logo_url TEXT,
-            favicon_url TEXT,
-            primary_color TEXT DEFAULT '#732C3F',
-            secondary_color TEXT DEFAULT '#F7E8EC',
-            contact_email TEXT,
-            contact_phone TEXT,
-            address TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    if db_type == 'postgresql':
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cms_site_settings (
+                id SERIAL PRIMARY KEY,
+                site_name VARCHAR(255) DEFAULT 'BizPulse ERP',
+                logo_url TEXT,
+                favicon_url TEXT,
+                primary_color VARCHAR(50) DEFAULT '#732C3F',
+                secondary_color VARCHAR(50) DEFAULT '#F7E8EC',
+                contact_email VARCHAR(255),
+                contact_phone VARCHAR(20),
+                address TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cms_site_settings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                site_name TEXT DEFAULT 'BizPulse ERP',
+                logo_url TEXT,
+                favicon_url TEXT,
+                primary_color TEXT DEFAULT '#732C3F',
+                secondary_color TEXT DEFAULT '#F7E8EC',
+                contact_email TEXT,
+                contact_phone TEXT,
+                address TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
     
     # Hero Section table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS cms_hero_section (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT DEFAULT 'Welcome to BizPulse',
-            subtitle TEXT DEFAULT 'Complete Business Management Solution',
-            button_text TEXT DEFAULT 'Get Started',
-            button_link TEXT DEFAULT '/register',
-            background_image_url TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    if db_type == 'postgresql':
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cms_hero_section (
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255) DEFAULT 'Welcome to BizPulse',
+                subtitle VARCHAR(255) DEFAULT 'Complete Business Management Solution',
+                button_text VARCHAR(100) DEFAULT 'Get Started',
+                button_link VARCHAR(255) DEFAULT '/register',
+                background_image_url TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cms_hero_section (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT DEFAULT 'Welcome to BizPulse',
+                subtitle TEXT DEFAULT 'Complete Business Management Solution',
+                button_text TEXT DEFAULT 'Get Started',
+                button_link TEXT DEFAULT '/register',
+                background_image_url TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
     
     # Features table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_features (
             id TEXT PRIMARY KEY,
             title TEXT NOT NULL,
             description TEXT,
             icon_image_url TEXT,
             display_order INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Pricing Plans table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_pricing_plans (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             price_per_month REAL NOT NULL,
             description TEXT,
             features TEXT,
-            is_popular BOOLEAN DEFAULT 0,
+            is_popular BOOLEAN DEFAULT {get_boolean_default(False)},
             display_order INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Testimonials table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_testimonials (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -592,26 +621,26 @@ def init_db():
             avatar_image_url TEXT,
             rating INTEGER DEFAULT 5,
             display_order INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # FAQs table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_faqs (
             id TEXT PRIMARY KEY,
             question TEXT NOT NULL,
             answer TEXT NOT NULL,
             category TEXT DEFAULT 'General',
             display_order INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # Gallery Images table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_gallery (
             id TEXT PRIMARY KEY,
             title TEXT,
@@ -619,20 +648,20 @@ def init_db():
             image_url TEXT NOT NULL,
             category TEXT DEFAULT 'General',
             display_order INTEGER DEFAULT 0,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
     
     # CMS Admin Users table
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS cms_admin_users (
             id TEXT PRIMARY KEY,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             email TEXT,
             full_name TEXT,
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             last_login TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -640,20 +669,33 @@ def init_db():
     ''')
     
     # Website Content table - stores edited website HTML
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS cms_website_content (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            page_name TEXT DEFAULT 'index',
-            content_html TEXT NOT NULL,
-            edited_by TEXT,
-            is_active BOOLEAN DEFAULT 1,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
+    if db_type == 'postgresql':
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS cms_website_content (
+                id SERIAL PRIMARY KEY,
+                page_name VARCHAR(100) DEFAULT 'index',
+                content_html TEXT NOT NULL,
+                edited_by VARCHAR(255),
+                is_active BOOLEAN DEFAULT {get_boolean_default(True)},
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+    else:
+        cursor.execute(f'''
+            CREATE TABLE IF NOT EXISTS cms_website_content (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                page_name TEXT DEFAULT 'index',
+                content_html TEXT NOT NULL,
+                edited_by TEXT,
+                is_active BOOLEAN DEFAULT {get_boolean_default(True)},
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
     
     # Companies table - for multi-tenant support and WhatsApp reports
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS companies (
             id TEXT PRIMARY KEY,
             business_name TEXT NOT NULL,
@@ -661,10 +703,10 @@ def init_db():
             whatsapp_number TEXT,
             email TEXT,
             address TEXT,
-            send_daily_report BOOLEAN DEFAULT 1,
+            send_daily_report BOOLEAN DEFAULT {get_boolean_default(True)},
             report_time TIME DEFAULT '23:55:00',
             timezone TEXT DEFAULT 'Asia/Kolkata',
-            is_active BOOLEAN DEFAULT 1,
+            is_active BOOLEAN DEFAULT {get_boolean_default(True)},
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -720,14 +762,18 @@ def init_db():
     
     # Initialize default CMS data
     cursor.execute('SELECT COUNT(*) FROM cms_site_settings')
-    if cursor.fetchone()[0] == 0:
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
+    if count == 0:
         cursor.execute('''
             INSERT INTO cms_site_settings (site_name, primary_color, secondary_color)
             VALUES ('BizPulse ERP', '#732C3F', '#F7E8EC')
         ''')
     
     cursor.execute('SELECT COUNT(*) FROM cms_hero_section')
-    if cursor.fetchone()[0] == 0:
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
+    if count == 0:
         cursor.execute('''
             INSERT INTO cms_hero_section (title, subtitle, button_text, button_link)
             VALUES ('Welcome to BizPulse', 'Complete Business Management Solution', 'Get Started', '/register')
@@ -735,13 +781,21 @@ def init_db():
     
     # Initialize default CMS admin user
     cursor.execute('SELECT COUNT(*) FROM cms_admin_users')
-    if cursor.fetchone()[0] == 0:
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
+    if count == 0:
         # Default credentials: username=admin, password=admin123
         default_password_hash = hashlib.sha256('admin123'.encode()).hexdigest()
-        cursor.execute('''
-            INSERT INTO cms_admin_users (id, username, password_hash, email, full_name)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (generate_id(), 'admin', default_password_hash, 'admin@bizpulse.com', 'CMS Administrator'))
+        if db_type == 'postgresql':
+            cursor.execute('''
+                INSERT INTO cms_admin_users (id, username, password_hash, email, full_name)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (generate_id(), 'admin', default_password_hash, 'admin@bizpulse.com', 'CMS Administrator'))
+        else:
+            cursor.execute('''
+                INSERT INTO cms_admin_users (id, username, password_hash, email, full_name)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (generate_id(), 'admin', default_password_hash, 'admin@bizpulse.com', 'CMS Administrator'))
     
     # Staff table for business owners to add their staff
     cursor.execute('''
@@ -820,11 +874,14 @@ def init_db():
 
     # Initialize default company
     cursor.execute('SELECT COUNT(*) FROM companies')
-    if cursor.fetchone()[0] == 0:
-        cursor.execute('''
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
+    if count == 0:
+        placeholder = '%s' if db_type == 'postgresql' else '?'
+        cursor.execute(f'''
             INSERT INTO companies (id, business_name, phone_number, whatsapp_number, email, address, send_daily_report, report_time)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('default_company', 'BizPulse Demo Store', '7093635305', '7093635305', 'bizpulse.erp@gmail.com', 'Hyderabad, Telangana, India', 1, '23:55:00'))
+            VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+        ''', ('default_company', 'BizPulse Demo Store', '7093635305', '7093635305', 'bizpulse.erp@gmail.com', 'Hyderabad, Telangana, India', True if db_type == 'postgresql' else 1, '23:55:00'))
     
     # Add BizPulse admin user if not exists
     if db_type == 'sqlite':
@@ -832,25 +889,26 @@ def init_db():
     else:
         cursor.execute('SELECT COUNT(*) FROM users WHERE email = %s', ('bizpulse.erp@gmail.com',))
     
-    if cursor.fetchone()[0] == 0:
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
+    if count == 0:
         if db_type == 'sqlite':
             cursor.execute('''
-                INSERT INTO users (id, first_name, last_name, email, business_name, business_type, password_hash, is_active, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', ('admin-bizpulse', 'BizPulse', 'Admin', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), 1, datetime.now().isoformat()))
+                INSERT INTO users (id, email, business_name, business_type, password_hash, is_active, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), 1, datetime.now().isoformat()))
         else:
             cursor.execute('''
-                INSERT INTO users (id, first_name, last_name, email, business_name, business_type, password_hash, is_active, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', ('admin-bizpulse', 'BizPulse', 'Admin', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), True, datetime.now().isoformat()))
+                INSERT INTO users (id, email, business_name, business_type, password_hash, is_active, created_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), True, datetime.now().isoformat()))
     
     # Add sample data
-    if db_type == 'sqlite':
-        cursor.execute('SELECT COUNT(*) FROM products')
-    else:
-        cursor.execute('SELECT COUNT(*) FROM products')
+    cursor.execute('SELECT COUNT(*) FROM products')
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
     
-    if cursor.fetchone()[0] == 0:
+    if count == 0:
         # Sample products
         sample_products = [
             ('prod-1', 'P001', 'Rice (1kg)', 'Groceries', 80.0, 70.0, 100, 10, 'kg', 'retail'),
@@ -873,12 +931,11 @@ def init_db():
             ''', product)
     
     # Sample customers
-    if db_type == 'sqlite':
-        cursor.execute('SELECT COUNT(*) FROM customers')
-    else:
-        cursor.execute('SELECT COUNT(*) FROM customers')
+    cursor.execute('SELECT COUNT(*) FROM customers')
+    result = cursor.fetchone()
+    count = result['count'] if db_type == 'postgresql' else result[0]
         
-    if cursor.fetchone()[0] == 0:
+    if count == 0:
         sample_customers = [
             ('cust-1', 'Rajesh Kumar', '+91 9876543210', 'rajesh@email.com', '123 Main Street, City', 5000.0),
             ('cust-2', 'Priya Sharma', '+91 9876543211', 'priya@email.com', '456 Park Avenue, City', 3000.0),

@@ -3,13 +3,14 @@ Integrated Inventory Database Schema
 Handles Product Master, Inventory Control, and Purchase Entry tables
 """
 
-from modules.shared.database import get_db_connection
+from modules.shared.database import get_db_connection, get_db_type
 import sqlite3
 
 def init_integrated_inventory_tables():
     """Initialize all tables for the integrated inventory system"""
     conn = get_db_connection()
     cursor = conn.cursor()
+    db_type = get_db_type()
     
     try:
         # Ensure products table has all required columns
@@ -42,38 +43,46 @@ def init_integrated_inventory_tables():
         # Add missing columns to existing products table
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN min_stock INTEGER DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass  # Column already exists
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN max_stock INTEGER DEFAULT 0")
-        except sqlite3.OperationalError:
+            conn.commit()
+        except Exception:
+            conn.rollback()
             pass
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN hsn_code TEXT")
-        except sqlite3.OperationalError:
-            pass
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN gst_rate REAL DEFAULT 18")
-        except sqlite3.OperationalError:
-            pass
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN mrp REAL DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN purchase_price REAL DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         try:
             cursor.execute("ALTER TABLE products ADD COLUMN selling_price REAL DEFAULT 0")
-        except sqlite3.OperationalError:
-            pass
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         # Stock transactions table for detailed tracking
         cursor.execute("""
@@ -165,27 +174,84 @@ def init_integrated_inventory_tables():
         """)
         
         # Create indexes for better performance (only if columns exist)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_user_id ON products (user_id)")
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_user_id ON products (user_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
         # Check if sku column exists before creating index
-        cursor.execute("PRAGMA table_info(products)")
-        columns = [row[1] for row in cursor.fetchall()]
+        if db_type == 'postgresql':
+            cursor.execute("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'products'
+            """)
+            columns = [row['column_name'] for row in cursor.fetchall()]
+        else:
+            cursor.execute("PRAGMA table_info(products)")
+            columns = [row[1] for row in cursor.fetchall()]
         
         if 'sku' in columns:
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_sku ON products (sku)")
+            try:
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_sku ON products (sku)")
+                conn.commit()
+            except Exception:
+                conn.rollback()
         if 'barcode_data' in columns:
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_barcode ON products (barcode_data)")
+            try:
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_barcode ON products (barcode_data)")
+                conn.commit()
+            except Exception:
+                conn.rollback()
         if 'category' in columns:
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products (category)")
+            try:
+                cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_category ON products (category)")
+                conn.commit()
+            except Exception:
+                conn.rollback()
         
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_product_id ON stock_transactions (product_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_business_owner ON stock_transactions (business_owner_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_type ON stock_transactions (transaction_type)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_reference ON stock_transactions (reference_type, reference_id)")
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_product_id ON stock_transactions (product_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
         
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_purchase_entries_business_owner ON purchase_entries (business_owner_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_user_id ON suppliers (user_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_user_id ON product_categories (user_id)")
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_business_owner ON stock_transactions (business_owner_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_type ON stock_transactions (transaction_type)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_stock_transactions_reference ON stock_transactions (reference_type, reference_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_purchase_entries_business_owner ON purchase_entries (business_owner_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_suppliers_user_id ON suppliers (user_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
+        
+        try:
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_categories_user_id ON product_categories (user_id)")
+            conn.commit()
+        except Exception:
+            conn.rollback()
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_user_id ON stock_alerts (user_id)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_alerts_product_id ON stock_alerts (product_id)")
         
@@ -204,10 +270,17 @@ def init_integrated_inventory_tables():
         ]
         
         for cat_id, cat_name in default_categories:
-            cursor.execute("""
-                INSERT OR IGNORE INTO product_categories (id, name, is_active, user_id, created_at)
-                VALUES (?, ?, 1, 'system', datetime('now'))
-            """, (cat_id, cat_name))
+            if db_type == 'postgresql':
+                cursor.execute("""
+                    INSERT INTO product_categories (id, name, is_active, created_at)
+                    VALUES (%s, %s, TRUE, CURRENT_TIMESTAMP)
+                    ON CONFLICT (id) DO NOTHING
+                """, (cat_id, cat_name))
+            else:
+                cursor.execute("""
+                    INSERT OR IGNORE INTO product_categories (id, name, is_active, user_id, created_at)
+                    VALUES (?, ?, 1, 'system', datetime('now'))
+                """, (cat_id, cat_name))
         
         conn.commit()
         print("✅ Integrated inventory tables initialized successfully")

@@ -1,24 +1,16 @@
-# Render Blueprint for BizPulse ERP
+# Render Blueprint for BizPulse ERP - Supabase PostgreSQL
 # This file defines the infrastructure for deploying on Render
-
-databases:
-  - name: bizpulse-db
-    databaseName: bizpulse_erp
-    user: bizpulse_user
-    plan: free  # Free tier PostgreSQL
-    region: oregon  # Choose region closest to your users
-    ipAllowList: []  # Empty means accessible from anywhere
 
 services:
   - type: web
     name: bizpulse-erp
     runtime: python
-    region: oregon  # Same region as database for low latency
+    region: oregon  # Choose region closest to your users
     plan: free  # Free tier web service
     branch: main  # Git branch to deploy
     
-    # Build configuration
-    buildCommand: pip install --upgrade pip && pip install -r requirements.txt
+    # Build configuration - Use custom build script
+    buildCommand: chmod +x render-build.sh && ./render-build.sh
     
     # Start command
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120 --log-level debug
@@ -29,12 +21,19 @@ services:
     # Environment variables
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11.9"
       
       - key: DATABASE_URL
-        fromDatabase:
-          name: bizpulse-db
-          property: connectionString
+        value: postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+      
+      - key: SUPABASE_URL
+        value: https://dnflpvmertmioebhjzas.supabase.co
+      
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRuZmxwdm1lcnRtaW9lYmhqemFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk2Nzg1NzgsImV4cCI6MjA4NTI1NDU3OH0.OWgbzjxVTUKNHIGlE_yr25BGMNNCBbkz-8x6Gc6K99M
+      
+      - key: SUPABASE_DB_PASSWORD
+        value: PEhR2p3tARI915Lz
       
       - key: FLASK_ENV
         value: production
@@ -50,11 +49,3 @@ services:
     
     # Auto-deploy on git push
     autoDeploy: true
-    
-    # Disk storage (optional - for file uploads)
-    # Note: Free tier doesn't include persistent disk
-    # Uncomment if you upgrade to paid plan
-    # disk:
-    #   name: bizpulse-uploads
-    #   mountPath: /opt/render/project/src/frontend/assets/static/uploads
-    #   sizeGB: 1
