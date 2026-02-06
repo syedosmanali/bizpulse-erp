@@ -23,12 +23,14 @@ def get_database_url():
     """Get DATABASE_URL from environment variables (Supabase PostgreSQL)"""
     db_url = os.environ.get('DATABASE_URL')
     
-    # Fallback for Render deployment if environment variable not set
-    if not db_url:
-        # Check if we're on Render (has RENDER environment variable)
-        if os.environ.get('RENDER'):
-            print("⚠️  DATABASE_URL not found, using Supabase fallback")
-            db_url = "postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+    # Clean up DATABASE_URL if it has extra text
+    if db_url and 'DATABASE_URL=' in db_url:
+        db_url = db_url.split('DATABASE_URL=')[-1]
+    
+    # Fallback for Render deployment if environment variable not set or empty
+    if not db_url or db_url.strip() == '':
+        print("⚠️  DATABASE_URL not found, using Supabase fallback")
+        db_url = "postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
     
     return db_url
 
@@ -47,7 +49,18 @@ def get_db_connection():
     if db_url:
         # Supabase PostgreSQL connection
         # Parse DATABASE_URL first (outside try block)
-        parsed = urlparse(db_url)
+        try:
+            parsed = urlparse(db_url)
+        except Exception as parse_error:
+            print(f"❌ Failed to parse DATABASE_URL: {parse_error}")
+            print(f"   Raw URL: {db_url}")
+            raise
+        
+        # Validate parsed URL
+        if not parsed.hostname:
+            print(f"❌ Invalid DATABASE_URL - missing hostname")
+            print(f"   Raw URL: {db_url}")
+            raise ValueError("Invalid DATABASE_URL format")
         
         # Extract username - handle Supabase format (postgres.project-ref)
         username = parsed.username
