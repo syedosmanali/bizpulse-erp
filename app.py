@@ -4,7 +4,7 @@ REFACTORED FROM SINGLE FILE TO MODULAR ARCHITECTURE
 WITH REAL-TIME SYNC SUPPORT
 """
 
-from flask import Flask, request, g, make_response
+from flask import Flask, request, g, make_response, session
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
