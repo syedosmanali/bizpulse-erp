@@ -21,7 +21,16 @@ DB_PATH = os.path.join(BASE_DIR, 'billing.db')
 
 def get_database_url():
     """Get DATABASE_URL from environment variables (Supabase PostgreSQL)"""
-    return os.environ.get('DATABASE_URL')
+    db_url = os.environ.get('DATABASE_URL')
+    
+    # Fallback for Render deployment if environment variable not set
+    if not db_url:
+        # Check if we're on Render (has RENDER environment variable)
+        if os.environ.get('RENDER'):
+            print("⚠️  DATABASE_URL not found, using Supabase fallback")
+            db_url = "postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+    
+    return db_url
 
 def get_db_type():
     """Determine database type - always PostgreSQL for production"""
