@@ -720,19 +720,22 @@ def get_bill_payment_history(bill_id):
 
 @retail_bp.route('/api/products', methods=['GET'])
 def get_products():
-    """Get all products - Filtered by user"""
+    """Get all products - Filtered by user (except for admins)"""
     from modules.shared.database import get_db_connection
     import traceback
     
     try:
-        # Get user_id for filtering
+        # Get user_id and check if admin
         user_id = get_user_id_from_session()
-        print(f"🔍 [PRODUCTS] Filtering by user_id: {user_id}")
+        user_type = session.get('user_type')
+        is_admin = session.get('is_super_admin', False)
+        
+        print(f"🔍 [PRODUCTS] user_id: {user_id}, type: {user_type}, admin: {is_admin}")
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Query with user filtering
+        # Query with conditional user filtering
         query = """
             SELECT 
                 id, name, description, category, price, cost, stock, min_stock, 
@@ -743,8 +746,8 @@ def get_products():
         
         params = []
         
-        # Add user filtering
-        if user_id:
+        # Only filter by user_id if NOT admin
+        if user_id and not is_admin and user_type != 'admin':
             query += " AND (user_id = ? OR user_id IS NULL)"
             params.append(user_id)
         
