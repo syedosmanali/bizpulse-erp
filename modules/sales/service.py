@@ -94,7 +94,7 @@ class SalesService:
                 (SELECT SUM(bi.quantity) FROM bill_items bi WHERE bi.bill_id = b.id) as quantity,
                 (SELECT COUNT(*) FROM bill_items bi WHERE bi.bill_id = b.id) as items_count,
                 CASE 
-                    WHEN b.is_credit = 1 AND b.credit_balance > 0 THEN 'due'
+                    WHEN b.is_credit = TRUE AND b.credit_balance > 0 THEN 'due'
                     WHEN b.payment_method = 'partial' THEN 'partial'
                     WHEN b.payment_method = 'credit' THEN 'due'
                     ELSE 'completed'
@@ -174,7 +174,7 @@ class SalesService:
                 sale['products_display'] = 'Multiple Items'
             
             # Fix status for credit bills - frontend expects proper status
-            if sale.get('is_credit') == 1 and sale.get('credit_balance', 0) > 0:
+            if sale.get('is_credit') and sale.get('credit_balance', 0) > 0:
                 sale['status'] = 'DUE'
                 sale['status_display'] = 'DUE'
                 sale['status_class'] = 'due'
@@ -196,7 +196,7 @@ class SalesService:
             sale['total_quantity'] = sale.get('quantity', 1)
             
             # Add CSS class for credit transactions (red color for amounts)
-            if sale.get('is_credit') == 1 or sale.get('payment_method') in ['credit', 'partial']:
+            if sale.get('is_credit') or sale.get('payment_method') in ['credit', 'partial']:
                 sale['css_class'] = 'credit-transaction'
                 sale['is_credit_transaction'] = True
                 sale['amount_class'] = 'text-danger'  # Red color for amounts
@@ -258,7 +258,7 @@ class SalesService:
                 COUNT(*) as total_sales,
                 COALESCE(SUM(total_amount), 0) as total_revenue,
                 COALESCE(AVG(total_amount), 0) as avg_sale_value,
-                COALESCE(SUM(CASE WHEN is_credit = 1 THEN credit_balance ELSE 0 END), 0) as total_receivables
+                COALESCE(SUM(CASE WHEN is_credit = TRUE THEN credit_balance ELSE 0 END), 0) as total_receivables
             FROM bills 
             {date_condition}
         """
