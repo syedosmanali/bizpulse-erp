@@ -787,94 +787,11 @@ def get_products():
         return jsonify([]), 500
 
 
-@retail_bp.route('/api/products', methods=['POST'])
-def add_product():
-    """Add a new product"""
-    from flask import request
-    from modules.shared.database import get_db_connection
-    import uuid
-    from datetime import datetime
-    
-    try:
-        data = request.json
-        user_id = get_user_id_from_session()
-        
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Auto-generate product code if not provided
-        product_code = data.get('code')
-        if not product_code:
-            # Get the highest numeric code
-            cursor.execute("""
-                SELECT code FROM products 
-                WHERE user_id = ? OR user_id IS NULL
-                ORDER BY CAST(code AS INTEGER) DESC LIMIT 1
-            """, (user_id,))
-            result = cursor.fetchone()
-            
-            if result and result[0]:
-                try:
-                    max_code = int(result[0])
-                    product_code = str(max_code + 1)
-                except:
-                    product_code = '1'
-            else:
-                product_code = '1'
-        
-        # Check for duplicate code
-        cursor.execute("""
-            SELECT id FROM products WHERE code = ? AND (user_id = ? OR user_id IS NULL)
-        """, (product_code, user_id))
-        
-        if cursor.fetchone():
-            conn.close()
-            return jsonify({
-                'success': False,
-                'error': 'Product code already exists'
-            }), 400
-        
-        # Generate product ID
-        product_id = str(uuid.uuid4())
-        now = datetime.now().isoformat()
-        
-        cursor.execute("""
-            INSERT INTO products (
-                id, name, description, category, price, cost, stock, min_stock, 
-                unit, code, barcode_data, image_url, is_active, user_id, created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
-        """, (
-            product_id,
-            data.get('name'),
-            data.get('description', ''),
-            data.get('category', 'Other'),
-            data.get('price', 0),
-            data.get('cost', 0),
-            data.get('stock', 0),
-            data.get('min_stock', 0),
-            data.get('unit', 'piece'),
-            product_code,
-            data.get('barcode_data', ''),
-            data.get('image_url', ''),
-            user_id,
-            now
-        ))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Product added successfully',
-            'product_id': product_id,
-            'product_code': product_code
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+# REMOVED: Duplicate endpoint - use products_bp instead
+# @retail_bp.route('/api/products', methods=['POST'])
+# def add_product():
+#     """This endpoint is now handled by products_bp"""
+#     pass
 
 
 @retail_bp.route('/api/products/<product_id>', methods=['PUT'])
