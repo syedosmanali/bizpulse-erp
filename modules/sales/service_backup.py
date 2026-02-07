@@ -1,6 +1,5 @@
 """
 Sales service - Handle all sales data and analytics
-FIXED VERSION: Handles NULL business_owner_id gracefully for migration
 """
 
 from modules.shared.database import get_db_connection
@@ -26,9 +25,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # FLEXIBLE DATA ISOLATION - Show user's data + unassigned data (for migration)
+        # STRICT DATA ISOLATION - Only show user's own sales
         if user_id:
-            where_clauses.append("(s.business_owner_id = ? OR s.business_owner_id IS NULL)")
+            where_clauses.append("s.business_owner_id = ?")
             params.append(user_id)
         
         # Add date filters
@@ -108,9 +107,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # FLEXIBLE DATA ISOLATION - Show user's data + unassigned data (for migration)
+        # STRICT DATA ISOLATION - Only show user's own bills
         if user_id:
-            where_clauses.append("(b.business_owner_id = ? OR b.business_owner_id IS NULL)")
+            where_clauses.append("b.business_owner_id = ?")
             params.append(user_id)
         
         if date_filter:
@@ -148,12 +147,7 @@ class SalesService:
         if not date_filter or date_filter == 'all':
             base_query += " LIMIT 500"
         
-        print(f"🔍 [SALES SERVICE] Query: {base_query[:200]}...")
-        print(f"🔍 [SALES SERVICE] Params: {params}")
-        
         sales = conn.execute(base_query, params).fetchall()
-        
-        print(f"🔍 [SALES SERVICE] Found {len(sales)} bills")
         
         conn.close()
         
@@ -223,9 +217,9 @@ class SalesService:
         where_clauses = []
         params = []
         
-        # FLEXIBLE DATA ISOLATION - Show user's data + unassigned data (for migration)
+        # STRICT DATA ISOLATION - Only show user's own sales
         if user_id:
-            where_clauses.append("(business_owner_id = ? OR business_owner_id IS NULL)")
+            where_clauses.append("business_owner_id = ?")
             params.append(user_id)
         
         if date_filter:
@@ -269,9 +263,6 @@ class SalesService:
             {date_condition}
         """
         
-        print(f"🔍 [SALES SUMMARY] Query: {query[:200]}...")
-        print(f"🔍 [SALES SUMMARY] Params: {params}")
-        
         summary = conn.execute(query, params).fetchone()
         
         # Get total items from sales table
@@ -285,15 +276,13 @@ class SalesService:
         conn.close()
         
         if summary:
-            result = {
+            return {
                 "total_sales": summary['total_sales'] or 0,
                 "total_revenue": round(float(summary['total_revenue'] or 0), 2),
                 "total_items": items_result['total_items'] if items_result else 0,
                 "avg_sale_value": round(float(summary['avg_sale_value'] or 0), 2),
                 "total_receivables": round(float(summary['total_receivables'] or 0), 2)
             }
-            print(f"🔍 [SALES SUMMARY] Result: {result}")
-            return result
         else:
             return {
                 "total_sales": 0,
