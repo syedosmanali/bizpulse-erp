@@ -830,7 +830,7 @@
                             }
                         </div>
                         <div class="product-name">${product.name}</div>
-                        <div class="product-price">₹${product.price.toFixed(2)}</div>
+                        <div class="product-price">₹${parseFloat(product.price || 0).toFixed(2)}</div>
                         <div class="product-stock">
                             ${isOutOfStock ? 
                                 `${t('stock')}: ${product.stock} ${product.unit || 'pcs'} - OUT OF STOCK` : 
@@ -1007,7 +1007,7 @@
                         ${cart.map(item => `
                             <tr>
                                 <td class="product-name-cell">${item.name}</td>
-                                <td class="price-cell">₹${item.price.toFixed(2)}</td>
+                                <td class="price-cell">₹${parseFloat(item.price || 0).toFixed(2)}</td>
                                 <td>
                                     <div class="qty-controls">
                                         <button class="qty-btn-simple" onclick="updateQuantity('${item.id}', -1)">−</button>
@@ -1018,7 +1018,7 @@
                                         <button class="qty-btn-simple" onclick="updateQuantity('${item.id}', 1)">+</button>
                                     </div>
                                 </td>
-                                <td class="total-cell">₹${(item.price * item.quantity).toFixed(2)}</td>
+                                <td class="total-cell">₹${(parseFloat(item.price || 0) * item.quantity).toFixed(2)}</td>
                                 <td style="text-align: center;">
                                     <button class="remove-btn-simple" onclick="removeFromCart('${item.id}')">×</button>
                                 </td>
