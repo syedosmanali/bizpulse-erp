@@ -1197,7 +1197,7 @@
 
             const checkoutBtn = document.getElementById('checkoutBtn');
             checkoutBtn.disabled = true;
-            checkoutBtn.textContent = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('creating_bill')}`;
+            checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('creating_bill')}`;
 
             try {
                 const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -1374,7 +1374,7 @@
                 }
             } finally {
                 checkoutBtn.disabled = false;
-                checkoutBtn.textContent = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
             }
         }
 
