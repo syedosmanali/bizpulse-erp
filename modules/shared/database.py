@@ -144,7 +144,7 @@ class CursorWrapper:
         else:
             converted_query = query
         
-        # Boolean conversion
+        # Boolean conversion in WHERE clauses
         if self.db_type == 'postgresql':
             import re
             boolean_columns = [
@@ -154,6 +154,18 @@ class CursorWrapper:
             for col in boolean_columns:
                 converted_query = re.sub(rf'\b{col}\s*=\s*1\b', f'{col} = TRUE', converted_query, flags=re.IGNORECASE)
                 converted_query = re.sub(rf'\b{col}\s*=\s*0\b', f'{col} = FALSE', converted_query, flags=re.IGNORECASE)
+        
+        # Convert params: 1/0 to True/False for PostgreSQL
+        if self.db_type == 'postgresql' and params:
+            converted_params = []
+            for param in params:
+                if param == 1:
+                    converted_params.append(True)
+                elif param == 0:
+                    converted_params.append(False)
+                else:
+                    converted_params.append(param)
+            params = tuple(converted_params)
         
         return self._cursor.execute(converted_query, params)
     
