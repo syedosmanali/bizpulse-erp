@@ -15,4 +15,8 @@ find . -type f -name "*.pyc" -delete 2>/dev/null || true
 pip install --upgrade pip
 pip install -r requirements.txt
 
+# Run critical migration to add business_owner_id column
+echo "Running database migration..."
+python migrate_add_business_owner_id.py || echo "Migration failed or already applied"
+
 echo "Build completed at $(date)"
