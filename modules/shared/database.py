@@ -150,6 +150,33 @@ class EnterpriseConnectionWrapper:
             else:
                 converted_query = query
             
+            # PostgreSQL boolean fix: Convert = 1 to = TRUE and = 0 to = FALSE
+            if self.db_type == 'postgresql':
+                import re
+                # Replace boolean comparisons (be careful with numbers in other contexts)
+                # Match patterns like "column = 1" or "column = 0" where column is likely boolean
+                boolean_columns = [
+                    'is_active', 'is_admin', 'is_super_admin', 'is_credit', 
+                    'low_stock_enabled', 'is_popular', 'used', 'force_password_change',
+                    'autocommit', 'is_permanent', 'send_daily_report'
+                ]
+                
+                for col in boolean_columns:
+                    # Replace "column = 1" with "column = TRUE"
+                    converted_query = re.sub(
+                        rf'\b{col}\s*=\s*1\b', 
+                        f'{col} = TRUE', 
+                        converted_query, 
+                        flags=re.IGNORECASE
+                    )
+                    # Replace "column = 0" with "column = FALSE"
+                    converted_query = re.sub(
+                        rf'\b{col}\s*=\s*0\b', 
+                        f'{col} = FALSE', 
+                        converted_query, 
+                        flags=re.IGNORECASE
+                    )
+            
             # Get cursor
             if self.db_type == 'postgresql':
                 from psycopg2.extras import RealDictCursor
