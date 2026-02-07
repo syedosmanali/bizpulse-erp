@@ -2,8 +2,8 @@
 BizPulse ERP - Modular Monolith Entry Point
 REFACTORED FROM SINGLE FILE TO MODULAR ARCHITECTURE
 WITH REAL-TIME SYNC SUPPORT
-Version: 2.0.3 - CRITICAL FIX - Added business_owner_id column
-Last Updated: 2026-02-07 14:00 PM
+Version: 2.0.4 - AUTO-FIX ON STARTUP - business_owner_id migration
+Last Updated: 2026-02-07 15:00 PM
 """
 
 from flask import Flask, request, g, make_response, session
@@ -197,6 +197,13 @@ def initialize_database():
     # Initialize integrated inventory system
     from modules.integrated_inventory.database import init_integrated_inventory_tables
     init_integrated_inventory_tables()
+    
+    # 🔧 AUTO-FIX: Run database migration for business_owner_id
+    try:
+        from modules.shared.auto_fix import auto_fix_database_on_startup
+        auto_fix_database_on_startup()
+    except Exception as e:
+        print(f"⚠️  Auto-fix warning: {e}")
     
     print("✅ Database initialized successfully")
 
