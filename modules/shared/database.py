@@ -121,6 +121,56 @@ def get_db_connection():
     return EnterpriseConnectionWrapper(raw_conn, get_db_type())
 
 
+class CursorWrapper:
+    """Wrapper for cursor to auto-convert queries"""
+    
+    def __init__(self, conn, db_type):
+        self.conn = conn
+        self.db_type = db_type
+        
+        # Get actual cursor
+        if db_type == 'postgresql':
+            from psycopg2.extras import RealDictCursor
+            self._cursor = conn.cursor(cursor_factory=RealDictCursor)
+        else:
+            self._cursor = conn.cursor()
+            self._cursor.row_factory = sqlite3.Row
+    
+    def execute(self, query, params=()):
+        """Execute with auto-conversion"""
+        # Convert ? to %s for PostgreSQL
+        if self.db_type == 'postgresql' and '?' in query:
+            converted_query = query.replace('?', '%s')
+        else:
+            converted_query = query
+        
+        # Boolean conversion
+        if self.db_type == 'postgresql':
+            import re
+            boolean_columns = [
+                'is_active', 'is_admin', 'is_super_admin', 'is_credit',
+                'low_stock_enabled', 'is_popular', 'used', 'force_password_change'
+            ]
+            for col in boolean_columns:
+                converted_query = re.sub(rf'\b{col}\s*=\s*1\b', f'{col} = TRUE', converted_query, flags=re.IGNORECASE)
+                converted_query = re.sub(rf'\b{col}\s*=\s*0\b', f'{col} = FALSE', converted_query, flags=re.IGNORECASE)
+        
+        return self._cursor.execute(converted_query, params)
+    
+    def fetchone(self):
+        return self._cursor.fetchone()
+    
+    def fetchall(self):
+        return self._cursor.fetchall()
+    
+    def close(self):
+        return self._cursor.close()
+    
+    def __getattr__(self, name):
+        """Delegate other methods to actual cursor"""
+        return getattr(self._cursor, name)
+
+
 class EnterpriseConnectionWrapper:
     """
     Enterprise-grade connection wrapper
@@ -242,14 +292,9 @@ class EnterpriseConnectionWrapper:
             logger.error(f"❌ Close failed: {e}")
     
     def cursor(self):
-        """Get raw cursor for advanced operations"""
-        if self.db_type == 'postgresql':
-            from psycopg2.extras import RealDictCursor
-            return self.conn.cursor(cursor_factory=RealDictCursor)
-        else:
-            cursor = self.conn.cursor()
-            cursor.row_factory = sqlite3.Row
-            return cursor
+        """Get raw cursor for advanced operations - returns wrapped cursor"""
+        # Return a cursor wrapper that auto-converts queries
+        return CursorWrapper(self.conn, self.db_type)
     
     @property
     def autocommit(self):
