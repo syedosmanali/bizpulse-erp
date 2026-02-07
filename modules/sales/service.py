@@ -32,10 +32,10 @@ class SalesService:
         
         # Add date filters
         if from_date and to_date:
-            where_clauses.append("DATE(s.sale_date) >= ? AND DATE(s.sale_date) <= ?")
+            where_clauses.append("CAST(s.sale_date AS DATE) >= ? AND CAST(s.sale_date AS DATE) <= ?")
             params.extend([from_date, to_date])
         elif from_date:
-            where_clauses.append("DATE(s.sale_date) >= ?")
+            where_clauses.append("CAST(s.sale_date AS DATE) >= ?")
             params.append(from_date)
         
         # Combine where clauses
@@ -115,26 +115,26 @@ class SalesService:
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
-                where_clauses.append("DATE(b.created_at) = ?")
+                where_clauses.append("CAST(b.created_at AS DATE) = ?")
                 params.append(today)
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(b.created_at) = ?")
+                where_clauses.append("CAST(b.created_at AS DATE) = ?")
                 params.append(yesterday)
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(b.created_at) >= ?")
+                where_clauses.append("CAST(b.created_at AS DATE) >= ?")
                 params.append(week_ago)
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(b.created_at) >= ?")
+                where_clauses.append("CAST(b.created_at AS DATE) >= ?")
                 params.append(month_ago)
             elif date_filter == 'all':
                 # All sales - no date filter, but limit results
                 pass
             else:
                 # Custom date
-                where_clauses.append("DATE(b.created_at) = ?")
+                where_clauses.append("CAST(b.created_at AS DATE) = ?")
                 params.append(date_filter)
         
         # Add WHERE clause if we have conditions
@@ -225,26 +225,26 @@ class SalesService:
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
-                where_clauses.append("DATE(created_at) = ?")
+                where_clauses.append("CAST(created_at AS DATE) = ?")
                 params.append(today)
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(created_at) = ?")
+                where_clauses.append("CAST(created_at AS DATE) = ?")
                 params.append(yesterday)
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(created_at) >= ?")
+                where_clauses.append("CAST(created_at AS DATE) >= ?")
                 params.append(week_ago)
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-                where_clauses.append("DATE(created_at) >= ?")
+                where_clauses.append("CAST(created_at AS DATE) >= ?")
                 params.append(month_ago)
             elif date_filter == 'all':
                 # All data - no date filter
                 pass
             else:
                 # Custom date
-                where_clauses.append("DATE(created_at) = ?")
+                where_clauses.append("CAST(created_at AS DATE) = ?")
                 params.append(date_filter)
         
         # Build WHERE clause
@@ -306,7 +306,7 @@ class SalesService:
                         SUM(total_price) as total_revenue,
                         COUNT(*) as sale_count
                     FROM sales 
-                    WHERE DATE(sale_date) = ?
+                    WHERE CAST(sale_date AS DATE) = ?
                     GROUP BY product_id, product_name
                     ORDER BY total_revenue DESC
                     LIMIT ?
@@ -320,7 +320,7 @@ class SalesService:
                         SUM(total_price) as total_revenue,
                         COUNT(*) as sale_count
                     FROM sales 
-                    WHERE DATE(sale_date) >= ?
+                    WHERE CAST(sale_date AS DATE) >= ?
                     GROUP BY product_id, product_name
                     ORDER BY total_revenue DESC
                     LIMIT ?
@@ -334,7 +334,7 @@ class SalesService:
                         SUM(total_price) as total_revenue,
                         COUNT(*) as sale_count
                     FROM sales 
-                    WHERE DATE(sale_date) = ?
+                    WHERE CAST(sale_date AS DATE) = ?
                     GROUP BY product_id, product_name
                     ORDER BY total_revenue DESC
                     LIMIT ?
@@ -365,12 +365,12 @@ class SalesService:
         
         sales_data = conn.execute("""
             SELECT 
-                DATE(sale_date) as sale_date,
+                CAST(sale_date AS DATE) as sale_date,
                 SUM(total_price) as daily_revenue,
                 COUNT(*) as daily_sales
             FROM sales 
-            WHERE DATE(sale_date) >= ?
-            GROUP BY DATE(sale_date)
+            WHERE CAST(sale_date AS DATE) >= ?
+            GROUP BY CAST(sale_date AS DATE)
             ORDER BY sale_date ASC
         """, (start_date,)).fetchall()
         
