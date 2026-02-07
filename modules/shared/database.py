@@ -1,5 +1,6 @@
 """
 Database connection and initialization utilities
+ENTERPRISE-GRADE: Uses SQLAlchemy for production-ready database management
 UPDATED: Now uses Supabase PostgreSQL for persistent cloud storage
 """
 
@@ -11,6 +12,12 @@ import json
 import sqlite3
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text, event
+from sqlalchemy.pool import NullPool, QueuePool
+from sqlalchemy.engine import Engine
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -18,6 +25,10 @@ load_dotenv()
 # Get absolute path to database file (for SQLite fallback only)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(BASE_DIR, 'billing.db')
+
+# Global engine instance
+_engine = None
+_db_type = None
 
 def get_database_url():
     """Get DATABASE_URL from environment variables (Supabase PostgreSQL)"""
@@ -29,134 +40,189 @@ def get_database_url():
     
     # Fallback for Render deployment if environment variable not set or empty
     if not db_url or db_url.strip() == '':
-        print("⚠️  DATABASE_URL not found, using Supabase fallback")
+        logger.warning("⚠️  DATABASE_URL not found, using Supabase fallback")
         db_url = "postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
     
     return db_url
 
 def get_db_type():
     """Determine database type - always PostgreSQL for production"""
-    return 'postgresql' if get_database_url() else 'sqlite'
+    global _db_type
+    if _db_type:
+        return _db_type
+    
+    _db_type = 'postgresql' if get_database_url() else 'sqlite'
+    return _db_type
 
-def get_db_connection():
-    """
-    Get database connection to Supabase PostgreSQL.
-    - Production/Supabase: PostgreSQL connection (persistent cloud storage)
-    - Local fallback: SQLite (only for development without Supabase)
-    """
+def get_engine():
+    """Get or create SQLAlchemy engine (singleton pattern)"""
+    global _engine
+    
+    if _engine:
+        return _engine
+    
     db_url = get_database_url()
     
     if db_url:
-        # Supabase PostgreSQL connection
-        # Parse DATABASE_URL first (outside try block)
+        # PostgreSQL with connection pooling
+        logger.info(f"🔗 Creating PostgreSQL engine")
+        
+        _engine = create_engine(
+            db_url,
+            poolclass=QueuePool,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,  # Verify connections before using
+            pool_recycle=3600,   # Recycle connections after 1 hour
+            echo=False,          # Set to True for SQL debugging
+            connect_args={
+                'sslmode': 'require',
+                'connect_timeout': 10
+            }
+        )
+        
+        # Test connection
         try:
-            parsed = urlparse(db_url)
-        except Exception as parse_error:
-            print(f"❌ Failed to parse DATABASE_URL: {parse_error}")
-            print(f"   Raw URL: {db_url}")
-            raise
-        
-        # Validate parsed URL
-        if not parsed.hostname:
-            print(f"❌ Invalid DATABASE_URL - missing hostname")
-            print(f"   Raw URL: {db_url}")
-            raise ValueError("Invalid DATABASE_URL format")
-        
-        # Extract username - handle Supabase format (postgres.project-ref)
-        username = parsed.username
-        if username and '.' in username:
-            # Supabase format: postgres.dnflpvmertmioebhjzas
-            # We need the full username for Supabase
-            username = username
-        
-        # Extract database name from path
-        database = parsed.path[1:] if parsed.path else 'postgres'
-        
-        try:
-            import psycopg2
-            from psycopg2.extras import RealDictCursor
-            import psycopg2.extensions
-            
-            print(f"🔗 Connecting to Supabase: {parsed.hostname}:{parsed.port or 5432}")
-            
-            conn = psycopg2.connect(
-                host=parsed.hostname,
-                port=parsed.port or 5432,
-                user=username,
-                password=parsed.password,
-                database=database,
-                cursor_factory=RealDictCursor,
-                sslmode='require'  # Supabase requires SSL
-            )
-            
-            # Register adapter for dict-like row access
-            psycopg2.extensions.register_adapter(dict, psycopg2.extras.Json)
-            
-            conn.autocommit = False
-            print("✅ Connected to Supabase PostgreSQL")
-            return PostgreSQLConnectionWrapper(conn)
+            with _engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            logger.info("✅ PostgreSQL engine created successfully")
         except Exception as e:
-            print(f"❌ Supabase PostgreSQL connection failed: {e}")
-            print(f"   Host: {parsed.hostname}")
-            print(f"   Port: {parsed.port or 5432}")
-            print(f"   User: {username}")
-            print(f"   Database: {database}")
+            logger.error(f"❌ Failed to create PostgreSQL engine: {e}")
             raise
     else:
-        # SQLite fallback (local development only)
-        import sqlite3
-        print("⚠️  Using SQLite fallback (local development)")
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
-
-
-class PostgreSQLConnectionWrapper:
-    """Wrapper to make PostgreSQL connection compatible with SQLite-style queries"""
+        # SQLite fallback
+        logger.warning("⚠️  Using SQLite fallback (local development)")
+        
+        _engine = create_engine(
+            f'sqlite:///{DB_PATH}',
+            poolclass=NullPool,  # SQLite doesn't need pooling
+            echo=False
+        )
+        
+        # Enable foreign keys for SQLite
+        @event.listens_for(Engine, "connect")
+        def set_sqlite_pragma(dbapi_conn, connection_record):
+            if isinstance(dbapi_conn, sqlite3.Connection):
+                cursor = dbapi_conn.cursor()
+                cursor.execute("PRAGMA foreign_keys=ON")
+                cursor.close()
     
-    def __init__(self, conn):
+    return _engine
+
+def get_db_connection():
+    """
+    Get database connection - Enterprise-grade with SQLAlchemy
+    Returns a wrapper that's compatible with existing code
+    """
+    engine = get_engine()
+    raw_conn = engine.raw_connection()
+    
+    # Return wrapper for backward compatibility
+    return EnterpriseConnectionWrapper(raw_conn, get_db_type())
+
+
+class EnterpriseConnectionWrapper:
+    """
+    Enterprise-grade connection wrapper
+    - Automatic query conversion (SQLite ? to PostgreSQL %s)
+    - Transaction management
+    - Connection pooling
+    - Error handling
+    - Backward compatible with existing code
+    """
+    
+    def __init__(self, conn, db_type):
         self.conn = conn
+        self.db_type = db_type
         self._cursor = None
+        self._in_transaction = False
     
     def execute(self, query, params=()):
         """Execute query with automatic placeholder conversion"""
-        # Convert SQLite ? placeholders to PostgreSQL %s
-        pg_query = query.replace('?', '%s')
-        
-        cursor = self.conn.cursor()
-        cursor.execute(pg_query, params)
-        self._cursor = cursor
-        return self
+        try:
+            # Convert SQLite ? placeholders to PostgreSQL %s if needed
+            if self.db_type == 'postgresql' and '?' in query:
+                # Count placeholders
+                placeholder_count = query.count('?')
+                # Replace with %s
+                converted_query = query.replace('?', '%s')
+                logger.debug(f"Converted query: {converted_query[:100]}...")
+            else:
+                converted_query = query
+            
+            # Get cursor
+            if self.db_type == 'postgresql':
+                from psycopg2.extras import RealDictCursor
+                cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            else:
+                cursor = self.conn.cursor()
+                cursor.row_factory = sqlite3.Row
+            
+            # Execute query
+            cursor.execute(converted_query, params)
+            self._cursor = cursor
+            
+            return self
+            
+        except Exception as e:
+            logger.error(f"❌ Query execution failed: {e}")
+            logger.error(f"   Query: {query[:200]}...")
+            logger.error(f"   Params: {params}")
+            raise
     
     def fetchone(self):
         """Fetch one result"""
         if self._cursor:
-            return self._cursor.fetchone()
+            result = self._cursor.fetchone()
+            return result
         return None
     
     def fetchall(self):
         """Fetch all results"""
         if self._cursor:
-            return self._cursor.fetchall()
+            results = self._cursor.fetchall()
+            return results
         return []
     
     def commit(self):
         """Commit transaction"""
-        self.conn.commit()
+        try:
+            self.conn.commit()
+            self._in_transaction = False
+            logger.debug("✅ Transaction committed")
+        except Exception as e:
+            logger.error(f"❌ Commit failed: {e}")
+            raise
     
     def rollback(self):
         """Rollback transaction"""
-        self.conn.rollback()
+        try:
+            self.conn.rollback()
+            self._in_transaction = False
+            logger.debug("⚠️  Transaction rolled back")
+        except Exception as e:
+            logger.error(f"❌ Rollback failed: {e}")
+            raise
     
     def close(self):
-        """Close connection"""
-        if self._cursor:
-            self._cursor.close()
-        self.conn.close()
+        """Close connection and return to pool"""
+        try:
+            if self._cursor:
+                self._cursor.close()
+            self.conn.close()
+            logger.debug("🔒 Connection closed")
+        except Exception as e:
+            logger.error(f"❌ Close failed: {e}")
     
     def cursor(self):
-        """Get cursor"""
-        return self.conn.cursor()
+        """Get raw cursor for advanced operations"""
+        if self.db_type == 'postgresql':
+            from psycopg2.extras import RealDictCursor
+            return self.conn.cursor(cursor_factory=RealDictCursor)
+        else:
+            cursor = self.conn.cursor()
+            cursor.row_factory = sqlite3.Row
+            return cursor
     
     @property
     def autocommit(self):
@@ -167,6 +233,20 @@ class PostgreSQLConnectionWrapper:
     def autocommit(self, value):
         """Set autocommit"""
         self.conn.autocommit = value
+    
+    def __enter__(self):
+        """Context manager entry"""
+        self._in_transaction = True
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit with automatic commit/rollback"""
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+        self.close()
+        return False
 
 def generate_id():
     return str(uuid.uuid4())
