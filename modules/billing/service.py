@@ -118,14 +118,14 @@ class BillingService:
         conn.execute('BEGIN TRANSACTION')
         
         try:
-            # Prepare data
+            # Prepare data - ensure numeric values are floats
             customer_name = data.get('customer_name', 'Walk-in Customer')
-            gst_rate = data.get('gst_rate', 18)
+            gst_rate = float(data.get('gst_rate', 18))
             payment_method = data.get('payment_method', 'cash')
-            total_amount = data.get('total_amount', 0)
-            subtotal = data.get('subtotal', 0)
-            tax_amount = data.get('tax_amount', 0)
-            discount_amount = data.get('discount_amount', 0)
+            total_amount = float(data.get('total_amount', 0))
+            subtotal = float(data.get('subtotal', 0))
+            tax_amount = float(data.get('tax_amount', 0))
+            discount_amount = float(data.get('discount_amount', 0))
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             sale_date = datetime.now().strftime('%Y-%m-%d')
             sale_time = datetime.now().strftime('%H:%M:%S')
@@ -152,20 +152,25 @@ class BillingService:
                 item_id = generate_id()
                 product = products_map.get(item['product_id'])
                 
+                # Ensure proper types for all numeric values
+                quantity = int(item['quantity'])
+                unit_price = float(item['unit_price'])
+                total_price = float(item['total_price'])
+                
                 # Prepare bill item
                 bill_items_data.append((
                     item_id, bill_id, item['product_id'], item['product_name'],
-                    item['quantity'], item['unit_price'], item['total_price']
+                    quantity, unit_price, total_price
                 ))
                 
                 # Prepare stock update
-                stock_updates.append((item['quantity'], item['product_id']))
+                stock_updates.append((quantity, item['product_id']))
                 
                 # Prepare stock transaction if service available
                 if stock_service:
                     stock_transactions.append({
                         'product_id': item['product_id'],
-                        'quantity': item['quantity'],
+                        'quantity': quantity,
                         'bill_id': bill_id,
                         'bill_number': bill_number
                     })
@@ -183,14 +188,15 @@ class BillingService:
                 
                 # Prepare sales entry
                 sale_id = generate_id()
-                item_tax = (item['total_price'] / subtotal) * tax_amount if subtotal > 0 else 0
-                item_discount = (item['total_price'] / subtotal) * discount_amount if subtotal > 0 else 0
+                # Ensure all values are floats for calculations
+                item_tax = (total_price / subtotal) * tax_amount if subtotal > 0 else 0
+                item_discount = (total_price / subtotal) * discount_amount if subtotal > 0 else 0
                 category = product['category'] if product else 'General'
                 
                 sales_data.append((
                     sale_id, bill_id, bill_number, data.get('customer_id'), customer_name,
                     item['product_id'], item['product_name'], category,
-                    item['quantity'], item['unit_price'], item['total_price'],
+                    quantity, unit_price, total_price,
                     item_tax, item_discount, payment_method, business_owner_id,
                     sale_date, sale_time, current_time
                 ))
