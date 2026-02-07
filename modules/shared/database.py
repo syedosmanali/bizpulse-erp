@@ -223,6 +223,23 @@ class EnterpriseConnectionWrapper:
             if self.db_type == 'postgresql':
                 if converted_query.strip().upper() == 'BEGIN TRANSACTION':
                     converted_query = 'BEGIN'
+                
+                # Convert DATE() and TIME() functions to CAST for PostgreSQL
+                import re
+                # Replace DATE(column) with CAST(column AS DATE)
+                converted_query = re.sub(
+                    r'\bDATE\(([^)]+)\)',
+                    r'CAST(\1 AS DATE)',
+                    converted_query,
+                    flags=re.IGNORECASE
+                )
+                # Replace TIME(column) with CAST(column AS TIME)
+                converted_query = re.sub(
+                    r'\bTIME\(([^)]+)\)',
+                    r'CAST(\1 AS TIME)',
+                    converted_query,
+                    flags=re.IGNORECASE
+                )
             
             # PostgreSQL boolean fix: Convert = 1 to = TRUE and = 0 to = FALSE
             if self.db_type == 'postgresql':
