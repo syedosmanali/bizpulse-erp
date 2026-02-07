@@ -24,18 +24,28 @@ def get_user_id_from_session():
 @products_bp.route('/api/products', methods=['GET'])
 @require_auth
 def get_products():
-    """Get products - STRICT MULTI-TENANT ISOLATION - Only user's own products"""
+    """Get products - Admin sees all, regular users see only their products"""
     conn = products_service.get_db_connection()
     
-    # 🔥 STRICT ISOLATION: Get user_id from session
+    # Get user info
     user_id = get_user_id_from_session()
+    user_type = session.get('user_type')
+    is_admin = session.get('is_super_admin', False)
     
-    if user_id:
-        # STRICT FILTER: Only show products belonging to this user (NO SHARED)
-        products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND user_id = ?', (user_id,)).fetchall()
+    print(f"🔍 [PRODUCTS GET] user_id: {user_id}, type: {user_type}, admin: {is_admin}")
+    
+    if is_admin or user_type == 'admin':
+        # Admin: Show ALL products
+        products = conn.execute('SELECT * FROM products WHERE is_active = 1').fetchall()
+        print(f"✅ [ADMIN] Showing all {len(products)} products")
+    elif user_id:
+        # Regular user: Only their products
+        products = conn.execute('SELECT * FROM products WHERE is_active = 1 AND (user_id = ? OR user_id IS NULL)', (user_id,)).fetchall()
+        print(f"✅ [USER] Showing {len(products)} products for user {user_id}")
     else:
         # No user_id: show nothing
         products = []
+        print(f"⚠️  No user_id - showing 0 products")
     
     conn.close()
     return jsonify([dict(row) for row in products])
