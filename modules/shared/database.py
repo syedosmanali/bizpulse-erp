@@ -271,9 +271,11 @@ class EnterpriseConnectionWrapper:
                 ])
                 
                 if has_boolean_columns and 'INSERT' in query_upper:
-                    # Extract column names from INSERT statement
+                    # Extract column names from INSERT statement (handle multi-line)
                     import re
-                    match = re.search(r'INSERT\s+INTO\s+\w+\s*\((.*?)\)', converted_query, re.IGNORECASE)
+                    # Remove newlines and extra spaces for easier parsing
+                    clean_query = ' '.join(converted_query.split())
+                    match = re.search(r'INSERT\s+INTO\s+\w+\s*\((.*?)\)\s*VALUES', clean_query, re.IGNORECASE)
                     if match:
                         columns = [c.strip().lower() for c in match.group(1).split(',')]
                         boolean_col_names = [
