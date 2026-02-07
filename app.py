@@ -2,7 +2,8 @@
 BizPulse ERP - Modular Monolith Entry Point
 REFACTORED FROM SINGLE FILE TO MODULAR ARCHITECTURE
 WITH REAL-TIME SYNC SUPPORT
-Version: 2.0.1 - Sales Data Fix Deployed
+Version: 2.0.2 - FORCE RELOAD - Sales Fix Applied
+Last Updated: 2026-02-07 12:30 PM
 """
 
 from flask import Flask, request, g, make_response, session
