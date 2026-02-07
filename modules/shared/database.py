@@ -259,9 +259,44 @@ class EnterpriseConnectionWrapper:
                 cursor = self.conn.cursor()
                 cursor.row_factory = sqlite3.Row
             
-            # DON'T convert params automatically - let PostgreSQL handle it
-            # The query conversion above handles boolean columns in WHERE clauses
-            # For INSERT/UPDATE, PostgreSQL will accept 0/1 for boolean columns
+            # Smart parameter conversion for PostgreSQL
+            # Only convert 0/1 to True/False if the query contains boolean column names
+            if self.db_type == 'postgresql' and params:
+                # Check if query contains INSERT with boolean columns
+                query_upper = converted_query.upper()
+                has_boolean_columns = any(col.upper() in query_upper for col in [
+                    'IS_ACTIVE', 'IS_ADMIN', 'IS_SUPER_ADMIN', 'IS_CREDIT',
+                    'LOW_STOCK_ENABLED', 'IS_POPULAR', 'FORCE_PASSWORD_CHANGE',
+                    'SEND_DAILY_REPORT', 'IS_PERMANENT'
+                ])
+                
+                if has_boolean_columns and 'INSERT' in query_upper:
+                    # Extract column names from INSERT statement
+                    import re
+                    match = re.search(r'INSERT\s+INTO\s+\w+\s*\((.*?)\)', converted_query, re.IGNORECASE)
+                    if match:
+                        columns = [c.strip().lower() for c in match.group(1).split(',')]
+                        boolean_col_names = [
+                            'is_active', 'is_admin', 'is_super_admin', 'is_credit',
+                            'low_stock_enabled', 'is_popular', 'force_password_change',
+                            'send_daily_report', 'is_permanent', 'used', 'autocommit'
+                        ]
+                        
+                        # Convert params based on column position
+                        converted_params = []
+                        for i, param in enumerate(params):
+                            if i < len(columns) and columns[i] in boolean_col_names:
+                                # This is a boolean column - convert 0/1 to True/False
+                                if param == 1:
+                                    converted_params.append(True)
+                                elif param == 0:
+                                    converted_params.append(False)
+                                else:
+                                    converted_params.append(param)
+                            else:
+                                # Not a boolean column - keep as is
+                                converted_params.append(param)
+                        params = tuple(converted_params)
             
             # Execute query
             cursor.execute(converted_query, params)
