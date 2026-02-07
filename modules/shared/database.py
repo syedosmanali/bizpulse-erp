@@ -232,7 +232,7 @@ class EnterpriseConnectionWrapper:
                 boolean_columns = [
                     'is_active', 'is_admin', 'is_super_admin', 'is_credit', 
                     'low_stock_enabled', 'is_popular', 'used', 'force_password_change',
-                    'autocommit', 'is_permanent', 'send_daily_report'
+                    'autocommit', 'is_permanent', 'send_daily_report', 'is_system_role'
                 ]
                 
                 for col in boolean_columns:
