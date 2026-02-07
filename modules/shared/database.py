@@ -75,6 +75,7 @@ def get_db_connection():
         try:
             import psycopg2
             from psycopg2.extras import RealDictCursor
+            import psycopg2.extensions
             
             print(f"🔗 Connecting to Supabase: {parsed.hostname}:{parsed.port or 5432}")
             
@@ -87,9 +88,13 @@ def get_db_connection():
                 cursor_factory=RealDictCursor,
                 sslmode='require'  # Supabase requires SSL
             )
+            
+            # Register adapter for dict-like row access
+            psycopg2.extensions.register_adapter(dict, psycopg2.extras.Json)
+            
             conn.autocommit = False
             print("✅ Connected to Supabase PostgreSQL")
-            return conn
+            return PostgreSQLConnectionWrapper(conn)
         except Exception as e:
             print(f"❌ Supabase PostgreSQL connection failed: {e}")
             print(f"   Host: {parsed.hostname}")
@@ -104,6 +109,64 @@ def get_db_connection():
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         return conn
+
+
+class PostgreSQLConnectionWrapper:
+    """Wrapper to make PostgreSQL connection compatible with SQLite-style queries"""
+    
+    def __init__(self, conn):
+        self.conn = conn
+        self._cursor = None
+    
+    def execute(self, query, params=()):
+        """Execute query with automatic placeholder conversion"""
+        # Convert SQLite ? placeholders to PostgreSQL %s
+        pg_query = query.replace('?', '%s')
+        
+        cursor = self.conn.cursor()
+        cursor.execute(pg_query, params)
+        self._cursor = cursor
+        return self
+    
+    def fetchone(self):
+        """Fetch one result"""
+        if self._cursor:
+            return self._cursor.fetchone()
+        return None
+    
+    def fetchall(self):
+        """Fetch all results"""
+        if self._cursor:
+            return self._cursor.fetchall()
+        return []
+    
+    def commit(self):
+        """Commit transaction"""
+        self.conn.commit()
+    
+    def rollback(self):
+        """Rollback transaction"""
+        self.conn.rollback()
+    
+    def close(self):
+        """Close connection"""
+        if self._cursor:
+            self._cursor.close()
+        self.conn.close()
+    
+    def cursor(self):
+        """Get cursor"""
+        return self.conn.cursor()
+    
+    @property
+    def autocommit(self):
+        """Get autocommit status"""
+        return self.conn.autocommit
+    
+    @autocommit.setter
+    def autocommit(self, value):
+        """Set autocommit"""
+        self.conn.autocommit = value
 
 def generate_id():
     return str(uuid.uuid4())
