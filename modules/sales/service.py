@@ -55,7 +55,17 @@ class SalesService:
         conn = get_db_connection()
         
         # Query bills table for accurate bill-level data
-        base_query = """
+        # Check database type for proper aggregation function
+        from modules.shared.database import get_db_type
+        db_type = get_db_type()
+        
+        # Use appropriate string aggregation function
+        if db_type == 'postgresql':
+            concat_func = "STRING_AGG(bi.product_name, ', ')"
+        else:
+            concat_func = "GROUP_CONCAT(bi.product_name, ', ')"
+        
+        base_query = f"""
             SELECT 
                 b.id,
                 b.id as bill_id,
@@ -78,7 +88,7 @@ class SalesService:
                 b.business_type,
                 b.status,
                 COALESCE(
-                    (SELECT GROUP_CONCAT(bi.product_name, ', ') FROM bill_items bi WHERE bi.bill_id = b.id),
+                    (SELECT {concat_func} FROM bill_items bi WHERE bi.bill_id = b.id),
                     'Multiple Items'
                 ) as products,
                 (SELECT SUM(bi.quantity) FROM bill_items bi WHERE bi.bill_id = b.id) as quantity,
