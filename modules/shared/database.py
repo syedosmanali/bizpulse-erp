@@ -198,6 +198,13 @@ class EnterpriseConnectionWrapper:
         self.db_type = db_type
         self._cursor = None
         self._in_transaction = False
+        
+        # Disable autocommit for PostgreSQL to enable transactions
+        if db_type == 'postgresql':
+            try:
+                self.conn.autocommit = False
+            except Exception as e:
+                logger.warning(f"Could not set autocommit=False: {e}")
     
     def execute(self, query, params=()):
         """Execute query with automatic placeholder conversion"""
@@ -211,6 +218,11 @@ class EnterpriseConnectionWrapper:
                 logger.debug(f"Converted query: {converted_query[:100]}...")
             else:
                 converted_query = query
+            
+            # Convert SQLite transaction syntax to PostgreSQL
+            if self.db_type == 'postgresql':
+                if converted_query.strip().upper() == 'BEGIN TRANSACTION':
+                    converted_query = 'BEGIN'
             
             # PostgreSQL boolean fix: Convert = 1 to = TRUE and = 0 to = FALSE
             if self.db_type == 'postgresql':
