@@ -247,6 +247,18 @@ class EnterpriseConnectionWrapper:
                 cursor = self.conn.cursor()
                 cursor.row_factory = sqlite3.Row
             
+            # Convert params for PostgreSQL
+            if self.db_type == 'postgresql' and params:
+                converted_params = []
+                for param in params:
+                    if param == 1:
+                        converted_params.append(True)
+                    elif param == 0:
+                        converted_params.append(False)
+                    else:
+                        converted_params.append(param)
+                params = tuple(converted_params)
+            
             # Execute query
             cursor.execute(converted_query, params)
             self._cursor = cursor
@@ -257,6 +269,49 @@ class EnterpriseConnectionWrapper:
             logger.error(f"❌ Query execution failed: {e}")
             logger.error(f"   Query: {query[:200]}...")
             logger.error(f"   Params: {params}")
+            raise
+    
+    def executemany(self, query, params_list):
+        """Execute query multiple times with different parameters"""
+        try:
+            # Convert SQLite ? placeholders to PostgreSQL %s if needed
+            if self.db_type == 'postgresql' and '?' in query:
+                converted_query = query.replace('?', '%s')
+            else:
+                converted_query = query
+            
+            # Get cursor
+            if self.db_type == 'postgresql':
+                from psycopg2.extras import RealDictCursor
+                cursor = self.conn.cursor(cursor_factory=RealDictCursor)
+            else:
+                cursor = self.conn.cursor()
+                cursor.row_factory = sqlite3.Row
+            
+            # Convert params for PostgreSQL
+            if self.db_type == 'postgresql':
+                converted_params_list = []
+                for params in params_list:
+                    converted_params = []
+                    for param in params:
+                        if param == 1:
+                            converted_params.append(True)
+                        elif param == 0:
+                            converted_params.append(False)
+                        else:
+                            converted_params.append(param)
+                    converted_params_list.append(tuple(converted_params))
+                params_list = converted_params_list
+            
+            # Execute many
+            cursor.executemany(converted_query, params_list)
+            self._cursor = cursor
+            
+            return self
+            
+        except Exception as e:
+            logger.error(f"❌ Executemany failed: {e}")
+            logger.error(f"   Query: {query[:200]}...")
             raise
     
     def fetchone(self):
