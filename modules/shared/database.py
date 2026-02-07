@@ -259,17 +259,9 @@ class EnterpriseConnectionWrapper:
                 cursor = self.conn.cursor()
                 cursor.row_factory = sqlite3.Row
             
-            # Convert params for PostgreSQL
-            if self.db_type == 'postgresql' and params:
-                converted_params = []
-                for param in params:
-                    if param == 1:
-                        converted_params.append(True)
-                    elif param == 0:
-                        converted_params.append(False)
-                    else:
-                        converted_params.append(param)
-                params = tuple(converted_params)
+            # DON'T convert params automatically - let PostgreSQL handle it
+            # The query conversion above handles boolean columns in WHERE clauses
+            # For INSERT/UPDATE, PostgreSQL will accept 0/1 for boolean columns
             
             # Execute query
             cursor.execute(converted_query, params)
@@ -300,20 +292,8 @@ class EnterpriseConnectionWrapper:
                 cursor = self.conn.cursor()
                 cursor.row_factory = sqlite3.Row
             
-            # Convert params for PostgreSQL
-            if self.db_type == 'postgresql':
-                converted_params_list = []
-                for params in params_list:
-                    converted_params = []
-                    for param in params:
-                        if param == 1:
-                            converted_params.append(True)
-                        elif param == 0:
-                            converted_params.append(False)
-                        else:
-                            converted_params.append(param)
-                    converted_params_list.append(tuple(converted_params))
-                params_list = converted_params_list
+            # DON'T convert params automatically - let PostgreSQL handle it
+            # PostgreSQL accepts 0/1 for boolean columns automatically
             
             # Execute many
             cursor.executemany(converted_query, params_list)
