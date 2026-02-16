@@ -225,24 +225,35 @@ def cms_login():
         password = request.form.get('password')
         
         # Check against users table (BizPulse admins only)
-        from modules.shared.database import get_db_connection, hash_password
+        from modules.shared.database import get_db_connection, hash_password, get_db_type
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
         
         try:
-            cursor.execute("""
+            # Use proper placeholder for database type
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            
+            query = f"""
                 SELECT id, email, business_name, password_hash 
                 FROM users 
-                WHERE email = %s AND is_active = TRUE
-            """, (username,))
+                WHERE email = {placeholder}
+            """
             
+            cursor.execute(query, (username,))
             user = cursor.fetchone()
             
             if user:
-                user_dict = dict(user) if hasattr(user, 'keys') else {
-                    'id': user[0], 'email': user[1], 
-                    'business_name': user[2], 'password_hash': user[3]
-                }
+                # Handle both dict and tuple cursor results
+                if isinstance(user, dict):
+                    user_dict = user
+                else:
+                    user_dict = {
+                        'id': user[0], 
+                        'email': user[1], 
+                        'business_name': user[2], 
+                        'password_hash': user[3]
+                    }
                 
                 # Verify password
                 if hash_password(password) == user_dict['password_hash']:
@@ -262,6 +273,8 @@ def cms_login():
                 flash('Invalid credentials!', 'error')
                 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             flash(f'Login error: {str(e)}', 'error')
         finally:
             conn.close()
