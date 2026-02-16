@@ -1252,16 +1252,19 @@ def init_db():
     result = cursor.fetchone()
     count = result['count'] if db_type == 'postgresql' else result[0]
     if count == 0:
+        # Use strong default password - CHANGE THIS IN PRODUCTION!
+        # Default: BizPulse@2024!
+        default_password = 'BizPulse@2024!'
         if db_type == 'sqlite':
             cursor.execute('''
                 INSERT INTO users (id, email, business_name, business_type, password_hash, is_active, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), 1, datetime.now().isoformat()))
+            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password(default_password), 1, datetime.now().isoformat()))
         else:
             cursor.execute('''
                 INSERT INTO users (id, email, business_name, business_type, password_hash, is_active, created_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
-            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password('demo123'), True, datetime.now().isoformat()))
+            ''', ('admin-bizpulse', 'bizpulse.erp@gmail.com', 'BizPulse ERP', 'software', hash_password(default_password), True, datetime.now().isoformat()))
     
     # Add sample data
     cursor.execute('SELECT COUNT(*) FROM products')

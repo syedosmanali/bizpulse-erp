@@ -219,19 +219,52 @@ def cms_access_page():
 
 @app.route('/cms/login', methods=['GET', 'POST'])
 def cms_login():
-    """CMS Login Page"""
+    """CMS Login Page - Only for BizPulse Super Admins"""
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Simple authentication (in production, use proper password hashing)
-        if username == 'admin' and password == 'admin123':
-            session['cms_admin_id'] = 'admin'
-            session['cms_user'] = username
-            flash('Login successful!', 'success')
-            return redirect(url_for('cms_dashboard'))
-        else:
-            flash('Invalid credentials!', 'error')
+        # Check against users table (BizPulse admins only)
+        from modules.shared.database import get_db_connection, hash_password
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute("""
+                SELECT id, email, business_name, password_hash 
+                FROM users 
+                WHERE email = %s AND is_active = TRUE
+            """, (username,))
+            
+            user = cursor.fetchone()
+            
+            if user:
+                user_dict = dict(user) if hasattr(user, 'keys') else {
+                    'id': user[0], 'email': user[1], 
+                    'business_name': user[2], 'password_hash': user[3]
+                }
+                
+                # Verify password
+                if hash_password(password) == user_dict['password_hash']:
+                    # Only allow BizPulse admin emails
+                    bizpulse_emails = ['bizpulse.erp@gmail.com', 'admin@bizpulse.com', 'support@bizpulse.com']
+                    if user_dict['email'] in bizpulse_emails:
+                        session['cms_admin_id'] = user_dict['id']
+                        session['cms_user'] = user_dict['email']
+                        session['cms_business_name'] = user_dict['business_name']
+                        flash('Login successful!', 'success')
+                        return redirect(url_for('cms_dashboard'))
+                    else:
+                        flash('Access denied! CMS is only for BizPulse administrators.', 'error')
+                else:
+                    flash('Invalid credentials!', 'error')
+            else:
+                flash('Invalid credentials!', 'error')
+                
+        except Exception as e:
+            flash(f'Login error: {str(e)}', 'error')
+        finally:
+            conn.close()
     
     return render_template('cms_login.html')
 

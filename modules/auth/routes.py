@@ -330,8 +330,14 @@ def create_client():
         # Generate client ID
         client_id = generate_id()
         
-        # Hash password
-        password = data.get('password', 'admin123')
+        # Hash password - require password to be provided
+        password = data.get('password')
+        if not password or len(password) < 8:
+            return jsonify({
+                'success': False,
+                'error': 'Password must be at least 8 characters long'
+            }), 400
+        
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         
         cursor.execute('''
