@@ -1524,20 +1524,19 @@
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            color: white;
             flex-shrink: 0;
         }
         
         .activity-icon.sale {
-            background: linear-gradient(135deg, var(--wine-primary), var(--wine-light));
+            /* background removed */
         }
         
         .activity-icon.product {
-            background: linear-gradient(135deg, var(--wine-light), #A66B7A);
+            /* background removed */
         }
         
         .activity-icon.customer {
-            background: linear-gradient(135deg, #A66B7A, var(--wine-primary));
+            /* background removed */
         }
         
         .activity-content {
@@ -2846,13 +2845,24 @@
                     }
                     
                     // Load stats
-                    const statsResp = await fetch('/api/dashboard/stats?type=retail', { 
+                    console.log('🔍 [DASHBOARD] Loading stats from /api/dashboard/stats...');
+                    const statsResp = await fetch('/api/dashboard/stats', { 
                         headers: { 'Authorization': `Bearer ${token}` } 
                     });
                     
                     if (statsResp.ok) { 
-                        const stats = await statsResp.json(); 
-                        updateStatsCards(stats); 
+                        const response = await statsResp.json();
+                        console.log('🔍 [DASHBOARD] Stats API response:', response);
+                        if (response.success) {
+                            console.log('🔍 [DASHBOARD] Updating stats cards with full response');
+                            updateStatsCards(response); 
+                        } else {
+                            console.error('🔍 [DASHBOARD] API returned success=false:', response);
+                        }
+                    } else {
+                        console.error('🔍 [DASHBOARD] Stats API error status:', statsResp.status);
+                        const errorText = await statsResp.text();
+                        console.error('🔍 [DASHBOARD] Stats API error body:', errorText);
                     }
                 } catch (e){ 
                     console.error('Error loading dashboard data', e); 
@@ -2974,7 +2984,7 @@
                         return;
                     }
                     
-                    // Fixed: Use correct IDs and values for each card
+                    // Fixed: Use correct field names from API response
                     const todaySales = document.getElementById('todaySales');
                     if (todaySales) todaySales.textContent = `₹${(stats.today_sales||0).toLocaleString()}`;
                     
@@ -3020,29 +3030,50 @@
                         profitMargin.className = changePercent >= 0 ? 'stat-change positive' : 'stat-change negative';
                     }
                     
-                    // Show receivable amounts in small text
+                    // Show today's receivable amounts in Revenue and Net Profit cards
                     const revenueReceivable = document.getElementById('revenueReceivable');
                     if (revenueReceivable) {
-                        const receivableAmount = stats.today_receivable || 0;
-                        if (receivableAmount > 0) {
-                            revenueReceivable.textContent = `Receivable: ₹${receivableAmount.toLocaleString()}`;
-                            revenueReceivable.style.display = 'block';
+                        const todayReceivable = stats.today_receivable || 0;
+                        console.log('💰 Today Revenue Receivable:', todayReceivable);
+                        if (todayReceivable > 0) {
+                            revenueReceivable.textContent = `Receivable: ₹${todayReceivable.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            console.log('✅ Set revenue receivable text:', revenueReceivable.textContent);
                         } else {
                             revenueReceivable.textContent = '';
-                            revenueReceivable.style.display = 'none';
+                            console.log('⚠️ Today receivable is 0, cleared text');
                         }
+                    } else {
+                        console.log('❌ revenueReceivable element not found!');
                     }
                     
                     const profitReceivable = document.getElementById('profitReceivable');
                     if (profitReceivable) {
-                        const receivableProfit = stats.today_receivable_profit || 0;
-                        if (receivableProfit > 0) {
-                            profitReceivable.textContent = `Receivable: ₹${receivableProfit.toLocaleString()}`;
-                            profitReceivable.style.display = 'block';
+                        // Calculate today's receivable profit based on actual profit margin
+                        const todayReceivable = stats.today_receivable || 0;
+                        const todayProfit = stats.today_profit || 0;
+                        const todayRevenue = stats.today_revenue || 0;
+                        
+                        // Calculate profit margin from today's actual data
+                        const profitMargin = todayRevenue > 0 ? (todayProfit / todayRevenue) : 0;
+                        const todayReceivableProfit = todayReceivable * profitMargin;
+                        
+                        console.log('💰 Today Profit Receivable Debug:', {
+                            today_receivable: todayReceivable,
+                            today_profit: todayProfit,
+                            today_revenue: todayRevenue,
+                            profit_margin: profitMargin,
+                            receivable_profit: todayReceivableProfit
+                        });
+                        
+                        if (todayReceivableProfit > 0) {
+                            profitReceivable.textContent = `Receivable: ₹${todayReceivableProfit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            console.log('✅ Set profit receivable text:', profitReceivable.textContent);
                         } else {
                             profitReceivable.textContent = '';
-                            profitReceivable.style.display = 'none';
+                            console.log('⚠️ Today profit receivable is 0, cleared text');
                         }
+                    } else {
+                        console.log('❌ profitReceivable element not found!');
                     }
                 }catch(e){
                     console.error('Error updating stats cards:', e);
@@ -3838,8 +3869,15 @@
             window.addEventListener('resize', initMobileLayout);
             
             // Load data immediately for faster display
+            console.log('🚀 Loading dashboard data...');
             loadDashboardData();
             // loadNotifications();
+            
+            // Fallback: Force update after 2 seconds if initial load failed
+            setTimeout(() => {
+                console.log('🔄 Fallback dashboard data load...');
+                loadDashboardData();
+            }, 2000);
             
             // Check user role in parallel (for UI permissions)
             checkUserRole();
@@ -4546,19 +4584,20 @@
                     
                     // Show receivable amount in red below revenue
                     const revenueReceivable = document.getElementById('revenueReceivable');
-                    console.log('<img src="/static/iconss/dashboard.png" style="width: 24px; height: 24px;"> Receivable Debug:', {
+                    console.log('💰 Receivable Debug:', {
                         today_receivable: stats.today_receivable,
-                        today_receivable_profit: stats.today_receivable_profit,
-                        element_exists: !!revenueReceivable
+                        today_obj_receivable: stats.today?.receivable,
+                        element_exists: !!revenueReceivable,
+                        full_stats: stats
                     });
                     if (revenueReceivable) {
-                        const receivableAmount = stats.today_receivable || 0;
+                        const receivableAmount = stats.today_receivable || stats.today?.receivable || 0;
                         if (receivableAmount > 0) {
-                            revenueReceivable.textContent = `Receivable: ₹${receivableAmount.toFixed(2)}`;
-                            revenueReceivable.style.display = 'block';
+                            revenueReceivable.textContent = `Receivable: ₹${receivableAmount.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            console.log('✅ Set revenue receivable:', revenueReceivable.textContent);
                         } else {
                             revenueReceivable.textContent = '';
-                            revenueReceivable.style.display = 'none';
+                            console.log('⚠️ Receivable is 0');
                         }
                     }
                     
@@ -4599,13 +4638,18 @@
                     // Show receivable profit in red below net profit
                     const profitReceivable = document.getElementById('profitReceivable');
                     if (profitReceivable) {
-                        const receivableProfit = stats.today_receivable_profit || 0;
+                        const todayReceivable = stats.today_receivable || stats.today?.receivable || 0;
+                        const receivableProfit = todayReceivable * 0.20; // 20% profit margin
+                        console.log('💰 Profit Receivable:', {
+                            today_receivable: todayReceivable,
+                            profit_amount: receivableProfit
+                        });
                         if (receivableProfit > 0) {
-                            profitReceivable.textContent = `Receivable: ₹${receivableProfit.toFixed(2)}`;
-                            profitReceivable.style.display = 'block';
+                            profitReceivable.textContent = `Receivable: ₹${receivableProfit.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                            console.log('✅ Set profit receivable:', profitReceivable.textContent);
                         } else {
                             profitReceivable.textContent = '';
-                            profitReceivable.style.display = 'none';
+                            console.log('⚠️ Profit receivable is 0');
                         }
                     }
                     

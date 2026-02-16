@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice - BizPulse</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --wine: #722F37;
+            --wine-dark: #5a2329;
+            --wine-light: #8B3A47;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5F5F5;
+            padding: 20px;
+        }
+
+        /* Theme Selector */
+        .theme-selector {
+            max-width: 900px;
+            margin: 0 auto 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .theme-btn {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #E0E0E0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--wine);
+            transform: translateY(-2px);
+        }
+
+        .theme-btn.active {
+            background: var(--wine);
+            color: white;
+            border-color: var(--wine);
+        }
+
+        .theme-btn h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .theme-btn p {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Back Button */
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--wine);
+            color: white;
+            text-decoration: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Invoice Container */
+        .invoice-wrapper {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 60px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--wine);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ========== STANDARD THEME ========== */
+        .theme-standard {
+            font-size: 11px;
+        }
+
+        .theme-standard .invoice-header {
+            background: linear-gradient(135deg, var(--wine) 0%, var(--wine-dark) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .theme-standard .company-section h1 {
+            font-size: 24px;
+            margin-bottom: 3px;
+        }
+
+        .theme-standard .company-section .tagline {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .theme-standard .company-details {
+            font-size: 10px;
+            line-height: 1.5;
+        }
+
+        .theme-standard .invoice-meta {
+            text-align: right;
+        }
+
+        .theme-standard .invoice-title {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+
+        .theme-standard .meta-info {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .theme-standard .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 700;
+            margin-top: 5px;
+        }
+
+        .theme-standard .bill-to-section {
+            padding: 20px 30px;
+            background: #F8F9FA;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            border-bottom: 2px solid var(--wine);
+        }
+
+        .theme-standard .section-title {
+            color: var(--wine);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            border-bottom: 2px solid var(--wine);
+            padding-bottom: 3px;
+        }
+
+        .theme-standard .detail-row {
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .theme-standard .detail-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .theme-standard table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .theme-standard thead {
+            background: var(--wine);
+            color: white;
+        }
+
+        .theme-standard th {
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .theme-standard th.text-right {
+            text-align: right;
+        }
+
+        .theme-standard td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #E9ECEF;
+            font-size: 10px;
+        }
+
+        .theme-standard td.text-right {
+            text-align: right;
+        }
+
+        .theme-standard tbody tr:hover {
+            background: #F8F9FA;
+        }
+
+        .theme-standard .tax-summary {
+            padding: 20px 30px;
+            background: #F8F9FA;
+        }
+
+        .theme-standard .summary-grid {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .theme-standard .amount-words {
+            flex: 1;
+            padding-right: 20px;
+        }
+
+        .theme-standard .amount-words h4 {
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--wine);
+        }
+
+        .theme-standard .amount-words p {
+            font-size: 11px;
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        .theme-standard .totals-table {
+            width: 350px;
+        }
+
+        .theme-standard .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 11px;
+        }
+
+        .theme-standard .total-row.grand {
+            background: var(--wine);
+            color: white;
+            padding: 12px 15px;
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 4px;
+        }
+
+        .theme-standard .footer {
+            padding: 20px 30px;
+            border-top: 2px solid #E9ECEF;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .theme-standard .terms {
+            flex: 1;
+        }
+
+        .theme-standard .terms h4 {
+            font-size: 10px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .theme-standard .terms p {
+            font-size: 9px;
+            line-height: 1.4;
+            color: #666;
+        }
+
+        .theme-standard .signature {
+            text-align: right;
+        }
+
+        .theme-standard .signature p {
+            font-size: 10px;
+            margin-top: 40px;
+            border-top: 1px solid #333;
+            padding-top: 5px;
+        }
+
+        /* ========== THERMAL THEME ========== */
+        .theme-thermal {
+            max-width: 300px !important;
+            font-family: 'Courier Prime', monospace;
+            background: white;
+            font-size: 10px;
+        }
+
+        .theme-thermal .invoice-header {
+            text-align: center;
+            padding: 12px;
+            border-bottom: 2px dashed #000;
+        }
+
+        .theme-thermal .company-section h1 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+
+        .theme-thermal .tagline {
+            font-size: 9px;
+            margin-bottom: 5px;
+        }
+
+        .theme-thermal .company-details {
+            font-size: 8px;
+            line-height: 1.4;
+        }
+
+        .theme-thermal .invoice-meta {
+            margin-top: 8px;
+            font-size: 9px;
+            border-top: 1px dashed #000;
+            padding-top: 8px;
+        }
+
+        .theme-thermal .invoice-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .theme-thermal .bill-to-section {
+            padding: 10px;
+            font-size: 9px;
+            border-bottom: 1px dashed #000;
+        }
+
+        .theme-thermal .section-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+
+        .theme-thermal .detail-row {
+            margin-bottom: 2px;
+        }
+
+        .theme-thermal table {
+            width: 100%;
+            font-size: 8px;
+            margin: 10px 0;
+        }
+
+        .theme-thermal th {
+            padding: 4px 2px;
+            text-align: left;
+            border-bottom: 1px solid #000;
+            font-weight: 700;
+        }
+
+        .theme-thermal th.text-right {
+            text-align: right;
+        }
+
+        .theme-thermal td {
+            padding: 4px 2px;
+            border-bottom: 1px dashed #ccc;
+        }
+
+        .theme-thermal td.text-right {
+            text-align: right;
+        }
+
+        .theme-thermal .tax-summary {
+            padding: 10px;
+            font-size: 9px;
+            border-top: 2px dashed #000;
+        }
+
+        .theme-thermal .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+
+        .theme-thermal .total-row.grand {
+            font-weight: 700;
+            font-size: 11px;
+            padding: 6px 0;
+            border-top: 2px solid #000;
+            border-bottom: 2px solid #000;
+            margin-top: 5px;
+        }
+
+        .theme-thermal .amount-words {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed #000;
+            font-size: 8px;
+        }
+
+        .theme-thermal .footer {
+            padding: 10px;
+            border-top: 2px dashed #000;
+            text-align: center;
+            font-size: 8px;
+        }
+
+        /* ========== PREMIUM THEME ========== */
+        .theme-premium {
+            background: linear-gradient(135deg, #FFF8F0 0%, #FFFFFF 100%);
+            font-size: 11px;
+        }
+
+        .theme-premium .invoice-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            padding: 30px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .theme-premium .invoice-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);
+        }
+
+        .theme-premium .company-section {
+            position: relative;
+            z-index: 2;
+        }
+
+        .theme-premium .company-section h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #D4AF37 0%, #FFD700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+
+        .theme-premium .tagline {
+            font-size: 11px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .theme-premium .company-details {
+            font-size: 10px;
+            line-height: 1.6;
+        }
+
+        .theme-premium .invoice-meta {
+            text-align: right;
+            position: relative;
+            z-index: 2;
+        }
+
+        .theme-premium .invoice-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #D4AF37;
+            margin-bottom: 10px;
+        }
+
+        .theme-premium .meta-info {
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        .theme-premium .bill-to-section {
+            padding: 25px 30px;
+            background: white;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            border-left: 4px solid #D4AF37;
+        }
+
+        .theme-premium .section-title {
+            color: #1a1a2e;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #D4AF37;
+            padding-bottom: 5px;
+        }
+
+        .theme-premium table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .theme-premium thead {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+        }
+
+        .theme-premium th {
+            padding: 15px 10px;
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .theme-premium th.text-right {
+            text-align: right;
+        }
+
+        .theme-premium td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #E9ECEF;
+            font-size: 10px;
+        }
+
+        .theme-premium td.text-right {
+            text-align: right;
+        }
+
+        .theme-premium tbody tr:hover {
+            background: #FFF8F0;
+        }
+
+        .theme-premium .tax-summary {
+            padding: 25px 30px;
+            background: white;
+        }
+
+        .theme-premium .total-row.grand {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #D4AF37;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* Common Styles */
+        .status-completed {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .status-pending, .status-due {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .status-cancelled {
+            background: #F8D7DA;
+            color: #721C24;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .theme-selector,
+            .back-button,
+            .action-buttons {
+                display: none !important;
+            }
+            .invoice-wrapper {
+                box-shadow: none;
+                border-radius: 0;
+                max-width: 100%;
+            }
+            .theme-standard .invoice-header,
+            .theme-premium .invoice-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/retail/invoices" class="back-button">
+        ← Back to Invoices
+    </a>
+
+    <!-- Theme Selector -->
+    <div class="theme-selector">
+        <button class="theme-btn active" onclick="switchTheme('standard')" id="btn-standard">
+            <h3>📄 Standard</h3>
+            <p>Professional GST Invoice</p>
+        </button>
+        <button class="theme-btn" onclick="switchTheme('thermal')" id="btn-thermal">
+            <h3>🧾 Thermal</h3>
+            <p>Receipt Style</p>
+        </button>
+        <button class="theme-btn" onclick="switchTheme('premium')" id="btn-premium">
+            <h3>✨ Premium</h3>
+            <p>Luxury Design</p>
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading">
+        <div class="spinner"></div>
+        <p>Loading invoice...</p>
+    </div>
+
+    <!-- Invoice Content -->
+    <div id="invoiceContent" style="display: none;">
+        <div class="invoice-wrapper theme-standard" id="invoiceWrapper">
+            
+            <!-- HEADER SECTION -->
+            <div class="invoice-header">
+                <div class="company-section">
+                    <h1>BizPulse ERP</h1>
+                    <div class="tagline">Complete Business Management Solution</div>
+                    <div class="company-details">
+                        <div>📍 Hyderabad, Telangana, India - 500001</div>
+                        <div>📞 +91 70936 35305</div>
+                        <div>📧 bizpulse.erp@gmail.com</div>
+                        <div><strong>GSTIN:</strong> 36XXXXX1234X1ZX</div>
+                        <div><strong>State:</strong> Telangana (36)</div>
+                    </div>
+                </div>
+                <div class="invoice-meta">
+                    <div class="invoice-title">TAX INVOICE</div>
+                    <div class="meta-info">
+                        <div><strong>Invoice No:</strong> <span id="billNumber">N/A</span></div>
+                        <div><strong>Invoice Date:</strong> <span id="invoiceDate">N/A</span></div>
+                        <div><strong>Due Date:</strong> <span id="dueDate">N/A</span></div>
+                        <div><strong>Payment Mode:</strong> <span id="paymentMethod">N/A</span></div>
+                        <div class="status-badge status-completed" id="invoiceStatus">PAID</div>
+                    </div>
+                    <div class="action-buttons" style="margin-top: 15px; display: flex; gap: 8px;">
+                        <button onclick="window.print()" style="padding: 8px 16px; background: white; color: var(--wine); border: 2px solid white; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                            🖨️ Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BILL TO SECTION -->
+            <div class="bill-to-section">
+                <div class="buyer-details">
+                    <div class="section-title">Bill To</div>
+                    <div class="detail-row"><span class="detail-label">Name:</span> <span id="customerName">N/A</span></div>
+                    <div class="detail-row"><span class="detail-label">Address:</span> <span id="customerAddress">N/A</span></div>
+                    <div class="detail-row"><span class="detail-label">Phone:</span> <span id="customerPhone">N/A</span></div>
+                    <div class="detail-row"><span class="detail-label">Email:</span> <span id="customerEmail">N/A</span></div>
+                    <div class="detail-row"><span class="detail-label">GSTIN:</span> <span id="customerGSTIN">N/A</span></div>
+                    <div class="detail-row"><span class="detail-label">Place of Supply:</span> <span id="placeOfSupply">N/A</span></div>
+                </div>
+                <div class="seller-details">
+                    <div class="section-title">Seller Details</div>
+                    <div class="detail-row"><strong>BizPulse ERP</strong></div>
+                    <div class="detail-row">Hyderabad, Telangana</div>
+                    <div class="detail-row">India - 500001</div>
+                    <div class="detail-row"><span class="detail-label">GSTIN:</span> 36XXXXX1234X1ZX</div>
+                    <div class="detail-row"><span class="detail-label">State Code:</span> 36</div>
+                </div>
+            </div>
+
+            <!-- PRODUCT/SERVICE TABLE -->
+            <div class="items-section">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">Sr</th>
+                            <th>Product/Service</th>
+                            <th style="width: 80px;">HSN/SAC</th>
+                            <th style="width: 50px;">Qty</th>
+                            <th class="text-right" style="width: 70px;">Rate (₹)</th>
+                            <th class="text-right" style="width: 50px;">Tax %</th>
+                            <th class="text-right" style="width: 70px;">CGST (₹)</th>
+                            <th class="text-right" style="width: 70px;">SGST (₹)</th>
+                            <th class="text-right" style="width: 70px;">IGST (₹)</th>
+                            <th class="text-right" style="width: 90px;">Total (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <!-- Items will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- TAX SUMMARY SECTION -->
+            <div class="tax-summary">
+                <div class="summary-grid">
+                    <div class="amount-words">
+                        <h4>Amount in Words:</h4>
+                        <p id="amountInWords">Rupees Zero Only</p>
+                    </div>
+                    <div class="totals-table">
+                        <div class="total-row">
+                            <span>Subtotal (Before Tax):</span>
+                            <span id="subtotal">₹0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>CGST Total:</span>
+                            <span id="cgstTotal">₹0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>SGST Total:</span>
+                            <span id="sgstTotal">₹0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>IGST Total:</span>
+                            <span id="igstTotal">₹0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Discount:</span>
+                            <span id="discountAmount">₹0.00</span>
+                        </div>
+                        <div class="total-row">
+                            <span>Round Off:</span>
+                            <span id="roundOff">₹0.00</span>
+                        </div>
+                        <div class="total-row grand">
+                            <span>GRAND TOTAL:</span>
+                            <span id="grandTotal">₹0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FOOTER SECTION -->
+            <div class="footer">
+                <div class="terms">
+                    <h4>Terms & Conditions:</h4>
+                    <p>1. Payment is due within 30 days from the invoice date.</p>
+                    <p>2. Please make cheques payable to "BizPulse ERP".</p>
+                    <p style="margin-top: 8px; font-style: italic;">This is a computer-generated invoice and does not require a physical signature.</p>
+                </div>
+                <div class="signature">
+                    <p><strong>Authorized Signatory</strong></p>
+                    <p style="margin-top: 5px; font-size: 9px;">For BizPulse ERP</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const invoiceId = '{{ invoice_id }}';
+        let currentTheme = 'standard';
+
+        // Load theme from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('invoiceTheme') || 'standard';
+            switchTheme(savedTheme);
+            loadInvoiceDetails();
+        });
+
+        function switchTheme(theme) {
+            currentTheme = theme;
+            const wrapper = document.getElementById('invoiceWrapper');
+            const buttons = document.querySelectorAll('.theme-btn');
+            
+            wrapper.className = 'invoice-wrapper theme-' + theme;
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + theme).classList.add('active');
+            
+            localStorage.setItem('invoiceTheme', theme);
+        }
+
+        async function loadInvoiceDetails() {
+            try {
+                console.log('Loading invoice:', invoiceId);
+                const response = await fetch(`/api/invoices/${invoiceId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Invoice data:', data);
+
+                if (data.error || !data.success) {
+                    alert('Invoice not found: ' + (data.error || 'Unknown error'));
+                    window.location.href = '/retail/invoices';
+                    return;
+                }
+
+                if (!data.invoice) {
+                    alert('Invoice data is missing');
+                    window.location.href = '/retail/invoices';
+                    return;
+                }
+
+                displayInvoice(data);
+                
+                document.getElementById('loadingState').style.display = 'none';
+                document.getElementById('invoiceContent').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading invoice:', error);
+                alert('Error loading invoice details: ' + error.message);
+            }
+        }
+
+        function displayInvoice(data) {
+            try {
+                const invoice = data.invoice;
+                const items = data.items || [];
+                const payments = data.payments || [];
+
+                if (!invoice) {
+                    throw new Error('Invoice data is missing');
+                }
+
+                // Invoice header
+                document.getElementById('billNumber').textContent = invoice.bill_number || 'N/A';
+                document.getElementById('invoiceDate').textContent = formatDate(invoice.created_at) || 'N/A';
+                
+                // Due date (30 days from invoice date)
+                const dueDate = new Date(invoice.created_at);
+                dueDate.setDate(dueDate.getDate() + 30);
+                document.getElementById('dueDate').textContent = formatDate(dueDate.toISOString()) || 'N/A';
+                
+                document.getElementById('paymentMethod').textContent = (invoice.payment_method || 'Cash').toUpperCase();
+
+                // Customer details with safe fallbacks
+                document.getElementById('customerName').textContent = invoice.customer_name || 'N/A';
+                document.getElementById('customerAddress').textContent = invoice.customer_address || 'N/A';
+                document.getElementById('customerPhone').textContent = invoice.customer_phone || 'N/A';
+                document.getElementById('customerEmail').textContent = invoice.customer_email || 'N/A';
+                document.getElementById('customerGSTIN').textContent = invoice.customer_gstin || 'N/A';
+                document.getElementById('placeOfSupply').textContent = invoice.place_of_supply || 'Telangana';
+
+                // Status
+                const statusBadge = document.getElementById('invoiceStatus');
+                let displayStatus = invoice.status || 'completed';
+                let statusClass = invoice.status || 'completed';
+                
+                if (invoice.payment_method === 'credit' || invoice.is_credit === 1 || invoice.is_credit === true) {
+                    if (invoice.status === 'completed') {
+                        displayStatus = 'DUE';
+                        statusClass = 'pending';
+                    }
+                }
+                
+                statusBadge.className = `status-badge status-${statusClass}`;
+                statusBadge.textContent = displayStatus.toUpperCase();
+
+                // Items table
+                const tbody = document.getElementById('itemsTableBody');
+                tbody.innerHTML = '';
+                
+                let cgstTotal = 0;
+                let sgstTotal = 0;
+                let igstTotal = 0;
+                
+                items.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    const unitPrice = parseFloat(item.unit_price) || 0;
+                    const totalPrice = parseFloat(item.total_price) || 0;
+                    const quantity = parseFloat(item.quantity) || 0;
+                    const taxRate = parseFloat(item.tax_rate) || 18;
+                    
+                    // Calculate tax amounts
+                    const taxAmount = (totalPrice * taxRate) / 100;
+                    const cgst = taxAmount / 2;
+                    const sgst = taxAmount / 2;
+                    const igst = 0; // For intra-state, IGST is 0
+                    
+                    cgstTotal += cgst;
+                    sgstTotal += sgst;
+                    igstTotal += igst;
+                    
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>
+                            <div style="font-weight: 600;">${item.product_name || 'Unknown Product'}</div>
+                            <div style="font-size: 9px; color: #6c757d;">SKU: ${item.product_id || 'N/A'}</div>
+                        </td>
+                        <td>${item.hsn_code || 'N/A'}</td>
+                        <td>${quantity}</td>
+                        <td class="text-right">₹${unitPrice.toFixed(2)}</td>
+                        <td class="text-right">${taxRate}%</td>
+                        <td class="text-right">₹${cgst.toFixed(2)}</td>
+                        <td class="text-right">₹${sgst.toFixed(2)}</td>
+                        <td class="text-right">₹${igst.toFixed(2)}</td>
+                        <td class="text-right" style="font-weight: 600;">₹${totalPrice.toFixed(2)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                // Totals
+                const subtotal = parseFloat(invoice.subtotal) || 0;
+                const taxAmount = parseFloat(invoice.tax_amount) || 0;
+                const discountAmount = parseFloat(invoice.discount_amount) || 0;
+                const totalAmount = parseFloat(invoice.total_amount) || 0;
+                const roundOff = totalAmount - Math.floor(totalAmount);
+                
+                document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+                document.getElementById('cgstTotal').textContent = '₹' + cgstTotal.toFixed(2);
+                document.getElementById('sgstTotal').textContent = '₹' + sgstTotal.toFixed(2);
+                document.getElementById('igstTotal').textContent = '₹' + igstTotal.toFixed(2);
+                document.getElementById('discountAmount').textContent = '₹' + discountAmount.toFixed(2);
+                document.getElementById('roundOff').textContent = '₹' + roundOff.toFixed(2);
+                document.getElementById('grandTotal').textContent = '₹' + totalAmount.toFixed(2);
+
+                // Amount in words
+                document.getElementById('amountInWords').textContent = numberToWords(totalAmount);
+
+            } catch (error) {
+                console.error('Error displaying invoice:', error);
+                throw error;
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-IN', { 
+                day: '2-digit', 
+                month: 'short', 
+                year: 'numeric' 
+            });
+        }
+
+        function numberToWords(num) {
+            if (!num || num === 0) return 'Rupees Zero Only';
+            
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            
+            function convertLessThanThousand(n) {
+                if (n === 0) return '';
+                if (n < 10) return ones[n];
+                if (n < 20) return teens[n - 10];
+                if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+                return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convertLessThanThousand(n % 100) : '');
+            }
+            
+            const rupees = Math.floor(num);
+            const paise = Math.round((num - rupees) * 100);
+            
+            let result = 'Rupees ';
+            
+            if (rupees >= 10000000) {
+                result += convertLessThanThousand(Math.floor(rupees / 10000000)) + ' Crore ';
+                rupees %= 10000000;
+            }
+            if (rupees >= 100000) {
+                result += convertLessThanThousand(Math.floor(rupees / 100000)) + ' Lakh ';
+                rupees %= 100000;
+            }
+            if (rupees >= 1000) {
+                result += convertLessThanThousand(Math.floor(rupees / 1000)) + ' Thousand ';
+                rupees %= 1000;
+            }
+            if (rupees > 0) {
+                result += convertLessThanThousand(rupees);
+            }
+            
+            if (paise > 0) {
+                result += ' and ' + convertLessThanThousand(paise) + ' Paise';
+            }
+            
+            return result.trim() + ' Only';
+        }
+    </script>
+</body>
+</html>

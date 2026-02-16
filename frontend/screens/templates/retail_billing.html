@@ -623,9 +623,11 @@
                         </div>
                     </div>
                     <div>
-                        <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Phone Number</label>
-                        <input type="tel" id="customerPhone" placeholder="Enter phone number"
+                        <label style="display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 4px;">Phone Number <span style="color: red;">*</span></label>
+                        <input type="tel" id="customerPhone" placeholder="Enter 10-digit phone number" maxlength="10" pattern="[0-9]{10}" required
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)"
                                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                        <small style="color: #666; font-size: 11px;">10 digits, numbers only</small>
                     </div>
                 </div>
 
@@ -701,6 +703,7 @@
                             <option value="cash">Cash</option>
                             <option value="upi">UPI</option>
                             <option value="card">Card</option>
+                            <option value="cheque">Cheque</option>
                             <option value="credit">Credit (Full)</option>
                             <option value="partial">⚡ Partial Payment</option>
                         </select>
@@ -727,6 +730,7 @@
                             <option value="cash">Cash</option>
                             <option value="upi">UPI</option>
                             <option value="card">Card</option>
+                            <option value="cheque">Cheque</option>
                         </select>
                     </div>
                 </div>
@@ -1227,20 +1231,46 @@
                 // Grand total = subtotal with GST - discount
                 const grandTotal = subtotalWithGst - discountAmount;
 
-                // Get customer details (optional)
+                // Get customer details (optional for cash/card/upi, required for credit/partial)
                 const customerName = document.getElementById('customerName').value.trim();
                 const customerPhone = document.getElementById('customerPhone').value.trim();
+                
+                // Validate customer for credit/partial/cheque payments
+                if (paymentMode === 'credit' || paymentMode === 'partial' || paymentMode === 'cheque') {
+                    if (!customerName || customerName === 'Walk-in Customer') {
+                        alert('❌ Customer name is required for credit/partial/cheque payments');
+                        checkoutBtn.disabled = false;
+                        checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                        return;
+                    }
+                    if (!customerPhone || customerPhone.length !== 10) {
+                        alert('❌ Valid 10-digit phone number is required for credit/partial/cheque payments');
+                        checkoutBtn.disabled = false;
+                        checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                        return;
+                    }
+                }
                 
                 let customerId = null;
                 
                 // Create customer if name provided
                 if (customerName && customerName !== 'Walk-in Customer') {
+                    // Validate phone number
+                    if (customerPhone && customerPhone.length !== 10) {
+                        alert('❌ Phone number must be exactly 10 digits');
+                        checkoutBtn.disabled = false;
+                        checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                        return;
+                    }
+                    
                     try {
                         const customerData = {
                             name: customerName,
                             phone: customerPhone || null,
                             email: null
                         };
+                        
+                        console.log('🔍 Creating customer:', customerData);
                         
                         const customerResponse = await fetch('/api/customers', {
                             method: 'POST',
@@ -1250,10 +1280,28 @@
                         
                         if (customerResponse.ok) {
                             const customerResult = await customerResponse.json();
-                            customerId = customerResult.customer_id;
+                            customerId = customerResult.customer_id || customerResult.id;
+                            console.log('✅ Customer created with ID:', customerId);
+                        } else {
+                            const errorData = await customerResponse.json();
+                            console.error('❌ Customer creation failed:', errorData);
+                            // Continue without customer for non-credit payments
+                            if (paymentMode === 'credit' || paymentMode === 'partial') {
+                                alert('❌ Failed to create customer. Please try again.');
+                                checkoutBtn.disabled = false;
+                                checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                                return;
+                            }
                         }
                     } catch (customerError) {
-                        console.log('Customer creation failed, continuing without customer');
+                        console.error('❌ Customer creation error:', customerError);
+                        // For credit/partial, customer is required
+                        if (paymentMode === 'credit' || paymentMode === 'partial') {
+                            alert('❌ Failed to create customer. Please try again.');
+                            checkoutBtn.disabled = false;
+                            checkoutBtn.innerHTML = `<img src="/static/iconss/credit.png" style="width: 24px; height: 24px;"> ${t('create_bill')}`;
+                            return;
+                        }
                     }
                 }
 

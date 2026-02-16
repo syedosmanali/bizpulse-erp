@@ -110,6 +110,18 @@ class BillingService:
         # Proceed with bill creation
         # ============================================================================
         
+        # VALIDATION: Credit/Partial bills require a registered customer
+        payment_method = data.get('payment_method', 'cash')
+        customer_id = data.get('customer_id')
+        
+        if payment_method in ['credit', 'partial'] and (not customer_id or customer_id == 'walk-in-customer'):
+            conn.close()
+            return {
+                "error": "Credit and Partial payment bills require a registered customer. Please select or create a customer first.",
+                "success": False,
+                "requires_customer": True
+            }
+        
         bill_id = generate_id()
         bill_number = f"BILL-{datetime.now().strftime('%Y%m%d')}-{bill_id[:8]}"
         print(f"📝 [BILLING SERVICE] Generated bill: {bill_number}")
@@ -130,13 +142,15 @@ class BillingService:
             sale_date = datetime.now().strftime('%Y-%m-%d')
             sale_time = datetime.now().strftime('%H:%M:%S')
             
-            # Create bill record
-            conn.execute("""INSERT INTO bills (id, bill_number, customer_id, customer_name, business_type, business_owner_id, subtotal, tax_amount, discount_amount, gst_rate, total_amount, status, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
-                bill_id, bill_number, data.get('customer_id'), customer_name,
+            # Create bill record - Handle cheque payments specially
+            bill_status = 'initiated' if payment_method.upper() == 'CHEQUE' else 'completed'
+            
+            conn.execute("""INSERT INTO bills (id, bill_number, customer_id, customer_name, customer_phone, business_type, business_owner_id, subtotal, tax_amount, discount_amount, gst_rate, total_amount, status, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+                bill_id, bill_number, data.get('customer_id'), customer_name, data.get('customer_phone'),
                 data.get('business_type', 'retail'), business_owner_id,
                 subtotal, tax_amount, discount_amount, gst_rate, total_amount,
-                'completed', current_time
+                bill_status, current_time
             ))
             
             # ============================================================================
@@ -230,9 +244,9 @@ class BillingService:
                 paid_amount = 0
                 balance_due = total_amount
                 
-                conn.execute("""UPDATE bills SET is_credit = 1, payment_method = ?, payment_status = 'unpaid',
+                conn.execute("""UPDATE bills SET is_credit = ?, payment_method = ?, payment_status = 'unpaid',
                            credit_paid_amount = ?, credit_balance = ?
-                    WHERE id = ?""", (payment_method, paid_amount, balance_due, bill_id))
+                    WHERE id = ?""", (True, payment_method, paid_amount, balance_due, bill_id))
                 
                 conn.execute("""UPDATE sales SET balance_due = ?, paid_amount = ? 
                     WHERE bill_id = ?""", (balance_due, paid_amount, bill_id))
@@ -240,18 +254,48 @@ class BillingService:
                 conn.execute("""INSERT INTO payments (id, bill_id, method, amount, processed_at)
                     VALUES (?, ?, ?, ?, ?)""", (payment_id, bill_id, payment_method, paid_amount, current_time))
                 
-                # Credit transaction record
-                transaction_id = generate_id()
-                transaction_customer_id = data.get('customer_id') or 'walk-in-customer'
-                conn.execute("""INSERT INTO credit_transactions (
-                        id, bill_id, customer_id, transaction_type, amount, 
-                        payment_method, reference_number, notes, created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
-                    transaction_id, bill_id, transaction_customer_id, 'credit_issued',
-                    balance_due, payment_method, bill_number,
-                    f'Credit bill created for {customer_name}', current_time
-                ))
+                # Credit transaction record - ONLY if customer_id exists (not walk-in)
+                transaction_customer_id = data.get('customer_id')
+                if transaction_customer_id and transaction_customer_id != 'walk-in-customer':
+                    transaction_id = generate_id()
+                    conn.execute("""INSERT INTO credit_transactions (
+                            id, bill_id, customer_id, transaction_type, amount, 
+                            payment_method, reference_number, notes, created_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+                        transaction_id, bill_id, transaction_customer_id, 'credit_issued',
+                        balance_due, payment_method, bill_number,
+                        f'Credit bill created for {customer_name}', current_time
+                    ))
+                
+            elif payment_method.upper() == 'CHEQUE':
+                # Cheque payment - mark as credit bill with cheque_deposited status
+                paid_amount = 0
+                balance_due = total_amount
+                
+                conn.execute("""UPDATE bills SET is_credit = ?, payment_method = ?, payment_status = 'cheque_deposited',
+                           credit_paid_amount = ?, credit_balance = ?
+                    WHERE id = ?""", (True, payment_method, paid_amount, balance_due, bill_id))
+                
+                conn.execute("""UPDATE sales SET balance_due = ?, paid_amount = ? 
+                    WHERE bill_id = ?""", (balance_due, paid_amount, bill_id))
+                
+                conn.execute("""INSERT INTO payments (id, bill_id, method, amount, processed_at)
+                    VALUES (?, ?, ?, ?, ?)""", (payment_id, bill_id, payment_method, paid_amount, current_time))
+                
+                # Credit transaction record - ONLY if customer_id exists (not walk-in)
+                transaction_customer_id = data.get('customer_id')
+                if transaction_customer_id and transaction_customer_id != 'walk-in-customer':
+                    transaction_id = generate_id()
+                    conn.execute("""INSERT INTO credit_transactions (
+                            id, bill_id, customer_id, transaction_type, amount, 
+                            payment_method, reference_number, notes, created_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+                        transaction_id, bill_id, transaction_customer_id, 'credit_issued',
+                        balance_due, payment_method, bill_number,
+                        f'Cheque bill created for {customer_name}', current_time
+                    ))
                 
             elif payment_method == 'partial':
                 partial_amount = float(data.get('partial_amount', 0))
@@ -262,9 +306,9 @@ class BillingService:
                     partial_amount = 0
                     balance_due = total_amount
                 
-                conn.execute("""UPDATE bills SET is_credit = 1, payment_method = ?, payment_status = 'partial',
+                conn.execute("""UPDATE bills SET is_credit = ?, payment_method = ?, payment_status = 'partial',
                            credit_paid_amount = ?, credit_balance = ?, partial_payment_method = ?
-                    WHERE id = ?""", (payment_method, partial_amount, balance_due, partial_payment_method, bill_id))
+                    WHERE id = ?""", (True, payment_method, partial_amount, balance_due, partial_payment_method, bill_id))
                 
                 conn.execute("""UPDATE sales SET balance_due = ?, paid_amount = ? 
                     WHERE bill_id = ?""", (balance_due, partial_amount, bill_id))
@@ -272,31 +316,31 @@ class BillingService:
                 conn.execute("""INSERT INTO payments (id, bill_id, method, amount, processed_at)
                     VALUES (?, ?, ?, ?, ?)""", (payment_id, bill_id, payment_method, partial_amount, current_time))
                 
-                # Credit transaction records
-                transaction_customer_id = data.get('customer_id') or 'walk-in-customer'
-                
-                transaction_id_credit = generate_id()
-                conn.execute("""INSERT INTO credit_transactions (
-                        id, bill_id, customer_id, transaction_type, amount, 
-                        payment_method, reference_number, notes, created_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
-                    transaction_id_credit, bill_id, transaction_customer_id, 'credit_issued',
-                    total_amount, payment_method, bill_number,
-                    f'Partial payment bill created for {customer_name}', current_time
-                ))
-                
-                if partial_amount > 0:
-                    transaction_id_payment = generate_id()
+                # Credit transaction records - ONLY if customer_id exists (not walk-in)
+                transaction_customer_id = data.get('customer_id')
+                if transaction_customer_id and transaction_customer_id != 'walk-in-customer':
+                    transaction_id_credit = generate_id()
                     conn.execute("""INSERT INTO credit_transactions (
                             id, bill_id, customer_id, transaction_type, amount, 
                             payment_method, reference_number, notes, created_at
                         )
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
-                        transaction_id_payment, bill_id, transaction_customer_id, 'payment',
-                        partial_amount, partial_payment_method, bill_number,
-                        f'Initial partial payment by {customer_name}', current_time
+                        transaction_id_credit, bill_id, transaction_customer_id, 'credit_issued',
+                        total_amount, payment_method, bill_number,
+                        f'Partial payment bill created for {customer_name}', current_time
                     ))
+                    
+                    if partial_amount > 0:
+                        transaction_id_payment = generate_id()
+                        conn.execute("""INSERT INTO credit_transactions (
+                                id, bill_id, customer_id, transaction_type, amount, 
+                                payment_method, reference_number, notes, created_at
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""", (
+                            transaction_id_payment, bill_id, transaction_customer_id, 'payment',
+                            partial_amount, partial_payment_method, bill_number,
+                            f'Initial partial payment by {customer_name}', current_time
+                        ))
                 
             else:
                 # Regular payment

@@ -750,9 +750,20 @@
                     </td>
                     <td>
                         <div class="action-buttons" style="display: flex; gap: 5px;">
-                            <button onclick="receivePayment('${bill.id}', '${customerNameEscaped}', ${bill.balance_due}, '${billNumberEscaped}')" class="action-btn" style="background: white; color: var(--wine); border: 1px solid var(--wine); padding: 6px 12px; font-size: 0.75rem;" title="Receive Payment">
-                                Receive
-                            </button>
+                            ${bill.payment_status === 'cheque_deposited' ? `
+                                <div style="display: flex; gap: 5px;">
+                                    <button onclick="markChequeCleared('${bill.id}', '${customerNameEscaped}', '${billNumberEscaped}', 'cleared')" class="action-btn" style="background: var(--success); color: white; border: none; padding: 6px 12px; font-size: 0.75rem;" title="Mark Cheque as Cleared">
+                                        Received
+                                    </button>
+                                    <button onclick="markChequeCleared('${bill.id}', '${customerNameEscaped}', '${billNumberEscaped}', 'bounced')" class="action-btn" style="background: var(--danger); color: white; border: none; padding: 6px 12px; font-size: 0.75rem;" title="Mark Cheque as Bounced">
+                                        Bounced
+                                    </button>
+                                </div>
+                            ` : `
+                                <button onclick="receivePayment('${bill.id}', '${customerNameEscaped}', ${bill.balance_due}, '${billNumberEscaped}')" class="action-btn" style="background: white; color: var(--wine); border: 1px solid var(--wine); padding: 6px 12px; font-size: 0.75rem;" title="Receive Payment">
+                                    Receive
+                                </button>
+                            `}
                             <button onclick="printBill('${bill.id}')" class="action-btn" style="background: white; color: var(--wine); border: 1px solid var(--wine); padding: 6px 12px; font-size: 0.75rem;" title="Print Bill">
                                 Print
                             </button>
@@ -781,9 +792,74 @@
 
         function getStatusText(bill, isOverdue) {
             if (isOverdue) return 'Overdue';
+            if (bill.payment_status === 'cheque_deposited') return 'Cheque Deposited';
             if (bill.balance_due <= 0) return 'Fully Paid';
             if (bill.paid_amount > 0) return 'Partially Paid';
             return 'Unpaid';
+        }
+        
+        async function markChequeCleared(billId, customerName, billNumber, action = 'cleared') {
+            const actionText = action === 'bounced' ? 'bounced' : 'cleared';
+            const actionMessage = action === 'bounced' ? 
+                `Mark cheque as bounced for ${customerName}?
+
+Bill: ${billNumber}
+
+This will reverse the payment and mark the cheque as bounced.` :
+                `Mark cheque as cleared for ${customerName}?
+
+Bill: ${billNumber}
+
+This will mark the payment as received in bank.`;
+                
+            if (!confirm(actionMessage)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/credit/cheque-cleared', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        bill_id: billId,
+                        action: action
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const successMessage = data.action === 'bounced' ?
+                        `Cheque Bounced!
+
+Bill: ${data.bill_number}
+Customer: ${data.customer_name}
+
+Payment has been reversed and cheque marked as bounced.` :
+                        `Cheque Cleared!
+
+Bill: ${data.bill_number}
+Amount: ₹${data.amount}
+
+Payment has been marked as received in bank.`;
+                        
+                    alert(successMessage);
+                    
+                    // Refresh based on current view
+                    if (currentView === 'active') {
+                        loadCreditBills();
+                    } else {
+                        loadPaymentHistory();
+                    }
+                } else {
+                    alert('Error: ' + (data.error || `Failed to mark cheque as ${actionText}`));
+                }
+            } catch (error) {
+                console.error('Error marking cheque as cleared:', error);
+                alert('Error: ' + error.message);
+            }
         }
 
         function updateStats(stats) {
@@ -1412,7 +1488,23 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Payment Received!\n\nBill: ${data.bill_number}\nAmount: ₹${data.payment_amount}\nNew Balance: ₹${data.new_balance}\nStatus: ${data.new_status.toUpperCase()}`);
+                    let message = `Payment Received!
+
+Bill: ${data.bill_number}
+Amount: ₹${data.payment_amount}
+New Balance: ₹${data.new_balance}`;
+                    
+                    if (data.is_cheque) {
+                        message += `
+
+Status: CHEQUE DEPOSITED
+
+⚠️ Cheque has been deposited. Click "Received in Bank" once the cheque clears.`;
+                    } else {
+                        message += `\nStatus: ${data.payment_status_display || data.new_status.toUpperCase()}`;
+                    }
+                    
+                    alert(message);
                     closePaymentModal();
                     
                     // Refresh based on current view

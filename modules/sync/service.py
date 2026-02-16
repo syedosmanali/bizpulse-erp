@@ -137,36 +137,53 @@ class SyncService:
             latest_data = {}
             
             # Products
-            products = conn.execute("""
-                SELECT * FROM products 
-                WHERE user_id = ? 
-                ORDER BY updated_at DESC LIMIT 100
-            """, (user_id,)).fetchall()
-            latest_data['products'] = [dict(row) for row in products] if products else []
+            # Products - use created_at instead of updated_at
+            try:
+                products = conn.execute("""
+                    SELECT * FROM products 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC LIMIT 100
+                """, (user_id,)).fetchall()
+                latest_data['products'] = [dict(row) for row in products] if products else []
+            except Exception as e:
+                logger.error(f"Error fetching products: {e}")
+                latest_data['products'] = []
             
             # Sales
-            sales = conn.execute("""
-                SELECT * FROM sales 
-                WHERE user_id = ? 
-                ORDER BY created_at DESC LIMIT 50
-            """, (user_id,)).fetchall()
-            latest_data['sales'] = [dict(row) for row in sales] if sales else []
+            try:
+                sales = conn.execute("""
+                    SELECT * FROM sales 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC LIMIT 50
+                """, (user_id,)).fetchall()
+                latest_data['sales'] = [dict(row) for row in sales] if sales else []
+            except Exception as e:
+                logger.error(f"Error fetching sales: {e}")
+                latest_data['sales'] = []
             
-            # Customers
-            customers = conn.execute("""
-                SELECT * FROM customers 
-                WHERE user_id = ? 
-                ORDER BY updated_at DESC LIMIT 100
-            """, (user_id,)).fetchall()
-            latest_data['customers'] = [dict(row) for row in customers] if customers else []
+            # Customers - use created_at instead of updated_at
+            try:
+                customers = conn.execute("""
+                    SELECT * FROM customers 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC LIMIT 100
+                """, (user_id,)).fetchall()
+                latest_data['customers'] = [dict(row) for row in customers] if customers else []
+            except Exception as e:
+                logger.error(f"Error fetching customers: {e}")
+                latest_data['customers'] = []
             
             # Invoices (bills)
-            invoices = conn.execute("""
-                SELECT * FROM bills 
-                WHERE user_id = ? 
-                ORDER BY created_at DESC LIMIT 50
-            """, (user_id,)).fetchall()
-            latest_data['invoices'] = [dict(row) for row in invoices] if invoices else []
+            try:
+                invoices = conn.execute("""
+                    SELECT * FROM bills 
+                    WHERE user_id = ? 
+                    ORDER BY created_at DESC LIMIT 50
+                """, (user_id,)).fetchall()
+                latest_data['invoices'] = [dict(row) for row in invoices] if invoices else []
+            except Exception as e:
+                logger.error(f"Error fetching invoices: {e}")
+                latest_data['invoices'] = []
             
             latest_data['sync_timestamp'] = datetime.now().isoformat()
             

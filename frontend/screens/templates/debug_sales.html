@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Sales Issue</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Sales Issue</h1>
+        
+        <div id="status"></div>
+        
+        <div>
+            <button onclick="checkSession()">1. Check Session</button>
+            <button onclick="testAPI()">2. Test API</button>
+            <button onclick="checkDatabase()">3. Check Database</button>
+            <button onclick="location.href='/retail/sales'">Go to Sales Page</button>
+        </div>
+        
+        <h2>Debug Log:</h2>
+        <pre id="debugLog"></pre>
+    </div>
+    
+    <script>
+        let debugLog = [];
+        
+        function log(message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            debugLog.push(logEntry);
+            if (data) {
+                debugLog.push(JSON.stringify(data, null, 2));
+            }
+            document.getElementById('debugLog').textContent = debugLog.join('\n');
+        }
+        
+        async function checkSession() {
+            log('🔍 Checking session...');
+            try {
+                const response = await fetch('/api/auth/user-info');
+                const data = await response.json();
+                log('✅ Session data:', data);
+                
+                if (data.user_id) {
+                    document.getElementById('status').innerHTML = 
+                        '<div class="status success">✅ Session Active: ' + data.user_name + ' (' + data.user_type + ')</div>';
+                } else {
+                    document.getElementById('status').innerHTML = 
+                        '<div class="status error">❌ No active session - Please login first!</div>';
+                }
+            } catch (error) {
+                log('❌ Session check failed:', error.toString());
+                document.getElementById('status').innerHTML = 
+                    '<div class="status error">❌ Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function testAPI() {
+            log('🔍 Testing /api/sales/all...');
+            try {
+                const url = '/api/sales/all?filter=today&category=all&payment_method=all&limit=100';
+                log('Request URL: ' + url);
+                
+                const response = await fetch(url);
+                log('Response status: ' + response.status);
+                
+                const data = await response.json();
+                log('✅ API Response:', data);
+                
+                if (data.success) {
+                    document.getElementById('status').innerHTML = 
+                        '<div class="status success">✅ API Working! Found ' + data.sales.length + ' sales<br>' +
+                        'Total Revenue: ₹' + data.summary.total_revenue + '<br>' +
+                        'Total Bills: ' + data.summary.total_bills + '</div>';
+                    
+                    if (data.sales.length > 0) {
+                        log('First bill:', data.sales[0]);
+                    }
+                } else {
+                    document.getElementById('status').innerHTML = 
+                        '<div class="status error">❌ API returned success=false</div>';
+                }
+            } catch (error) {
+                log('❌ API test failed:', error.toString());
+                document.getElementById('status').innerHTML = 
+                    '<div class="status error">❌ Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function checkDatabase() {
+            log('🔍 Checking database directly...');
+            try {
+                // Check if bills exist
+                const response = await fetch('/api/sales/summary?date_filter=all');
+                const data = await response.json();
+                log('✅ Database summary:', data);
+                
+                if (data.success) {
+                    document.getElementById('status').innerHTML = 
+                        '<div class="status info">📊 Database Stats:<br>' +
+                        'Total Sales: ' + data.summary.total_sales + '<br>' +
+                        'Total Revenue: ₹' + data.summary.total_revenue + '<br>' +
+                        'Total Items: ' + data.summary.total_items + '</div>';
+                }
+            } catch (error) {
+                log('❌ Database check failed:', error.toString());
+            }
+        }
+        
+        // Auto-run checks on load
+        window.onload = async () => {
+            log('🚀 Starting debug checks...');
+            await checkSession();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testAPI();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await checkDatabase();
+            log('✅ All checks complete!');
+        };
+    </script>
+</body>
+</html>

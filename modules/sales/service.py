@@ -63,8 +63,12 @@ class SalesService:
         # Use appropriate string aggregation function
         if db_type == 'postgresql':
             concat_func = "STRING_AGG(bi.product_name, ', ')"
+            date_func = "CAST(b.created_at AS DATE)"
+            time_func = "CAST(b.created_at AS TIME)"
         else:
             concat_func = "GROUP_CONCAT(bi.product_name, ', ')"
+            date_func = "date(b.created_at)"
+            time_func = "strftime('%H:%M:%S', b.created_at)"
         
         base_query = f"""
             SELECT 
@@ -73,6 +77,7 @@ class SalesService:
                 b.bill_number,
                 b.customer_id,
                 COALESCE(b.customer_name, c.name, 'Walk-in Customer') as customer_name,
+                COALESCE(b.customer_phone, c.phone) as customer_phone,
                 b.total_amount,
                 b.total_amount as total_price,
                 b.subtotal,
@@ -83,8 +88,8 @@ class SalesService:
                 b.is_credit,
                 b.credit_balance,
                 b.credit_paid_amount,
-                CAST(b.created_at AS DATE) as sale_date,
-                CAST(b.created_at AS TIME) as sale_time,
+                {date_func} as sale_date,
+                {time_func} as sale_time,
                 b.created_at,
                 b.business_type,
                 b.status,
@@ -113,22 +118,27 @@ class SalesService:
             where_clauses.append("(b.business_owner_id = ? OR b.business_owner_id IS NULL)")
             params.append(user_id)
         
+        # Get database type for proper date functions
+        from modules.shared.database import get_db_type
+        db_type = get_db_type()
+        date_cast = "date(b.created_at)" if db_type == 'sqlite' else "CAST(b.created_at AS DATE)"
+        
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
-                where_clauses.append("CAST(b.created_at AS DATE) = ?")
+                where_clauses.append(f"{date_cast} = ?")
                 params.append(today)
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(b.created_at AS DATE) = ?")
+                where_clauses.append(f"{date_cast} = ?")
                 params.append(yesterday)
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(b.created_at AS DATE) >= ?")
+                where_clauses.append(f"{date_cast} >= ?")
                 params.append(week_ago)
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(b.created_at AS DATE) >= ?")
+                where_clauses.append(f"{date_cast} >= ?")
                 params.append(month_ago)
             elif date_filter == 'all':
                 # All sales - no date filter, but limit results
@@ -162,6 +172,16 @@ class SalesService:
         for index, row in enumerate(sales, 1):
             sale = dict(row)
             
+            # CRITICAL: Convert ALL non-JSON-serializable objects to strings
+            for key, value in list(sale.items()):
+                if value is not None:
+                    # Check if it's a basic JSON type
+                    if not isinstance(value, (str, int, float, bool, type(None))):
+                        try:
+                            sale[key] = str(value)
+                        except:
+                            sale[key] = None
+            
             # Fix S.NO - frontend expects 'serial_no'
             sale['serial_no'] = index
             sale['sno'] = index
@@ -180,7 +200,15 @@ class SalesService:
                 sale['products_display'] = 'Multiple Items'
             
             # Fix status for credit bills - frontend expects proper status
-            if sale.get('is_credit') and sale.get('credit_balance', 0) > 0:
+            credit_balance = sale.get('credit_balance', 0)
+            # Convert to float if string
+            if isinstance(credit_balance, str):
+                try:
+                    credit_balance = float(credit_balance)
+                except:
+                    credit_balance = 0
+            
+            if sale.get('is_credit') and credit_balance > 0:
                 sale['status'] = 'DUE'
                 sale['status_display'] = 'DUE'
                 sale['status_class'] = 'due'
@@ -228,22 +256,27 @@ class SalesService:
             where_clauses.append("(business_owner_id = ? OR business_owner_id IS NULL)")
             params.append(user_id)
         
+        # Get database type for proper date functions
+        from modules.shared.database import get_db_type
+        db_type = get_db_type()
+        date_cast = "date(created_at)" if db_type == 'sqlite' else "CAST(created_at AS DATE)"
+        
         if date_filter:
             if date_filter == 'today':
                 today = datetime.now().strftime('%Y-%m-%d')
-                where_clauses.append("CAST(created_at AS DATE) = ?")
+                where_clauses.append(f"{date_cast} = ?")
                 params.append(today)
             elif date_filter == 'yesterday':
                 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(created_at AS DATE) = ?")
+                where_clauses.append(f"{date_cast} = ?")
                 params.append(yesterday)
             elif date_filter == 'week':
                 week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(created_at AS DATE) >= ?")
+                where_clauses.append(f"{date_cast} >= ?")
                 params.append(week_ago)
             elif date_filter == 'month':
                 month_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-                where_clauses.append("CAST(created_at AS DATE) >= ?")
+                where_clauses.append(f"{date_cast} >= ?")
                 params.append(month_ago)
             elif date_filter == 'all':
                 # All data - no date filter
@@ -258,14 +291,28 @@ class SalesService:
         if where_clauses:
             date_condition = "WHERE " + " AND ".join(where_clauses)
         
-        # Get summary from BILLS table for accurate totals
+        # Get summary from BILLS table for accurate totals with actual profit calculation
+        # Calculate actual profit using product costs
         query = f"""
             SELECT 
                 COUNT(*) as total_sales,
-                COALESCE(SUM(total_amount), 0) as total_revenue,
-                COALESCE(AVG(total_amount), 0) as avg_sale_value,
-                COALESCE(SUM(CASE WHEN is_credit = TRUE THEN credit_balance ELSE 0 END), 0) as total_receivables
-            FROM bills 
+                COALESCE(SUM(b.total_amount), 0) as total_revenue,
+                COALESCE(AVG(b.total_amount), 0) as avg_sale_value,
+                COALESCE(SUM(CASE WHEN b.is_credit = TRUE THEN b.credit_balance ELSE 0 END), 0) as total_receivables,
+                COALESCE(SUM(
+                    (SELECT COALESCE(SUM(bi.quantity * COALESCE(p.cost, 0)), 0) 
+                     FROM bill_items bi 
+                     LEFT JOIN products p ON bi.product_id = p.id 
+                     WHERE bi.bill_id = b.id)
+                ), 0) as total_cost,
+                COALESCE(SUM(
+                    b.total_amount - 
+                    (SELECT COALESCE(SUM(bi.quantity * COALESCE(p.cost, 0)), 0) 
+                     FROM bill_items bi 
+                     LEFT JOIN products p ON bi.product_id = p.id 
+                     WHERE bi.bill_id = b.id)
+                ), 0) as total_profit
+            FROM bills b 
             {date_condition}
         """
         
@@ -285,12 +332,20 @@ class SalesService:
         conn.close()
         
         if summary:
+            total_revenue = round(float(summary['total_revenue'] or 0), 2)
+            total_cost = round(float(summary['total_cost'] or 0), 2)
+            total_profit = round(float(summary['total_profit'] or 0), 2)
+            profit_margin = round((total_profit / total_revenue * 100) if total_revenue > 0 else 0, 2)
+            
             result = {
                 "total_sales": summary['total_sales'] or 0,
-                "total_revenue": round(float(summary['total_revenue'] or 0), 2),
+                "total_revenue": total_revenue,
                 "total_items": items_result['total_items'] if items_result else 0,
                 "avg_sale_value": round(float(summary['avg_sale_value'] or 0), 2),
-                "total_receivables": round(float(summary['total_receivables'] or 0), 2)
+                "total_receivables": round(float(summary['total_receivables'] or 0), 2),
+                "total_cost": total_cost,
+                "total_profit": total_profit,
+                "profit_margin": profit_margin
             }
             print(f"🔍 [SALES SUMMARY] Result: {result}")
             return result

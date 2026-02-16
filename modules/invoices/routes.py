@@ -104,7 +104,7 @@ def get_invoice_by_id(invoice_id):
         
         result = invoice_service.get_invoice_by_id(invoice_id, user_id)
         
-        if result.get('success'):
+        if result.get("success"):
             return jsonify(result)
         else:
             return jsonify(result), 404

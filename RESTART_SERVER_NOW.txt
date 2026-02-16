@@ -1,0 +1,29 @@
+⚠️ IMPORTANT: RESTART THE FLASK SERVER NOW ⚠️
+
+Changes made:
+1. Created comprehensive GST-compliant multi-theme invoice template
+2. Added all required fields:
+   - Company details with GSTIN, State Code
+   - Bill To section with safe fallbacks (N/A for missing data)
+   - Complete product table with HSN/SAC, CGST, SGST, IGST
+   - Tax summary with amount in words
+   - Terms & conditions and authorized signatory
+3. Three professional themes:
+   - Standard: Professional GST invoice
+   - Thermal: Receipt-style (like biryani hotels)
+   - Premium: Luxury design with gold accents
+4. Print-friendly design (no buttons in print)
+5. Theme preference saved in localStorage
+
+To see the changes:
+1. Stop the current Flask server (Ctrl+C)
+2. Start it again: python app.py
+3. Clear browser cache (Ctrl+Shift+R)
+4. Go to any invoice and click "View Receipt"
+5. You'll see 3 theme buttons at the top
+
+The template is located at:
+frontend/screens/templates/retail_invoice_multi_theme.html
+
+Route updated in:
+modules/retail/routes.py (line 148)

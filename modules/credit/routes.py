@@ -445,6 +445,10 @@ def export_credit_bills():
         }), 500
 
 
+# REMOVED: Duplicate route - using retail_bp's /api/credit/history instead
+# This was causing Flask route conflicts
+
+
 @credit_bp.route('/api/credit/payment', methods=['POST'])
 def record_credit_payment():
     """Record a payment for a credit bill"""

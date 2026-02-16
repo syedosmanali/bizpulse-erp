@@ -622,11 +622,25 @@
 
         async function loadInvoiceDetails() {
             try {
+                console.log('Loading invoice:', invoiceId);
                 const response = await fetch(`/api/invoices/${invoiceId}`);
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('Invoice data:', data);
 
-                if (data.error) {
-                    alert('Invoice not found');
+                if (data.error || !data.success) {
+                    alert('Invoice not found: ' + (data.error || 'Unknown error'));
+                    window.location.href = '/retail/invoices';
+                    return;
+                }
+
+                if (!data.invoice) {
+                    alert('Invoice data is missing');
                     window.location.href = '/retail/invoices';
                     return;
                 }
@@ -637,97 +651,128 @@
                 document.getElementById('invoiceContent').style.display = 'block';
             } catch (error) {
                 console.error('Error loading invoice:', error);
-                alert('Error loading invoice details');
+                alert('Error loading invoice details: ' + error.message);
+                // Don't redirect, let user see the error
+                document.getElementById('loadingState').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        <h3>Error Loading Invoice</h3>
+                        <p>${error.message}</p>
+                        <button onclick="window.location.href='/retail/invoices'" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #722F37; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Back to Invoices
+                        </button>
+                    </div>
+                `;
             }
         }
 
         function displayInvoice(data) {
-            const invoice = data.invoice;
-            const items = data.items;
-            const payments = data.payments;
+            try {
+                const invoice = data.invoice;
+                const items = data.items || [];
+                const payments = data.payments || [];
 
-            // Invoice header
-            document.getElementById('billNumber').textContent = invoice.bill_number;
-
-            // Customer details
-            document.getElementById('customerName').textContent = invoice.customer_name || 'Walk-in Customer';
-            document.getElementById('customerPhone').textContent = invoice.customer_phone || 'N/A';
-            document.getElementById('customerEmail').textContent = invoice.customer_email || 'N/A';
-            document.getElementById('customerAddress').textContent = invoice.customer_address || 'N/A';
-
-            // Invoice details
-            const invoiceDate = formatDate(invoice.created_at);
-            document.getElementById('invoiceDate').textContent = invoiceDate;
-            document.getElementById('invoiceDate2').textContent = invoiceDate;
-            
-            // Due date (30 days from invoice date)
-            const dueDate = new Date(invoice.created_at);
-            dueDate.setDate(dueDate.getDate() + 30);
-            document.getElementById('dueDate').textContent = formatDate(dueDate.toISOString());
-            
-            const statusBadge = document.getElementById('invoiceStatus');
-            
-            // Special logic for credit transactions
-            let displayStatus = invoice.status;
-            let statusClass = invoice.status;
-            
-            // If it's a credit transaction (payment_method is credit or is_credit is true)
-            if (invoice.payment_method === 'credit' || invoice.is_credit === 1 || invoice.is_credit === true) {
-                // For credit bills, show DUE instead of COMPLETED
-                if (invoice.status === 'completed') {
-                    displayStatus = 'DUE';
-                    statusClass = 'pending'; // Use pending class for orange color
+                if (!invoice) {
+                    throw new Error('Invoice data is missing');
                 }
-            }
-            
-            statusBadge.className = `status-badge status-${statusClass}`;
-            statusBadge.textContent = displayStatus.toUpperCase();
 
-            // Items
-            const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = '';
-            
-            items.forEach(item => {
-                const row = document.createElement('tr');
-                const taxAmount = (item.total_price * (item.tax_rate || 18)) / 100;
-                row.innerHTML = `
-                    <td>
-                        <div class="product-name">${item.product_name}</div>
-                        <div class="product-details">SKU: ${item.product_id || 'N/A'}</div>
-                    </td>
-                    <td>${item.quantity}</td>
-                    <td>₹${item.unit_price.toFixed(2)}</td>
-                    <td>₹${taxAmount.toFixed(2)}</td>
-                    <td>₹${item.total_price.toFixed(2)}</td>
-                `;
-                tbody.appendChild(row);
-            });
+                // Invoice header
+                document.getElementById('billNumber').textContent = invoice.bill_number || 'N/A';
 
-            // Totals
-            document.getElementById('subtotal').textContent = '₹' + invoice.subtotal.toFixed(2);
-            document.getElementById('taxAmount').textContent = '₹' + invoice.tax_amount.toFixed(2);
-            document.getElementById('discountAmount').textContent = '₹' + (invoice.discount_amount || 0).toFixed(2);
-            document.getElementById('grandTotal').textContent = '₹' + invoice.total_amount.toFixed(2);
+                // Customer details
+                document.getElementById('customerName').textContent = invoice.customer_name || 'Walk-in Customer';
+                document.getElementById('customerPhone').textContent = invoice.customer_phone || 'N/A';
+                document.getElementById('customerEmail').textContent = invoice.customer_email || 'N/A';
+                document.getElementById('customerAddress').textContent = invoice.customer_address || 'N/A';
 
-            // Payment method
-            document.getElementById('paymentMethod').textContent = invoice.payment_method ? invoice.payment_method.toUpperCase() : 'CASH';
-            document.getElementById('transactionId').textContent = invoice.id;
-
-            // Payments
-            if (payments && payments.length > 0) {
-                document.getElementById('paymentsSection').style.display = 'block';
-                const paymentDetails = document.getElementById('paymentDetails');
-                paymentDetails.innerHTML = '';
+                // Invoice details
+                const invoiceDate = formatDate(invoice.created_at);
+                document.getElementById('invoiceDate').textContent = invoiceDate;
+                document.getElementById('invoiceDate2').textContent = invoiceDate;
                 
-                payments.forEach(payment => {
-                    const paymentDiv = document.createElement('div');
-                    paymentDiv.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 10px;';
-                    paymentDiv.innerHTML = `
-                        <span>${payment.method.toUpperCase()}</span>
-                        <span>₹${payment.amount.toFixed(2)}</span>
+                // Due date (30 days from invoice date)
+                const dueDate = new Date(invoice.created_at);
+                dueDate.setDate(dueDate.getDate() + 30);
+                document.getElementById('dueDate').textContent = formatDate(dueDate.toISOString());
+                
+                const statusBadge = document.getElementById('invoiceStatus');
+                
+                // Special logic for credit transactions
+                let displayStatus = invoice.status || 'completed';
+                let statusClass = invoice.status || 'completed';
+                
+                // If it's a credit transaction (payment_method is credit or is_credit is true)
+                if (invoice.payment_method === 'credit' || invoice.is_credit === 1 || invoice.is_credit === true) {
+                    // For credit bills, show DUE instead of COMPLETED
+                    if (invoice.status === 'completed') {
+                        displayStatus = 'DUE';
+                        statusClass = 'pending'; // Use pending class for orange color
+                    }
+                }
+                
+                statusBadge.className = `status-badge status-${statusClass}`;
+                statusBadge.textContent = displayStatus.toUpperCase();
+
+                // Items
+                const tbody = document.getElementById('itemsTableBody');
+                tbody.innerHTML = '';
+                
+                items.forEach(item => {
+                    const row = document.createElement('tr');
+                    // Convert string values to numbers safely
+                    const unitPrice = typeof item.unit_price === 'number' ? item.unit_price : parseFloat(item.unit_price) || 0;
+                    const totalPrice = typeof item.total_price === 'number' ? item.total_price : parseFloat(item.total_price) || 0;
+                    const quantity = typeof item.quantity === 'number' ? item.quantity : parseFloat(item.quantity) || 0;
+                    const taxRate = typeof item.tax_rate === 'number' ? item.tax_rate : parseFloat(item.tax_rate) || 18;
+                    
+                    const taxAmount = (totalPrice * taxRate) / 100;
+                    row.innerHTML = `
+                        <td>
+                            <div class="product-name">${item.product_name || 'Unknown Product'}</div>
+                            <div class="product-details">SKU: ${item.product_id || 'N/A'}</div>
+                        </td>
+                        <td>${quantity}</td>
+                        <td>₹${unitPrice.toFixed(2)}</td>
+                        <td>₹${taxAmount.toFixed(2)}</td>
+                        <td>₹${totalPrice.toFixed(2)}</td>
                     `;
-                    paymentDetails.appendChild(paymentDiv);
+                    tbody.appendChild(row);
                 });
+
+                // Totals - Convert string values to numbers safely
+                const subtotal = typeof invoice.subtotal === 'number' ? invoice.subtotal : parseFloat(invoice.subtotal) || 0;
+                const taxAmount = typeof invoice.tax_amount === 'number' ? invoice.tax_amount : parseFloat(invoice.tax_amount) || 0;
+                const discountAmount = typeof invoice.discount_amount === 'number' ? invoice.discount_amount : parseFloat(invoice.discount_amount) || 0;
+                const totalAmount = typeof invoice.total_amount === 'number' ? invoice.total_amount : parseFloat(invoice.total_amount) || 0;
+                
+                document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+                document.getElementById('taxAmount').textContent = '₹' + taxAmount.toFixed(2);
+                document.getElementById('discountAmount').textContent = '₹' + discountAmount.toFixed(2);
+                document.getElementById('grandTotal').textContent = '₹' + totalAmount.toFixed(2);
+
+                // Payment method
+                document.getElementById('paymentMethod').textContent = invoice.payment_method ? invoice.payment_method.toUpperCase() : 'CASH';
+                document.getElementById('transactionId').textContent = invoice.id || 'N/A';
+
+                // Payments
+                if (payments && payments.length > 0) {
+                    document.getElementById('paymentsSection').style.display = 'block';
+                    const paymentDetails = document.getElementById('paymentDetails');
+                    paymentDetails.innerHTML = '';
+                    
+                    payments.forEach(payment => {
+                        const paymentDiv = document.createElement('div');
+                        paymentDiv.style.cssText = 'display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 10px;';
+                        const paymentAmount = typeof payment.amount === 'number' ? payment.amount : parseFloat(payment.amount) || 0;
+                        paymentDiv.innerHTML = `
+                            <span>${(payment.method || 'CASH').toUpperCase()}</span>
+                            <span>₹${paymentAmount.toFixed(2)}</span>
+                        `;
+                        paymentDetails.appendChild(paymentDiv);
+                    });
+                }
+            } catch (error) {
+                console.error('Error displaying invoice:', error);
+                throw error; // Re-throw to be caught by loadInvoiceDetails
             }
         }
 

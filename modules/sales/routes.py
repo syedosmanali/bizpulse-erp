@@ -2,6 +2,10 @@
 Sales routes - Handle all sales API endpoints
 """
 
+print("=" * 80)
+print("🔥 SALES ROUTES LOADED - VERSION 3.0 - FIXED")
+print("=" * 80)
+
 from flask import Blueprint, request, jsonify, session
 from .service import SalesService
 from datetime import datetime, timedelta
@@ -41,6 +45,7 @@ def get_sales():
 @sales_bp.route('/api/sales/all', methods=['GET'])
 def get_all_sales():
     """Get all sales with date range filtering - for frontend compatibility - Filtered by user"""
+    print("🔍 [SALES ROUTE] Version 2.0 - WITH JSON CLEANING")
     try:
         from_date = request.args.get('from') or request.args.get('startDate')
         to_date = request.args.get('to') or request.args.get('endDate')
@@ -49,6 +54,11 @@ def get_all_sales():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 15, type=int)  # Default 15 per page
         user_id = get_user_id_from_session()
+        
+        # DEBUG: Log session info
+        print(f"🔍 [SALES API] Session user_id: {user_id}")
+        print(f"🔍 [SALES API] Session user_type: {session.get('user_type')}")
+        print(f"🔍 [SALES API] Date filter: {date_filter}")
         
         # Use date_filter if provided, otherwise use date range
         if date_filter and date_filter in ['today', 'yesterday', 'week', 'month', 'all']:
@@ -61,6 +71,23 @@ def get_all_sales():
             # Default to all sales
             sales = sales_service.get_all_sales('all', user_id)
             summary = sales_service.get_sales_summary('all', user_id)
+        
+        print(f"🔍 [SALES API] Found {len(sales)} sales")
+        print(f"🔍 [SALES API] Summary: {summary}")
+        
+        # CRITICAL FIX: Convert all non-JSON-serializable objects to strings
+        def clean_for_json(obj):
+            if isinstance(obj, dict):
+                return {k: clean_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_for_json(item) for item in obj]
+            elif isinstance(obj, (str, int, float, bool, type(None))):
+                return obj
+            else:
+                return str(obj)
+        
+        sales = clean_for_json(sales)
+        summary = clean_for_json(summary)
         
         # Filter by payment method if specified
         if payment_method and payment_method != 'all':
@@ -89,9 +116,11 @@ def get_all_sales():
                 "total_revenue": summary.get('total_revenue', 0),
                 "total_items": summary.get('total_items', 0),
                 "avg_sale_value": summary.get('avg_sale_value', 0),
-                "net_profit": summary.get('total_revenue', 0) * 0.2,  # Estimated 20% profit
+                "net_profit": summary.get('total_profit', 0),  # Actual profit calculation
                 "receivable": summary.get('total_receivables', 0),
-                "receivable_profit": summary.get('total_receivables', 0)
+                "receivable_profit": summary.get('total_receivables', 0),
+                "total_cost": summary.get('total_cost', 0),
+                "profit_margin": summary.get('profit_margin', 0)
             },
             "pagination": {
                 "current_page": page,

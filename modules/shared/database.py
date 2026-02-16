@@ -11,7 +11,6 @@ import os
 import json
 import sqlite3
 from urllib.parse import urlparse
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, text, event
 from sqlalchemy.pool import NullPool, QueuePool
 from sqlalchemy.engine import Engine
@@ -19,8 +18,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file (optional)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # dotenv not installed, skip loading .env file
+    pass
 
 # Get absolute path to database file (for SQLite fallback only)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -38,10 +42,9 @@ def get_database_url():
     if db_url and 'DATABASE_URL=' in db_url:
         db_url = db_url.split('DATABASE_URL=')[-1]
     
-    # Fallback for Render deployment if environment variable not set or empty
+    # Return None for local SQLite if DATABASE_URL not set
     if not db_url or db_url.strip() == '':
-        logger.warning("⚠️  DATABASE_URL not found, using Supabase fallback")
-        db_url = "postgresql://postgres.dnflpvmertmioebhjzas:PEhR2p3tARI915Lz@aws-1-ap-south-1.pooler.supabase.com:5432/postgres"
+        return None
     
     return db_url
 
@@ -155,19 +158,12 @@ class CursorWrapper:
                 converted_query = re.sub(rf'\b{col}\s*=\s*1\b', f'{col} = TRUE', converted_query, flags=re.IGNORECASE)
                 converted_query = re.sub(rf'\b{col}\s*=\s*0\b', f'{col} = FALSE', converted_query, flags=re.IGNORECASE)
         
-        # Convert params: 1/0 to True/False for PostgreSQL
-        if self.db_type == 'postgresql' and params:
-            converted_params = []
-            for param in params:
-                if param == 1:
-                    converted_params.append(True)
-                elif param == 0:
-                    converted_params.append(False)
-                else:
-                    converted_params.append(param)
-            params = tuple(converted_params)
+        # DO NOT convert params - let psycopg2 handle type inference
+        # The automatic 1/0 to True/False conversion was causing numeric columns to receive booleans
         
-        return self._cursor.execute(converted_query, params)
+        result = self._cursor.execute(converted_query, params)
+        # For method chaining, return the cursor itself
+        return self._cursor
     
     def fetchone(self):
         return self._cursor.fetchone()
@@ -321,7 +317,9 @@ class EnterpriseConnectionWrapper:
             cursor.execute(converted_query, params)
             self._cursor = cursor
             
-            return self
+            # Return the cursor for method chaining (fetchone, fetchall)
+            # This enables the pattern: conn.execute(query).fetchone()
+            return cursor
             
         except Exception as e:
             logger.error(f"❌ Query execution failed: {e}")
@@ -353,7 +351,8 @@ class EnterpriseConnectionWrapper:
             cursor.executemany(converted_query, params_list)
             self._cursor = cursor
             
-            return self
+            # Return the cursor for method chaining
+            return cursor
             
         except Exception as e:
             logger.error(f"❌ Executemany failed: {e}")
@@ -451,7 +450,7 @@ def get_current_client_id():
 def init_db():
     """Initialize database - supports both SQLite and PostgreSQL"""
     db_type = get_db_type()
-    print(f"📁 Initializing {db_type.upper()} database...")
+    print(f"Initializing {db_type.upper()} database...")
     
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -482,6 +481,7 @@ def init_db():
             min_stock INTEGER DEFAULT 0,
             unit VARCHAR(50) DEFAULT 'piece',
             business_type VARCHAR(50) DEFAULT 'both',
+            business_owner_id VARCHAR(255),
             barcode_data VARCHAR(255) UNIQUE,
             barcode_image TEXT,
             is_active BOOLEAN DEFAULT {get_boolean_default(True)},
@@ -497,6 +497,7 @@ def init_db():
             phone VARCHAR(20),
             email VARCHAR(255),
             address TEXT,
+            business_owner_id VARCHAR(255),
             credit_limit {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
             current_balance {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
             total_purchases {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
@@ -514,6 +515,7 @@ def init_db():
             customer_id VARCHAR(255),
             customer_name VARCHAR(255),
             business_type VARCHAR(50),
+            business_owner_id VARCHAR(255),
             subtotal {get_sql_type('REAL', 'NUMERIC(10,2)')},
             tax_amount {get_sql_type('REAL', 'NUMERIC(10,2)')},
             discount_amount {get_sql_type('REAL', 'NUMERIC(10,2)')} DEFAULT 0,
@@ -597,6 +599,7 @@ def init_db():
             payment_method TEXT,
             balance_due REAL DEFAULT 0,
             paid_amount REAL DEFAULT 0,
+            business_owner_id TEXT,
             sale_date DATE,
             sale_time TIME,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -779,7 +782,7 @@ def init_db():
                 cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id TEXT')
             else:
                 cursor.execute(f'ALTER TABLE {table} ADD COLUMN tenant_id VARCHAR(255)')
-            print(f"✅ Added tenant_id to {table}")
+            print(f"Added tenant_id to {table}")
         except Exception:
             # Column already exists or table doesn't exist
             pass
@@ -1304,4 +1307,4 @@ def init_db():
     conn.commit()
     conn.close()
     
-    print(f"✅ {db_type.upper()} database initialized successfully!")
+    print(f"{db_type.upper()} database initialized successfully!")

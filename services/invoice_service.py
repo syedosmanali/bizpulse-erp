@@ -209,30 +209,71 @@ class InvoiceService:
         finally:
             conn.close()
     
-    def get_invoice_by_id(self, invoice_id: str) -> Tuple[bool, Dict]:
+    def get_invoice_by_id(self, invoice_id: str, user_id: str = None) -> Tuple[bool, Dict]:
         """
         Get invoice details by ID
         Returns: (success, result_data)
         """
-        success, result = self.billing_service.get_bill_by_id(invoice_id)
+        conn = self._get_connection()
         
-        if success:
+        try:
+            # Build query with optional user filtering
+            query = '''
+                SELECT b.*, 
+                       COALESCE(c.name, 'Walk-in Customer') as customer_name, 
+                       c.phone as customer_phone,
+                       c.email as customer_email,
+                       c.address as customer_address
+                FROM bills b
+                LEFT JOIN customers c ON b.customer_id = c.id
+                WHERE b.id = ?
+            '''
+            params = [invoice_id]
+            
+            # Add user filter if provided - handle NULL user_id in database
+            if user_id:
+                query += ' AND (b.user_id = ? OR b.user_id IS NULL OR b.business_owner_id = ?)'
+                params.extend([user_id, user_id])
+            
+            # Get bill details
+            bill = conn.execute(query, params).fetchone()
+            
+            if not bill:
+                return False, {
+                    "success": False,
+                    "error": "Invoice not found"
+                }
+            
+            # Get bill items
+            items = conn.execute('''
+                SELECT * FROM bill_items WHERE bill_id = ?
+            ''', (invoice_id,)).fetchall()
+            
+            # Get payments
+            payments = conn.execute('''
+                SELECT * FROM payments WHERE bill_id = ?
+            ''', (invoice_id,)).fetchall()
+            
             # Transform bill to invoice format
-            invoice = dict(result["bill"])
+            invoice = dict(bill)
             invoice["invoice_id"] = invoice["id"]
             invoice["invoice_number"] = invoice["bill_number"]
             
             return True, {
                 "success": True,
                 "invoice": invoice,
-                "items": result["items"],
-                "payments": result["payments"]
+                "items": [dict(row) for row in items],
+                "payments": [dict(row) for row in payments]
             }
-        else:
+            
+        except Exception as e:
             return False, {
                 "success": False,
-                "message": result.get("error", "Invoice not found")
+                "error": str(e)
             }
+            
+        finally:
+            conn.close()
     
     def delete_invoice(self, invoice_id: str) -> Tuple[bool, Dict]:
         """

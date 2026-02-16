@@ -49,7 +49,9 @@ class CustomersService:
         
         # Check if customer with same name and phone already exists for this user
         name = data['name'].strip()
-        phone = data.get('phone', '').strip()
+        phone = (data.get('phone') or '').strip()  # Handle None values
+        email = (data.get('email') or '').strip()  # Handle None values
+        address = (data.get('address') or '').strip()  # Handle None values
         
         if phone and user_id:
             # STRICT ISOLATION: Check only within user's own customers
@@ -85,9 +87,9 @@ class CustomersService:
             ''', (
                 customer_id,
                 name,
-                phone,
-                data.get('email', '').strip(),
-                data.get('address', '').strip(),
+                phone if phone else None,  # Store None if empty
+                email if email else None,  # Store None if empty
+                address if address else None,  # Store None if empty
                 float(data.get('credit_limit', 0)),
                 data.get('customer_type', 'regular'),
                 1,  # is_active
@@ -123,12 +125,14 @@ class CustomersService:
         return {
             "success": True,
             "message": "Customer added successfully",
+            "customer_id": customer_id,  # Add this for frontend
+            "id": customer_id,  # Add this for frontend compatibility
             "customer": {
                 "id": customer_id,
                 "name": name,
                 "phone": phone,
-                "email": data.get('email', ''),
-                "address": data.get('address', '')
+                "email": email,
+                "address": address
             }
         }
     

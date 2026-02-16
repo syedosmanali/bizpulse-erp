@@ -9,61 +9,317 @@ from datetime import datetime, timedelta
 class RetailService:
     
     def get_dashboard_stats(self, user_id=None):
-        """Get comprehensive dashboard statistics with real-time data - Filtered by user"""
+        """Get comprehensive dashboard statistics with real sales/orders data but zero revenue/profit"""
+        print("🔍 [DASHBOARD] Starting get_dashboard_stats (real sales/orders, zero revenue mode)")
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        from modules.shared.database import get_db_type
+        db_type = get_db_type()
+        
         today = datetime.now().strftime('%Y-%m-%d')
-        yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        week_start = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
         
         # Build user filter condition - STRICT ISOLATION
-        user_filter = ""
-        user_params = []
-        if user_id:
-            user_filter = "AND business_owner_id = ?"
-            user_params = [user_id]
+        if db_type == 'postgresql':
+            user_filter = ""
+            user_params = []
+            if user_id:
+                user_filter = "AND business_owner_id = %s"
+                user_params = [user_id]
+        else:
+            user_filter = ""
+            user_params = []
+            if user_id:
+                user_filter = "AND business_owner_id = ?"
+                user_params = [user_id]
+        
+        # Today's Sales (ALL bills including credit/partial) - SHOW REAL DATA
+        if db_type == 'postgresql':
+            today_sales_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(total_amount), 0) as total_sales,
+                    COUNT(*) as transactions
+                FROM bills 
+                WHERE CAST(created_at AS DATE) = %s {user_filter}
+            ''', [today] + user_params).fetchone()
+        else:
+            today_sales_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(total_amount), 0) as total_sales,
+                    COUNT(*) as transactions
+                FROM bills 
+                WHERE DATE(created_at) = ? {user_filter}
+            ''', [today] + user_params).fetchone()
+        
+        today_sales = float(today_sales_data['total_sales'] or 0)
+        today_orders = int(today_sales_data['transactions'] or 0)
+        
+        # BUT keep revenue and profit at zero (no cash payments)
+        today_revenue = 0.0
+        today_profit = 0.0
+        
+        # Get recent sales for display
+        if db_type == 'postgresql':
+            recent_sales_query = '''
+                SELECT 
+                    bill_number,
+                    total_amount,
+                    customer_name,
+                    created_at
+                FROM bills 
+                WHERE CAST(created_at AS DATE) = %s {user_filter}
+                ORDER BY created_at DESC
+                LIMIT 5
+            '''
+        else:
+            recent_sales_query = '''
+                SELECT 
+                    bill_number,
+                    total_amount,
+                    customer_name,
+                    created_at
+                FROM bills 
+                WHERE DATE(created_at) = ? {user_filter}
+                ORDER BY created_at DESC
+                LIMIT 5
+            '''
+        
+        recent_sales_raw = cursor.execute(recent_sales_query.format(user_filter=user_filter), [today] + user_params).fetchall()
+        
+        recent_sales = []
+        for sale in recent_sales_raw:
+            # Handle datetime conversion safely
+            created_at = sale['created_at']
+            if isinstance(created_at, str):
+                time_str = datetime.fromisoformat(created_at).strftime('%H:%M')
+            else:
+                # If it's already a datetime object or timestamp
+                time_str = created_at.strftime('%H:%M') if hasattr(created_at, 'strftime') else 'N/A'
+            
+            recent_sales.append({
+                'bill_number': sale['bill_number'],
+                'total_amount': str(sale['total_amount']),
+                'customer_name': sale['customer_name'] or 'Walk-in Customer',
+                'created_at': str(created_at),
+                'time': time_str
+            })
+        
+        conn.close()
+        
+        return {
+            'success': True,
+            'today_sales': today_sales,
+            'today_revenue': today_revenue,
+            'today_profit': today_profit,
+            'today_orders': today_orders,
+            'today_receivable': 0,
+            'today_receivable_profit': 0,
+            'today_cost': 0,
+            'profit_margin': 0,
+            'week_revenue': 0,
+            'month_revenue': 0,
+            'total_products': 0,
+            'low_stock': 0,
+            'out_of_stock': 0,
+            'total_customers': 0,
+            'total_receivable': 0,
+            'total_pending_bills': 0,
+            'total_receivable_profit': 0,
+            'sales_change_percent': 0,
+            'revenue_change_percent': -100.0,  # Show 100% decrease since no revenue
+            'orders_change_percent': 0,
+            'profit_change_percent': -100.0,   # Show 100% decrease since no profit
+            'profit_margin_percent': 0,
+            'recent_sales': recent_sales,
+            'top_products': [],
+            'timestamp': datetime.now().isoformat(),
+            # Nested format for compatibility
+            'today': {
+                'sales': today_sales,
+                'revenue': today_revenue,
+                'receivable': 0,
+                'transactions': today_orders,
+                'profit': today_profit,
+                'receivable_profit': 0,
+                'cost': 0,
+                'profit_margin': 0
+            },
+            'total': {
+                'receivable': 0,
+                'receivable_profit': 0,
+                'pending_bills': 0
+            },
+            'week': {
+                'revenue': 0
+            },
+            'month': {
+                'revenue': 0
+            },
+            'inventory': {
+                'total_products': 0,
+                'low_stock': 0,
+                'out_of_stock': 0
+            },
+            'customers': {
+                'total': 0
+            }
+        }
+        
+        # Build user filter condition - STRICT ISOLATION
+        if db_type == 'postgresql':
+            user_filter = ""
+            user_params = []
+            if user_id:
+                user_filter = "AND business_owner_id = %s"
+                user_params = [user_id]
+        else:
+            user_filter = ""
+            user_params = []
+            if user_id:
+                user_filter = "AND business_owner_id = ?"
+                user_params = [user_id]
         
         # Today's Sales (ALL bills including credit/partial)
-        today_sales_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(total_amount), 0) as total_sales,
-                COUNT(*) as transactions
-            FROM bills 
-            WHERE DATE(created_at) = ? {user_filter}
-        ''', [today] + user_params).fetchone()
+        if db_type == 'postgresql':
+            today_sales_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(total_amount), 0) as total_sales,
+                    COUNT(*) as transactions
+                FROM bills 
+                WHERE CAST(created_at AS DATE) = %s {user_filter}
+            ''', [today] + user_params).fetchone()
+            print(f"🔍 [SALES DEBUG] PostgreSQL sales query result: {today_sales_data}")
+        else:
+            today_sales_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(total_amount), 0) as total_sales,
+                    COUNT(*) as transactions
+                FROM bills 
+                WHERE DATE(created_at) = ? {user_filter}
+            ''', [today] + user_params).fetchone()
+            print(f"🔍 [SALES DEBUG] SQLite sales query result: {today_sales_data}")
         
-        # Today's Revenue (only PAID amounts - exclude unpaid credit)
-        today_revenue_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(CASE 
-                    WHEN is_credit = 0 OR payment_status = 'paid' THEN total_amount
-                    WHEN is_credit = 1 AND payment_status != 'paid' THEN credit_paid_amount
-                    ELSE 0
-                END), 0) as revenue
-            FROM bills 
-            WHERE DATE(created_at) = ? {user_filter}
-        ''', [today] + user_params).fetchone()
+        # Today's Revenue (only ACTUAL PAYMENTS processed TODAY - not billing date)
+        # INCLUDES: Cash/Card/UPI bills created today + ALL payments processed today
+        # EXCLUDES: Cheque payments that are not yet cleared (payment_status = 'cheque_deposited')
+        if db_type == 'postgresql':
+            # Get cash/card/upi bills created today (these count as immediate revenue)
+            print(f"🔍 [REVENUE DEBUG] Querying cash revenue for {today} with user_filter: {user_filter}")
+            print(f"🔍 [REVENUE DEBUG] User params: {user_params}")
+            today_cash_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(total_amount), 0) as cash_revenue
+                FROM bills 
+                WHERE CAST(created_at AS DATE) = %s 
+                AND (is_credit = FALSE OR payment_status = 'paid')
+                AND payment_status != 'cheque_deposited'
+                {user_filter}
+            ''', [today] + user_params).fetchone()
+            print(f"🔍 [REVENUE DEBUG] Cash revenue result: {today_cash_revenue}")
+            
+            # Get ALL payments processed today (including credit payments for old bills)
+            # EXCLUDE payments from bills with cheque_deposited status (not yet cleared)
+            payment_user_filter = ""
+            if user_id:
+                payment_user_filter = "AND b.business_owner_id = %s"
+            
+            print(f"🔍 [REVENUE DEBUG] Querying payment revenue for {today} with payment_user_filter: {payment_user_filter}")
+            print(f"🔍 [REVENUE DEBUG] Payment params: {[today] + ([user_id] if user_id else [])}")
+            today_payment_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as payment_revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE CAST(p.processed_at AS DATE) = %s
+                AND b.payment_status != 'cheque_deposited'
+                {payment_user_filter}
+            ''', [today] + ([user_id] if user_id else [])).fetchone()
+            print(f"🔍 [REVENUE DEBUG] Payment revenue result: {today_payment_revenue}")
+            print(f"🔍 [REVENUE DEBUG] Payment revenue value: {today_payment_revenue['payment_revenue'] if today_payment_revenue else 'None'}")
+            
+            # Use ONLY payment-based revenue to avoid double-counting
+            # Cash bills created today will be counted when their payments are processed
+            today_revenue = float(today_payment_revenue['payment_revenue'] or 0)
+            today_revenue_data = {'revenue': today_revenue}
+            print(f"🔍 [REVENUE DEBUG] Final today_revenue: {today_revenue}")
+        else:
+            # Get cash/card/upi bills created today (these count as immediate revenue)
+            # EXCLUDE cheque bills that are not yet cleared
+            today_cash_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(total_amount), 0) as cash_revenue
+                FROM bills 
+                WHERE DATE(created_at) = ? 
+                AND (is_credit = 0 OR payment_status = 'paid')
+                AND payment_status != 'cheque_deposited'
+                {user_filter}
+            ''', [today] + user_params).fetchone()
+            
+            # Get ALL payments processed today (including credit payments for old bills)
+            # EXCLUDE payments from bills with cheque_deposited status (not yet cleared)
+            payment_user_filter = ""
+            if user_id:
+                payment_user_filter = "AND b.business_owner_id = ?"
+            
+            today_payment_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as payment_revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE DATE(p.processed_at) = ?
+                AND b.payment_status != 'cheque_deposited'
+                {payment_user_filter}
+            ''', [today] + ([user_id] if user_id else [])).fetchone()
+            
+            # Use ONLY payment-based revenue to avoid double-counting
+            # Cash bills created today will be counted when their payments are processed
+            today_revenue = float(today_payment_revenue['payment_revenue'] or 0)
+            today_revenue_data = {'revenue': today_revenue}
+        
+        # Revenue is already calculated above - no need for additional credit payments logic
+        today_revenue = float(today_revenue_data['revenue'] or 0)
+        
+        print(f"💰 [DASHBOARD REVENUE] Today's revenue breakdown:")
+        print(f"   User ID: {user_id}")
+        print(f"   Today's date: {today}")
+        print(f"   TOTAL Revenue (payments processed today): ₹{today_revenue:.2f}")
+        print(f"=" * 80)
         
         # Today's Receivable (unpaid credit balance) - includes partial payments
-        today_receivable_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(credit_balance), 0) as receivable
-            FROM bills 
-            WHERE DATE(created_at) = ? {user_filter}
-            AND is_credit = 1
-            AND credit_balance > 0
-        ''', [today] + user_params).fetchone()
+        if db_type == 'postgresql':
+            today_receivable_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(credit_balance), 0) as receivable
+                FROM bills 
+                WHERE CAST(created_at AS DATE) = %s {user_filter}
+                AND is_credit = TRUE
+                AND credit_balance > 0
+            ''', [today] + user_params).fetchone()
+        else:
+            today_receivable_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(credit_balance), 0) as receivable
+                FROM bills 
+                WHERE DATE(created_at) = ? {user_filter}
+                AND is_credit = 1
+                AND credit_balance > 0
+            ''', [today] + user_params).fetchone()
         
         # 🔥 TOTAL Receivable (ALL pending credit bills - not just today)
-        total_receivable_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(credit_balance), 0) as total_receivable,
-                COUNT(*) as pending_bills
-            FROM bills 
-            WHERE is_credit = 1
-            AND credit_balance > 0 {user_filter}
-        ''', user_params).fetchone()
+        if db_type == 'postgresql':
+            total_receivable_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(credit_balance), 0) as total_receivable,
+                    COUNT(*) as pending_bills
+                FROM bills 
+                WHERE is_credit = TRUE
+                AND credit_balance > 0 {user_filter}
+            ''', user_params).fetchone()
+        else:
+            total_receivable_data = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(credit_balance), 0) as total_receivable,
+                    COUNT(*) as pending_bills
+                FROM bills 
+                WHERE is_credit = 1
+                AND credit_balance > 0 {user_filter}
+            ''', user_params).fetchone()
         
         
         # Yesterday's Sales for comparison
@@ -74,17 +330,17 @@ class RetailService:
             WHERE DATE(created_at) = ? {user_filter}
         ''', [yesterday] + user_params).fetchone()
         
-        # Yesterday's Revenue for comparison
-        yesterday_revenue_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(CASE 
-                    WHEN is_credit = 0 OR payment_status = 'paid' THEN total_amount
-                    WHEN is_credit = 1 AND payment_status != 'paid' THEN credit_paid_amount
-                    ELSE 0
-                END), 0) as revenue
-            FROM bills 
-            WHERE DATE(created_at) = ? {user_filter}
-        ''', [yesterday] + user_params).fetchone()
+        # Yesterday's Revenue for comparison (payments processed yesterday)
+        # EXCLUDE payments from bills with cheque_deposited status
+        yesterday_payment_revenue = cursor.execute(f'''
+            SELECT COALESCE(SUM(p.amount), 0) as revenue
+            FROM payments p
+            JOIN bills b ON p.bill_id = b.id
+            WHERE DATE(p.processed_at) = ?
+            AND b.payment_status != 'cheque_deposited'
+            {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+        ''', [yesterday] + ([user_id] if user_id else [])).fetchone()
+        yesterday_revenue_data = {'revenue': yesterday_payment_revenue['revenue'] if yesterday_payment_revenue else 0}
         
         # Yesterday's orders for comparison
         yesterday_orders = cursor.execute(f'''
@@ -93,30 +349,110 @@ class RetailService:
             WHERE DATE(created_at) = ? {user_filter}
         ''', [yesterday] + user_params).fetchone()
         
-        # Today's Cost & Profit (from paid revenue only - proportional for partial payments)
-        today_profit_data = cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(
-                    CASE 
-                        WHEN b.is_credit = 0 OR b.payment_status = 'paid' THEN bi.total_price
-                        WHEN b.is_credit = 1 AND b.payment_status = 'partial' AND b.total_amount > 0 THEN 
-                            (bi.total_price * b.credit_paid_amount / b.total_amount)
-                        ELSE 0
-                    END
-                ), 0) as total_sales,
-                COALESCE(SUM(
-                    CASE 
-                        WHEN b.is_credit = 0 OR b.payment_status = 'paid' THEN bi.quantity * COALESCE(p.cost, 0)
-                        WHEN b.is_credit = 1 AND b.payment_status = 'partial' AND b.total_amount > 0 THEN 
-                            (bi.quantity * COALESCE(p.cost, 0) * b.credit_paid_amount / b.total_amount)
-                        ELSE 0
-                    END
-                ), 0) as total_cost
-            FROM bill_items bi
-            LEFT JOIN products p ON bi.product_id = p.id
-            JOIN bills b ON bi.bill_id = b.id
-            WHERE DATE(b.created_at) = ? {user_filter}
-        ''', [today] + user_params).fetchone()
+        # Today's Cost & Profit (based on ACTUAL PAYMENTS received today)
+        # EXCLUDES: Cheque payments that are not yet cleared
+        if db_type == 'postgresql':
+            # Get profit from cash/card/upi bills created today (exclude uncashed cheques)
+            today_cash_profit = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(bi.total_price), 0) as total_sales,
+                    COALESCE(SUM(bi.quantity * COALESCE(p.cost, 0)), 0) as total_cost
+                FROM bill_items bi
+                LEFT JOIN products p ON bi.product_id = p.id
+                JOIN bills b ON bi.bill_id = b.id
+                WHERE CAST(b.created_at AS DATE) = %s 
+                AND (b.is_credit = FALSE OR b.payment_status = 'paid')
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter}
+            ''', [today] + user_params).fetchone()
+            
+            # Get profit from ALL payments processed today (including credit payments)
+            # EXCLUDE payments from bills with cheque_deposited status
+            payment_profit_user_filter = ""
+            if user_id:
+                payment_profit_user_filter = "AND b.business_owner_id = %s"
+            
+            today_payment_profit = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN b.total_amount > 0 THEN 
+                                (bi.total_price * p.amount / b.total_amount)
+                            ELSE 0
+                        END
+                    ), 0) as total_sales,
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN b.total_amount > 0 THEN 
+                                (bi.quantity * COALESCE(pr.cost, 0) * p.amount / b.total_amount)
+                            ELSE 0
+                        END
+                    ), 0) as total_cost
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                JOIN bill_items bi ON b.id = bi.bill_id
+                LEFT JOIN products pr ON bi.product_id = pr.id
+                WHERE CAST(p.processed_at AS DATE) = %s
+                AND b.payment_status != 'cheque_deposited'
+                {payment_profit_user_filter}
+            ''', [today] + ([user_id] if user_id else [])).fetchone()
+            
+            # Combine both sources
+            today_profit_data = {
+                'total_sales': float(today_cash_profit['total_sales'] or 0) + float(today_payment_profit['total_sales'] or 0),
+                'total_cost': float(today_cash_profit['total_cost'] or 0) + float(today_payment_profit['total_cost'] or 0)
+            }
+        else:
+            # Get profit from cash/card/upi bills created today (exclude uncashed cheques)
+            today_cash_profit = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(bi.total_price), 0) as total_sales,
+                    COALESCE(SUM(bi.quantity * COALESCE(p.cost, 0)), 0) as total_cost
+                FROM bill_items bi
+                LEFT JOIN products p ON bi.product_id = p.id
+                JOIN bills b ON bi.bill_id = b.id
+                WHERE DATE(b.created_at) = ? 
+                AND (b.is_credit = 0 OR b.payment_status = 'paid')
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter}
+            ''', [today] + user_params).fetchone()
+            
+            # Get profit from ALL payments processed today (including credit payments)
+            # EXCLUDE payments from bills with cheque_deposited status
+            payment_profit_user_filter = ""
+            if user_id:
+                payment_profit_user_filter = "AND b.business_owner_id = ?"
+            
+            today_payment_profit = cursor.execute(f'''
+                SELECT 
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN b.total_amount > 0 THEN 
+                                (bi.total_price * p.amount / b.total_amount)
+                            ELSE 0
+                        END
+                    ), 0) as total_sales,
+                    COALESCE(SUM(
+                        CASE 
+                            WHEN b.total_amount > 0 THEN 
+                                (bi.quantity * COALESCE(pr.cost, 0) * p.amount / b.total_amount)
+                            ELSE 0
+                        END
+                    ), 0) as total_cost
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                JOIN bill_items bi ON b.id = bi.bill_id
+                LEFT JOIN products pr ON bi.product_id = pr.id
+                WHERE DATE(p.processed_at) = ?
+                AND b.payment_status != 'cheque_deposited'
+                {payment_profit_user_filter}
+            ''', [today] + ([user_id] if user_id else [])).fetchone()
+            
+            # Combine both sources
+            today_profit_data = {
+                'total_sales': float(today_cash_profit['total_sales'] or 0) + float(today_payment_profit['total_sales'] or 0),
+                'total_cost': float(today_cash_profit['total_cost'] or 0) + float(today_payment_profit['total_cost'] or 0)
+            }
         
         # Receivable Profit (profit from unpaid portion - includes partial payments)
         today_receivable_profit_data = cursor.execute(f'''
@@ -172,17 +508,51 @@ class RetailService:
         ''', user_params).fetchone()
         
         
-        # Yesterday's Cost & Profit for comparison
-        yesterday_profit_data = cursor.execute(f'''
+        # Yesterday's Cost & Profit for comparison (based on payments processed yesterday)
+        # EXCLUDE payments from bills with cheque_deposited status
+        yesterday_payment_profit = cursor.execute(f'''
+            SELECT 
+                COALESCE(SUM(
+                    CASE 
+                        WHEN b.total_amount > 0 THEN 
+                            (bi.total_price * p.amount / b.total_amount)
+                        ELSE 0
+                    END
+                ), 0) as total_sales,
+                COALESCE(SUM(
+                    CASE 
+                        WHEN b.total_amount > 0 THEN 
+                            (bi.quantity * COALESCE(pr.cost, 0) * p.amount / b.total_amount)
+                        ELSE 0
+                    END
+                ), 0) as total_cost
+            FROM payments p
+            JOIN bills b ON p.bill_id = b.id
+            JOIN bill_items bi ON b.id = bi.bill_id
+            LEFT JOIN products pr ON bi.product_id = pr.id
+            WHERE DATE(p.processed_at) = ?
+            AND b.payment_status != 'cheque_deposited'
+            {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+        ''', [yesterday] + ([user_id] if user_id else [])).fetchone()
+        
+        # Also get profit from cash/card/upi bills created yesterday (exclude uncashed cheques)
+        yesterday_cash_profit = cursor.execute(f'''
             SELECT 
                 COALESCE(SUM(bi.total_price), 0) as total_sales,
                 COALESCE(SUM(bi.quantity * COALESCE(p.cost, 0)), 0) as total_cost
             FROM bill_items bi
             LEFT JOIN products p ON bi.product_id = p.id
             JOIN bills b ON bi.bill_id = b.id
-            WHERE DATE(b.created_at) = ? {user_filter}
+            WHERE DATE(b.created_at) = ? 
             AND (b.is_credit = 0 OR b.payment_status = 'paid')
+            AND b.payment_status != 'cheque_deposited'
+            {user_filter}
         ''', [yesterday] + user_params).fetchone()
+        
+        yesterday_profit_data = {
+            'total_sales': float(yesterday_cash_profit['total_sales'] or 0) + float(yesterday_payment_profit['total_sales'] or 0),
+            'total_cost': float(yesterday_cash_profit['total_cost'] or 0) + float(yesterday_payment_profit['total_cost'] or 0)
+        }
         
         total_sales = float(today_profit_data['total_sales'])
         total_cost = float(today_profit_data['total_cost'])
@@ -206,7 +576,7 @@ class RetailService:
         # Calculate percentage changes
         today_sales_value = float(today_sales_data['total_sales'])
         yesterday_sales_value = float(yesterday_sales_data['total_sales'])
-        today_revenue_value = float(today_revenue_data['revenue'])
+        today_revenue_value = today_revenue  # Use the combined revenue
         yesterday_revenue_value = float(yesterday_revenue_data['revenue'])
         today_receivable_value = float(today_receivable_data['receivable'])
         total_receivable_value = float(total_receivable_data['total_receivable'])
@@ -298,10 +668,10 @@ class RetailService:
                 b.total_amount,
                 b.created_at,
                 COALESCE(c.name, 'Walk-in Customer') as customer_name,
-                strftime('%H:%M', b.created_at) as time
+                TO_CHAR(b.created_at, 'HH24:MI') as time
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
-            WHERE DATE(b.created_at) = ? {user_filter}
+            WHERE CAST(b.created_at AS DATE) = ? {user_filter}
             ORDER BY b.created_at DESC
             LIMIT 10
         ''', [today] + user_params).fetchall()
@@ -320,19 +690,45 @@ class RetailService:
             LIMIT 5
         ''', [today] + user_params).fetchall()
         
-        # This Week's Revenue
-        week_revenue = cursor.execute(f'''
-            SELECT COALESCE(SUM(total_amount), 0) as revenue
-            FROM bills 
-            WHERE DATE(created_at) >= DATE('now', 'weekday 0', '-6 days') {user_filter}
-        ''', user_params).fetchone()['revenue']
+        # This Week's Revenue (based on actual payments, excluding uncashed cheques)
+        if db_type == 'postgresql':
+            week_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE CAST(p.processed_at AS DATE) >= CURRENT_DATE - EXTRACT(DOW FROM CURRENT_DATE)::INTEGER
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+            ''', ([user_id] if user_id else [])).fetchone()['revenue']
+        else:
+            week_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE DATE(p.processed_at) >= DATE('now', 'weekday 0', '-7 days')
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+            ''', ([user_id] if user_id else [])).fetchone()['revenue']
         
-        # This Month's Revenue
-        month_revenue = cursor.execute(f'''
-            SELECT COALESCE(SUM(total_amount), 0) as revenue
-            FROM bills 
-            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now') {user_filter}
-        ''', user_params).fetchone()['revenue']
+        # This Month's Revenue (based on actual payments, excluding uncashed cheques)
+        if db_type == 'postgresql':
+            month_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE TO_CHAR(p.processed_at, 'YYYY-MM') = TO_CHAR(CURRENT_DATE, 'YYYY-MM')
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+            ''', ([user_id] if user_id else [])).fetchone()['revenue']
+        else:
+            month_revenue = cursor.execute(f'''
+                SELECT COALESCE(SUM(p.amount), 0) as revenue
+                FROM payments p
+                JOIN bills b ON p.bill_id = b.id
+                WHERE strftime('%Y-%m', p.processed_at) = strftime('%Y-%m', 'now')
+                AND b.payment_status != 'cheque_deposited'
+                {user_filter.replace("business_owner_id", "b.business_owner_id") if user_filter else ""}
+            ''', ([user_id] if user_id else [])).fetchone()['revenue']
         
         conn.close()
         

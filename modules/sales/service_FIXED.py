@@ -63,8 +63,12 @@ class SalesService:
         # Use appropriate string aggregation function
         if db_type == 'postgresql':
             concat_func = "STRING_AGG(bi.product_name, ', ')"
+            date_func = "CAST(b.created_at AS DATE)"
+            time_func = "CAST(b.created_at AS TIME)"
         else:
             concat_func = "GROUP_CONCAT(bi.product_name, ', ')"
+            date_func = "date(b.created_at)"
+            time_func = "strftime('%H:%M:%S', b.created_at)"
         
         base_query = f"""
             SELECT 
@@ -83,8 +87,8 @@ class SalesService:
                 b.is_credit,
                 b.credit_balance,
                 b.credit_paid_amount,
-                CAST(b.created_at AS DATE) as sale_date,
-                CAST(b.created_at AS TIME) as sale_time,
+                {date_func} as sale_date,
+                {time_func} as sale_time,
                 b.created_at,
                 b.business_type,
                 b.status,

@@ -18,7 +18,7 @@ class AuthService:
         
         try:
             # First check users table (includes BizPulse admin users)
-            user = conn.execute("SELECT id, first_name, last_name, email, business_name, business_type, password_hash, is_active, is_admin FROM users WHERE email = ? AND is_active = 1", (login_id,)).fetchone()
+            user = conn.execute("SELECT id, email, business_name, business_type, password_hash, is_active FROM users WHERE email = ? AND is_active = 1", (login_id,)).fetchone()
             
             if user and hash_password(password) == user['password_hash']:
                 # Determine if this is a BizPulse admin user
@@ -32,15 +32,17 @@ class AuthService:
                 
                 # Check admin status from multiple sources
                 is_bizpulse_admin = (
-                    user['is_admin'] == 1 or  # Database flag
                     user['email'].lower() in bizpulse_emails or  # Email whitelist
                     '@bizpulse.com' in user['email'].lower()  # Domain check
                 )
                 
+                # Extract name from email or use business name
+                user_name = user['business_name'] or user['email'].split('@')[0]
+                
                 session_data = {
                     'user_id': user['id'],
                     'user_type': 'admin' if is_bizpulse_admin else 'client',
-                    'user_name': f"{user['first_name']} {user['last_name']}",
+                    'user_name': user_name,
                     'email': user['email'],
                     'username': user['email'],  # Use email as username for BizPulse check
                     'business_name': user['business_name'],
@@ -60,7 +62,7 @@ class AuthService:
                     'session_data': session_data,
                     'user': {
                         "id": user['id'],
-                        "name": f"{user['first_name']} {user['last_name']}",
+                        "name": user_name,
                         "email": user['email'],
                         "username": user['email'],
                         "type": 'admin' if is_bizpulse_admin else 'client',
@@ -205,8 +207,14 @@ class AuthService:
                     }
                 }
             
-            # Check client users (employees)
-            client_user = conn.execute("SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1", (login_id, login_id)).fetchone()
+            # Check client users (employees) - wrap in try-except for missing table
+            client_user = None
+            try:
+                client_user = conn.execute("SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1", (login_id, login_id)).fetchone()
+            except Exception as e:
+                # Table doesn't exist or query failed, skip
+                logger.debug(f"client_users table check skipped: {e}")
+                client_user = None
             
             if client_user and hash_password(password) == client_user['password_hash']:
                 session_data = {
@@ -345,7 +353,7 @@ class AuthService:
             username = None
             
             # Check in users table first
-            user = conn.execute("SELECT id, email, first_name, last_name FROM users WHERE (email = ? OR email = ?) AND is_active = 1", (email_or_username, email_or_username)).fetchone()
+            user = conn.execute("SELECT id, email, business_name FROM users WHERE email = ? AND is_active = 1", (email_or_username,)).fetchone()
             
             if user:
                 user_found = user

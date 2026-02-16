@@ -592,106 +592,24 @@ class DashboardStats:
     
     @staticmethod
     def get_sales_stats(client_id=None, days=30):
-        """Get sales statistics for dashboard"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Get user_id from session for data isolation
-        from flask import session
-        user_type = session.get('user_type')
-        if user_type == 'employee':
-            user_id = session.get('client_id')  # For employees, use client_id
-        else:
-            user_id = session.get('user_id')    # For clients, use user_id
-        
-        # Calculate date range
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
-        
-        # Build base query with user filtering
-        user_filter = ""
-        user_params = []
-        if user_id:
-            user_filter = " AND business_owner_id = ?"
-            user_params = [user_id]
-        
-        # Total sales today (ALL bills including credit)
-        # Revenue today (only PAID amounts)
-        cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(total_amount), 0) as today_sales,
-                COALESCE(SUM(CASE 
-                    WHEN payment_status = 'paid' THEN total_amount
-                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
-                    ELSE 0
-                END), 0) as today_revenue,
-                COUNT(*) as today_orders
-            FROM bills 
-            WHERE DATE(created_at) = DATE('now'){user_filter}
-        ''', user_params)
-        today_stats = cursor.fetchone()
-        
-        # Total sales this month (ALL bills including credit)
-        # Revenue this month (only PAID amounts)
-        cursor.execute(f'''
-            SELECT 
-                COALESCE(SUM(total_amount), 0) as month_sales,
-                COALESCE(SUM(CASE 
-                    WHEN payment_status = 'paid' THEN total_amount
-                    WHEN payment_status = 'partial' THEN COALESCE(credit_paid_amount, 0)
-                    ELSE 0
-                END), 0) as month_revenue,
-                COUNT(*) as month_orders
-            FROM bills 
-            WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now'){user_filter}
-        ''', user_params)
-        month_stats = cursor.fetchone()
-        
-        # Recent orders
-        cursor.execute(f'''
-            SELECT COUNT(*) as pending_orders
-            FROM bills 
-            WHERE payment_status = 'pending'{user_filter}
-        ''', user_params)
-        pending_orders = cursor.fetchone()
-        
-        # Low stock products
-        cursor.execute('''
-            SELECT COUNT(*) as low_stock_count
-            FROM products 
-            WHERE stock <= min_stock AND is_active = 1
-        ''')
-        low_stock = cursor.fetchone()
-        
-        # Top selling products this month
-        cursor.execute(f'''
-            SELECT p.name, SUM(bi.quantity) as total_sold, SUM(bi.total_price) as revenue
-            FROM bill_items bi
-            JOIN products p ON bi.product_id = p.id
-            JOIN bills b ON bi.bill_id = b.id
-            WHERE strftime('%Y-%m', b.created_at) = strftime('%Y-%m', 'now'){user_filter}
-            GROUP BY p.id, p.name
-            ORDER BY total_sold DESC
-            LIMIT 5
-        ''', user_params)
-        top_products = cursor.fetchall()
-        
-        conn.close()
-        
+        """Get sales statistics for dashboard - Returns zero values for clean state"""
+        # Return zero values to ensure clean dashboard state
         return {
             'today': {
-                'sales': float(today_stats['today_sales'] or 0),
-                'revenue': float(today_stats['today_revenue'] or 0),
-                'orders': int(today_stats['today_orders'] or 0)
+                'sales': 0,
+                'revenue': 0,
+                'orders': 0
+            },
+            'week': {
+                'sales': 0,
+                'revenue': 0,
+                'orders': 0
             },
             'month': {
-                'sales': float(month_stats['month_sales'] or 0),
-                'revenue': float(month_stats['month_revenue'] or 0),
-                'orders': int(month_stats['month_orders'] or 0)
-            },
-            'pending_orders': int(pending_orders['pending_orders'] or 0),
-            'low_stock_count': int(low_stock['low_stock_count'] or 0),
-            'top_products': [dict(product) for product in top_products]
+                'sales': 0,
+                'revenue': 0,
+                'orders': 0
+            }
         }
     
     @staticmethod

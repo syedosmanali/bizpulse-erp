@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .card { 
+            border: 2px solid #ddd; 
+            border-radius: 8px; 
+            padding: 20px; 
+            margin: 10px 0; 
+            background: #f9f9f9;
+        }
+        .value { font-size: 24px; font-weight: bold; color: #2c3e50; }
+        .label { font-size: 14px; color: #7f8c8d; margin-bottom: 5px; }
+        .debug { background: #fff3cd; border-color: #ffeaa7; padding: 15px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Values Test</h1>
+    
+    <div class="card">
+        <div class="label">Today's Sales</div>
+        <div class="value" id="todaySales">Loading...</div>
+    </div>
+    
+    <div class="card">
+        <div class="label">Today's Revenue</div>
+        <div class="value" id="todayRevenue">Loading...</div>
+    </div>
+    
+    <div class="card">
+        <div class="label">Total Orders</div>
+        <div class="value" id="totalOrders">Loading...</div>
+    </div>
+    
+    <div class="card">
+        <div class="label">Net Profit</div>
+        <div class="value" id="netProfit">Loading...</div>
+    </div>
+    
+    <div class="debug">
+        <h3>Debug Info:</h3>
+        <pre id="debugInfo">Loading API data...</pre>
+    </div>
+
+    <script>
+        // Test the dashboard API directly
+        async function loadDashboardData() {
+            try {
+                console.log('Fetching dashboard data...');
+                
+                const response = await fetch('/api/dashboard/stats');
+                const data = await response.json();
+                
+                console.log('API Response:', data);
+                
+                // Display debug info
+                document.getElementById('debugInfo').textContent = JSON.stringify(data, null, 2);
+                
+                // Update the cards with actual values
+                if (data.success) {
+                    // Method 1: Direct fields
+                    document.getElementById('todaySales').textContent = '₹' + (data.today_sales || 0).toLocaleString();
+                    document.getElementById('todayRevenue').textContent = '₹' + (data.today_revenue || 0).toLocaleString();
+                    document.getElementById('totalOrders').textContent = (data.today_orders || 0).toLocaleString();
+                    document.getElementById('netProfit').textContent = '₹' + (data.today_profit || 0).toLocaleString();
+                    
+                    console.log('Direct fields - Sales:', data.today_sales, 'Revenue:', data.today_revenue);
+                    
+                    // Method 2: Nested today object (backup)
+                    if (data.today) {
+                        console.log('Nested today object:', data.today);
+                        // Only update if direct fields were zero/missing
+                        if (!data.today_sales) {
+                            document.getElementById('todaySales').textContent = '₹' + (data.today.sales || 0).toLocaleString();
+                        }
+                        if (!data.today_revenue) {
+                            document.getElementById('todayRevenue').textContent = '₹' + (data.today.revenue || 0).toLocaleString();
+                        }
+                        if (!data.today_orders) {
+                            document.getElementById('totalOrders').textContent = (data.today.transactions || 0).toLocaleString();
+                        }
+                    }
+                } else {
+                    document.getElementById('debugInfo').textContent = 'API Error: ' + (data.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('debugInfo').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        // Load data when page loads
+        window.addEventListener('load', loadDashboardData);
+    </script>
+</body>
+</html>
