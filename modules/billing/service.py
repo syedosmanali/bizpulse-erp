@@ -3,7 +3,7 @@ Billing service
 UPDATED to use new transaction-based stock system
 """
 
-from modules.shared.database import get_db_connection, generate_id
+from modules.shared.database import get_db_connection, generate_id, get_db_type
 from datetime import datetime
 from modules.dashboard.models import ActivityTracker, log_sale_activity, log_order_activity
 
@@ -152,6 +152,8 @@ class BillingService:
                 subtotal, tax_amount, discount_amount, gst_rate, total_amount,
                 bill_status, current_time
             ))
+            
+            print(f"✅ [BILLING SERVICE] Bill record inserted: {bill_number}")
             
             # ============================================================================
             # OPTIMIZED: Batch prepare all inserts
