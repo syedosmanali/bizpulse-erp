@@ -3,7 +3,7 @@ Invoice service - Handle all invoice data and analytics
 Invoices are the source of truth - they read from bills table
 """
 
-from modules.shared.database import get_db_connection, generate_id
+from modules.shared.database import get_db_connection, generate_id, get_db_type
 from datetime import datetime, timedelta
 
 class InvoiceService:
