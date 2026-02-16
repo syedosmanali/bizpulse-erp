@@ -211,17 +211,22 @@ class InvoiceService:
     def get_invoice_by_id(self, invoice_id, user_id=None):
         """Get invoice details by ID - Filtered by user"""
         conn = get_db_connection()
+        cursor = conn.cursor()
+        db_type = get_db_type()
         
         try:
             # Get bill details with user filtering
-            query = '''
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            
+            query = f'''
                 SELECT b.*, 
                        COALESCE(b.customer_name, c.name, 'Walk-in Customer') as customer_name, 
-                       c.phone as customer_phone, 
-                       c.address as customer_address
+                       COALESCE(b.customer_phone, c.phone) as customer_phone, 
+                       c.address as customer_address,
+                       c.email as customer_email
                 FROM bills b
                 LEFT JOIN customers c ON b.customer_id = c.id
-                WHERE b.id = ?
+                WHERE b.id = {placeholder}
             '''
             
             params = [invoice_id]
@@ -229,23 +234,26 @@ class InvoiceService:
             # 🔥 FLEXIBLE DATA ISOLATION - Show user's data + unassigned data (for migration)
             # TEMPORARILY DISABLED FOR TESTING
             # if user_id:
-            #     query += " AND (b.business_owner_id = ? OR b.business_owner_id IS NULL)"
+            #     query += f" AND (b.business_owner_id = {placeholder} OR b.business_owner_id IS NULL)"
             #     params.append(user_id)
             
-            bill = conn.execute(query, params).fetchone()
+            cursor.execute(query, params)
+            bill = cursor.fetchone()
             
             if not bill:
                 return {"success": False, "error": "Invoice not found"}
             
             # Get bill items
-            items = conn.execute('''
-                SELECT * FROM bill_items WHERE bill_id = ?
-            ''', (invoice_id,)).fetchall()
+            cursor.execute(f'''
+                SELECT * FROM bill_items WHERE bill_id = {placeholder}
+            ''', (invoice_id,))
+            items = cursor.fetchall()
             
             # Get payments
-            payments = conn.execute('''
-                SELECT * FROM payments WHERE bill_id = ?
-            ''', (invoice_id,)).fetchall()
+            cursor.execute(f'''
+                SELECT * FROM payments WHERE bill_id = {placeholder}
+            ''', (invoice_id,))
+            payments = cursor.fetchall()
             
             invoice = dict(bill)
             invoice["invoice_id"] = invoice["id"]
@@ -259,6 +267,9 @@ class InvoiceService:
             }
             
         except Exception as e:
+            import traceback
+            print(f"❌ Error in get_invoice_by_id: {e}")
+            traceback.print_exc()
             return {"success": False, "error": str(e)}
             
         finally:
@@ -273,29 +284,34 @@ class InvoiceService:
     def delete_invoice(self, invoice_id):
         """Delete invoice and revert all changes"""
         conn = get_db_connection()
+        cursor = conn.cursor()
+        db_type = get_db_type()
+        placeholder = '%s' if db_type == 'postgresql' else '?'
         
         try:
             # Check if bill exists
-            bill = conn.execute('SELECT * FROM bills WHERE id = ?', (invoice_id,)).fetchone()
+            cursor.execute(f'SELECT * FROM bills WHERE id = {placeholder}', (invoice_id,))
+            bill = cursor.fetchone()
             if not bill:
                 return {"success": False, "error": "Invoice not found"}
             
             # Get all bill items to revert stock
-            bill_items = conn.execute('''
-                SELECT product_id, quantity FROM bill_items WHERE bill_id = ?
-            ''', (invoice_id,)).fetchall()
+            cursor.execute(f'''
+                SELECT product_id, quantity FROM bill_items WHERE bill_id = {placeholder}
+            ''', (invoice_id,))
+            bill_items = cursor.fetchall()
             
             # Revert stock for each item
             for item in bill_items:
-                conn.execute('''
-                    UPDATE products SET stock = stock + ? WHERE id = ?
+                cursor.execute(f'''
+                    UPDATE products SET stock = stock + {placeholder} WHERE id = {placeholder}
                 ''', (item['quantity'], item['product_id']))
             
             # Delete related records in correct order
-            conn.execute('DELETE FROM payments WHERE bill_id = ?', (invoice_id,))
-            conn.execute('DELETE FROM sales WHERE bill_id = ?', (invoice_id,))
-            conn.execute('DELETE FROM bill_items WHERE bill_id = ?', (invoice_id,))
-            conn.execute('DELETE FROM bills WHERE id = ?', (invoice_id,))
+            cursor.execute(f'DELETE FROM payments WHERE bill_id = {placeholder}', (invoice_id,))
+            cursor.execute(f'DELETE FROM sales WHERE bill_id = {placeholder}', (invoice_id,))
+            cursor.execute(f'DELETE FROM bill_items WHERE bill_id = {placeholder}', (invoice_id,))
+            cursor.execute(f'DELETE FROM bills WHERE id = {placeholder}', (invoice_id,))
             
             conn.commit()
             

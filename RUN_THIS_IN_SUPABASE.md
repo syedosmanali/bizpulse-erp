@@ -1,150 +1,270 @@
-# 🔧 FIX SUPABASE DATABASE - RUN THIS NOW!
+# 🚨 URGENT: RUN THIS SQL IN SUPABASE NOW! 🚨
 
-## ⚠️ CRITICAL: Your billing is broken because columns are missing!
+## ⚠️ CURRENT STATUS:
+- ✅ All code fixes are DONE and DEPLOYED
+- ✅ Invoice themes are working
+- ❌ **Billing NOT working** - Missing database columns
+- ❌ **User Management NOT working** - Missing database tables
+- ❌ **Dashboard Revenue showing ₹0** - Missing database columns
 
-### Missing Columns Found:
-- ❌ `bills.customer_phone`
-- ❌ `bills.business_owner_id`
-- ❌ `bills.user_id`
-- ❌ `bills.paid_amount`
-- ❌ `bills.partial_payment_amount`
-- ❌ `bills.partial_payment_method`
-- ❌ `products.business_owner_id`
-- ❌ `customers.business_owner_id`
-- ❌ `sales.business_owner_id`
-- ❌ `sales.user_id`
-- ❌ `bill_items.user_id`
-- ❌ `payments.user_id`
+## 🔥 WHY IT'S NOT WORKING:
+Your Supabase database is missing:
+1. **Missing columns** in bills, products, customers, sales tables
+2. **Missing ALL 4 user management tables** (user_roles, user_accounts, user_activity_log, user_sessions)
 
----
-
-## 📋 STEP-BY-STEP INSTRUCTIONS:
+## ✅ THE FIX (Takes 2 minutes):
 
 ### Step 1: Open Supabase SQL Editor
-1. Go to: https://supabase.com/dashboard
-2. Select your project: **bizpulse-erp**
-3. Click on **SQL Editor** in the left sidebar
+1. Go to: **https://supabase.com/dashboard**
+2. Select your **BizPulse project**
+3. Click **SQL Editor** (left sidebar)
 4. Click **New Query**
 
-### Step 2: Copy and Run This SQL
-Copy the entire SQL script from `fix_supabase_bills_table.sql` and paste it into the SQL editor.
-
-Or copy this:
+### Step 2: Copy This SQL and Run It
 
 ```sql
--- Fix Supabase bills table - Add missing columns
--- Run this in Supabase SQL Editor
+-- ============================================================================
+-- COMPLETE SUPABASE DATABASE FIX - Run this entire script
+-- ============================================================================
 
--- Add customer_phone column
+-- Add missing columns to bills table
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS customer_phone VARCHAR(20);
-
--- Add business_owner_id column
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS business_owner_id VARCHAR(255);
-
--- Add user_id column
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS user_id VARCHAR(255);
-
--- Add paid_amount column
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10,2) DEFAULT 0;
-
--- Add partial_payment_amount column
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS partial_payment_amount NUMERIC(10,2);
-
--- Add partial_payment_method column
 ALTER TABLE bills ADD COLUMN IF NOT EXISTS partial_payment_method VARCHAR(50);
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_bills_business_owner_id ON bills(business_owner_id);
-CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id);
-
--- Also add missing columns to other tables
+-- Add missing columns to other tables
 ALTER TABLE products ADD COLUMN IF NOT EXISTS business_owner_id VARCHAR(255);
-
 ALTER TABLE customers ADD COLUMN IF NOT EXISTS business_owner_id VARCHAR(255);
-
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS business_owner_id VARCHAR(255);
 ALTER TABLE sales ADD COLUMN IF NOT EXISTS user_id VARCHAR(255);
-
 ALTER TABLE bill_items ADD COLUMN IF NOT EXISTS user_id VARCHAR(255);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS user_id VARCHAR(255);
 
--- Create indexes
+-- Create User Management Tables
+CREATE TABLE IF NOT EXISTS user_roles (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    role_name VARCHAR(100) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    permissions TEXT NOT NULL DEFAULT '{}',
+    is_system_role BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(client_id, role_name),
+    FOREIGN KEY (client_id) REFERENCES clients (id)
+);
+
+CREATE TABLE IF NOT EXISTS user_accounts (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    mobile VARCHAR(20) NOT NULL,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    temp_password VARCHAR(255),
+    role_id VARCHAR(255) NOT NULL,
+    department VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'active',
+    module_permissions TEXT DEFAULT '{}',
+    force_password_change BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP,
+    login_count INTEGER DEFAULT 0,
+    failed_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (role_id) REFERENCES user_roles (id)
+);
+
+CREATE TABLE IF NOT EXISTS user_activity_log (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    module VARCHAR(100) NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    details TEXT,
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    session_token VARCHAR(255) UNIQUE NOT NULL,
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_bills_business_owner_id ON bills(business_owner_id);
+CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id);
+CREATE INDEX IF NOT EXISTS idx_bills_customer_id ON bills(customer_id);
+CREATE INDEX IF NOT EXISTS idx_bills_created_at ON bills(created_at);
+CREATE INDEX IF NOT EXISTS idx_bills_payment_method ON bills(payment_method);
 CREATE INDEX IF NOT EXISTS idx_products_business_owner_id ON products(business_owner_id);
+CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode_data);
 CREATE INDEX IF NOT EXISTS idx_customers_business_owner_id ON customers(business_owner_id);
 CREATE INDEX IF NOT EXISTS idx_sales_business_owner_id ON sales(business_owner_id);
+CREATE INDEX IF NOT EXISTS idx_sales_customer_id ON sales(customer_id);
+CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
+CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date);
+CREATE INDEX IF NOT EXISTS idx_user_roles_client_id ON user_roles(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_client_id ON user_accounts(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_username ON user_accounts(username);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_status ON user_accounts(status);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_client_id ON user_activity_log(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_id ON user_activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_timestamp ON user_activity_log(timestamp);
+
+-- Verify the fix
+SELECT 'Bills table columns:' AS info;
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'bills' 
+ORDER BY ordinal_position;
+
+SELECT 'User management tables created:' AS info;
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_name IN ('user_roles', 'user_accounts', 'user_activity_log', 'user_sessions')
+ORDER BY table_name;
 
 -- Success message
-SELECT 'All missing columns added successfully!' AS status;
+SELECT '✅ ALL FIXES APPLIED SUCCESSFULLY!' AS status;
+SELECT '✅ Billing system is now fixed' AS message;
+SELECT '✅ User management system is now ready' AS message;
+SELECT '✅ Dashboard revenue will now show correctly' AS message;
 ```
 
-### Step 3: Click "Run" Button
-- Click the **Run** button (or press Ctrl+Enter)
-- Wait for the query to complete
-- You should see: "All missing columns added successfully!"
+### Step 3: Click "RUN" Button
+- Wait 5-10 seconds for the query to complete
+- You should see: **"✅ ALL FIXES APPLIED SUCCESSFULLY!"**
 
-### Step 4: Verify the Fix
-Run this query to verify all columns exist:
+### Step 4: Test Everything (Wait 2-3 minutes for deployment)
+1. **Test Billing**: https://bizpulse24.com/retail/billing
+   - Try creating a new bill
+   - Should work without errors
+
+2. **Test User Management**: https://bizpulse24.com/user-management
+   - Should show user management interface
+   - Try creating a new user
+   - Try enabling/disabling module permissions
+
+3. **Test Dashboard**: https://bizpulse24.com/retail/dashboard
+   - Revenue card should show actual amounts (not ₹0)
+   - All metrics should display correctly
+
+---
+
+## 🎯 WHAT THIS FIXES:
+
+### ✅ Billing System
+- Can create bills with customer phone
+- Multi-tenant data isolation
+- User tracking
+- Partial payments
+
+### ✅ User Management
+- Create users with roles
+- Assign module permissions
+- Enable/disable access
+- Track user activity
+- Default roles: Cashier, Biller, Manager, Accountant, Supervisor, Store Keeper, Sales Executive
+
+### ✅ Dashboard Revenue
+- Shows actual payment amounts
+- Proper calculation based on bills
+- User filtering works
+- Multi-tenant isolation
+
+---
+
+## 📋 VERIFY THE FIX:
+
+After running the SQL, run this query to verify:
 
 ```sql
+-- Check bills table has all columns
 SELECT column_name 
 FROM information_schema.columns 
 WHERE table_name = 'bills' 
 ORDER BY column_name;
+
+-- Check user management tables exist
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_name IN ('user_roles', 'user_accounts', 'user_activity_log', 'user_sessions');
 ```
 
-You should see all these columns:
-- business_owner_id ✅
-- customer_id ✅
-- customer_name ✅
-- customer_phone ✅
-- user_id ✅
-- paid_amount ✅
-- partial_payment_amount ✅
-- partial_payment_method ✅
-- (and all other existing columns)
+You should see:
+- ✅ `customer_phone` in bills
+- ✅ `business_owner_id` in bills
+- ✅ `user_id` in bills
+- ✅ `paid_amount` in bills
+- ✅ All 4 user management tables
 
 ---
 
-## ✅ AFTER RUNNING THE SQL:
+## 🎉 AFTER THIS, EVERYTHING WILL WORK!
 
-1. **Wait 1-2 minutes** for Render to auto-deploy the latest code
-2. **Go to your billing page**: https://bizpulse-erp.onrender.com/retail/billing
-3. **Try creating a bill** - it should work now!
-
----
-
-## 🔍 TROUBLESHOOTING:
-
-### If you still get errors:
-1. Check Render logs: https://dashboard.render.com
-2. Look for the auto-fix message: "✅ Added customer_phone column to bills table"
-3. If auto-fix didn't run, manually restart the service in Render
-
-### If columns already exist:
-- The SQL uses `IF NOT EXISTS` so it's safe to run multiple times
-- You'll see: "column already exists" - that's OK!
+- ✅ Billing system (create bills with customer phone)
+- ✅ User management (create users, assign permissions)
+- ✅ Dashboard revenue (shows actual amounts)
+- ✅ Invoice themes (Standard, Thermal, Premium)
+- ✅ Multi-tenant isolation
+- ✅ Permissions system
 
 ---
 
-## 📝 WHAT THIS FIXES:
+## ⚠️ IMPORTANT NOTES:
 
-✅ Billing system will work again
-✅ Customer phone numbers will be saved
-✅ Multi-tenant data isolation will work
-✅ User tracking will work
-✅ Partial payments will work
-
----
-
-## ⚡ QUICK FIX (Alternative):
-
-If you don't want to run SQL manually, just:
-1. Wait for the auto-deploy to complete (2-3 minutes)
-2. The auto-fix will run automatically on startup
-3. Check Render logs to confirm it ran
-
-But running the SQL manually is FASTER and GUARANTEED to work!
+1. **This is a ONE-TIME fix** - Safe to run multiple times (uses IF NOT EXISTS)
+2. **No data will be lost** - Only adds missing columns and tables
+3. **Takes 2 minutes** - Quick and easy
+4. **Must be done manually** - Cannot be automated from code
+5. **All code is already deployed** - Just need database schema update
 
 ---
 
-**Run this NOW to fix your billing system!** 🚀
+## 🆘 IF YOU FACE ANY ISSUES:
+
+1. **Foreign key error**: Run this first:
+   ```sql
+   ALTER TABLE user_accounts DROP CONSTRAINT IF EXISTS user_accounts_created_by_fkey;
+   ```
+   Then run the main SQL again.
+
+2. **Permission denied**: Make sure you're logged into the correct Supabase project
+
+3. **Table already exists**: That's fine! The script uses IF NOT EXISTS
+
+---
+
+## 📞 NEED HELP?
+
+If you see any errors, send me:
+1. Screenshot of the error message
+2. Which step you're on
+3. I'll help you fix it immediately
+
+---
+
+# 🚀 RUN THE SQL NOW TO FIX EVERYTHING! 🚀

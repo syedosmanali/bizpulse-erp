@@ -261,7 +261,7 @@ def cms_settings():
     """CMS Settings Page"""
     return render_template('cms_settings.html')
 
-@app.route('/cms/hero')
+@app.route('/cms/hero')b
 @require_cms_auth
 def cms_hero():
     """CMS Hero Section Management"""
