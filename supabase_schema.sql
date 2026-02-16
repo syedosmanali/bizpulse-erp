@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS products (
     min_stock INTEGER DEFAULT 0,
     unit VARCHAR(50) DEFAULT 'piece',
     business_type VARCHAR(50) DEFAULT 'both',
+    business_owner_id VARCHAR(255),
     barcode_data VARCHAR(255) UNIQUE,
     barcode_image TEXT,
     is_active BOOLEAN DEFAULT TRUE,
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS customers (
     phone VARCHAR(20),
     email VARCHAR(255),
     address TEXT,
+    business_owner_id VARCHAR(255),
     credit_limit NUMERIC(10,2) DEFAULT 0,
     current_balance NUMERIC(10,2) DEFAULT 0,
     total_purchases NUMERIC(10,2) DEFAULT 0,
@@ -44,13 +46,19 @@ CREATE TABLE IF NOT EXISTS bills (
     bill_number VARCHAR(100) UNIQUE,
     customer_id VARCHAR(255),
     customer_name VARCHAR(255),
+    customer_phone VARCHAR(20),
     business_type VARCHAR(50),
+    business_owner_id VARCHAR(255),
+    user_id VARCHAR(255),
     subtotal NUMERIC(10,2),
     tax_amount NUMERIC(10,2),
     discount_amount NUMERIC(10,2) DEFAULT 0,
     total_amount NUMERIC(10,2),
     payment_status VARCHAR(50) DEFAULT 'paid',
     payment_method VARCHAR(50) DEFAULT 'cash',
+    paid_amount NUMERIC(10,2) DEFAULT 0,
+    partial_payment_amount NUMERIC(10,2),
+    partial_payment_method VARCHAR(50),
     is_credit BOOLEAN DEFAULT FALSE,
     credit_due_date DATE,
     credit_amount NUMERIC(10,2) DEFAULT 0,
@@ -74,6 +82,7 @@ CREATE TABLE IF NOT EXISTS bill_items (
     total_price NUMERIC(10,2),
     tax_rate NUMERIC(10,2) DEFAULT 18,
     tenant_id VARCHAR(255),
+    user_id VARCHAR(255),
     FOREIGN KEY (bill_id) REFERENCES bills (id),
     FOREIGN KEY (product_id) REFERENCES products (id)
 );
@@ -87,6 +96,7 @@ CREATE TABLE IF NOT EXISTS payments (
     reference VARCHAR(255),
     processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     tenant_id VARCHAR(255),
+    user_id VARCHAR(255),
     FOREIGN KEY (bill_id) REFERENCES bills (id)
 );
 
@@ -108,10 +118,12 @@ CREATE TABLE IF NOT EXISTS sales (
     payment_method VARCHAR(255),
     balance_due NUMERIC(10,2) DEFAULT 0,
     paid_amount NUMERIC(10,2) DEFAULT 0,
+    business_owner_id VARCHAR(255),
     sale_date DATE,
     sale_time TIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     tenant_id VARCHAR(255),
+    user_id VARCHAR(255),
     FOREIGN KEY (bill_id) REFERENCES bills (id),
     FOREIGN KEY (customer_id) REFERENCES customers (id),
     FOREIGN KEY (product_id) REFERENCES products (id)
@@ -316,12 +328,17 @@ CREATE TABLE IF NOT EXISTS product_categories (
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode_data);
+CREATE INDEX IF NOT EXISTS idx_products_business_owner_id ON products(business_owner_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at);
 CREATE INDEX IF NOT EXISTS idx_bills_customer_id ON bills(customer_id);
+CREATE INDEX IF NOT EXISTS idx_bills_business_owner_id ON bills(business_owner_id);
+CREATE INDEX IF NOT EXISTS idx_bills_user_id ON bills(user_id);
+CREATE INDEX IF NOT EXISTS idx_customers_business_owner_id ON customers(business_owner_id);
 CREATE INDEX IF NOT EXISTS idx_sales_customer_id ON sales(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
+CREATE INDEX IF NOT EXISTS idx_sales_business_owner_id ON sales(business_owner_id);
 
 -- Success message
 SELECT 'Database schema created successfully!' AS status;

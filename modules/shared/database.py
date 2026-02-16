@@ -839,6 +839,12 @@ def init_db():
         conn.rollback()
     
     try:
+        cursor.execute('ALTER TABLE bills ADD COLUMN customer_phone TEXT')
+        conn.commit()
+    except Exception:
+        conn.rollback()
+    
+    try:
         cursor.execute('ALTER TABLE bills ADD COLUMN gst_rate REAL DEFAULT 18')
         conn.commit()
     except Exception:
