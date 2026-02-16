@@ -514,6 +514,7 @@ def init_db():
             bill_number VARCHAR(100) UNIQUE,
             customer_id VARCHAR(255),
             customer_name VARCHAR(255),
+            customer_phone VARCHAR(20),
             business_type VARCHAR(50),
             business_owner_id VARCHAR(255),
             subtotal {get_sql_type('REAL', 'NUMERIC(10,2)')},

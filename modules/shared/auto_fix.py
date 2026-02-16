@@ -22,7 +22,9 @@ except ImportError:
 
 def auto_fix_database_on_startup():
     """
-    Automatically fix business_owner_id issue on Render deployment
+    Automatically fix database issues on Render deployment
+    - Adds business_owner_id column if missing
+    - Adds customer_phone column to bills table if missing
     Runs once on startup, safe to run multiple times
     """
     try:
@@ -35,13 +37,13 @@ def auto_fix_database_on_startup():
             print("DATABASE_URL not found, skipping auto-fix")
             return
         
-        logger.info("🔧 Running auto-fix for business_owner_id...")
+        logger.info("🔧 Running auto-fix for database...")
         
         conn = psycopg2.connect(DATABASE_URL, sslmode='require')
         conn.autocommit = False
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        # Check if fix is needed
+        # FIX 1: Check if business_owner_id exists
         cursor.execute("""
             SELECT column_name 
             FROM information_schema.columns 
@@ -63,6 +65,24 @@ def auto_fix_database_on_startup():
                     logger.debug(f"   Column may already exist in {table}: {e}")
             
             conn.commit()
+        
+        # FIX 2: Check if customer_phone exists in bills table
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'bills' AND column_name = 'customer_phone'
+        """)
+        
+        phone_column_exists = cursor.fetchone() is not None
+        
+        if not phone_column_exists:
+            logger.info("   Adding customer_phone column to bills table...")
+            try:
+                cursor.execute("ALTER TABLE bills ADD COLUMN customer_phone VARCHAR(20)")
+                conn.commit()
+                logger.info("   ✅ Added customer_phone column to bills table")
+            except Exception as e:
+                logger.debug(f"   customer_phone column may already exist: {e}")
         
         # Check if backfill is needed
         cursor.execute("SELECT COUNT(*) as count FROM bills WHERE business_owner_id IS NULL")
