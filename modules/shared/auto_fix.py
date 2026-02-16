@@ -84,6 +84,104 @@ def auto_fix_database_on_startup():
             except Exception as e:
                 logger.debug(f"   customer_phone column may already exist: {e}")
         
+        # FIX 3: Check if user management tables exist
+        cursor.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = 'user_roles'
+        """)
+        
+        user_tables_exist = cursor.fetchone() is not None
+        
+        if not user_tables_exist:
+            logger.info("   Creating user management tables...")
+            try:
+                # Create user_roles table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS user_roles (
+                        id VARCHAR(255) PRIMARY KEY,
+                        client_id VARCHAR(255) NOT NULL,
+                        role_name VARCHAR(100) NOT NULL,
+                        display_name VARCHAR(255) NOT NULL,
+                        permissions TEXT NOT NULL DEFAULT '{}',
+                        is_system_role BOOLEAN DEFAULT FALSE,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_by VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(client_id, role_name),
+                        FOREIGN KEY (client_id) REFERENCES clients (id)
+                    )
+                """)
+                
+                # Create user_accounts table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS user_accounts (
+                        id VARCHAR(255) PRIMARY KEY,
+                        client_id VARCHAR(255) NOT NULL,
+                        user_id VARCHAR(255) UNIQUE NOT NULL,
+                        full_name VARCHAR(255) NOT NULL,
+                        email VARCHAR(255),
+                        mobile VARCHAR(20) NOT NULL,
+                        username VARCHAR(255) UNIQUE NOT NULL,
+                        password_hash VARCHAR(255) NOT NULL,
+                        temp_password VARCHAR(255),
+                        role_id VARCHAR(255) NOT NULL,
+                        department VARCHAR(100),
+                        status VARCHAR(50) DEFAULT 'active',
+                        module_permissions TEXT DEFAULT '{}',
+                        force_password_change BOOLEAN DEFAULT TRUE,
+                        last_login TIMESTAMP,
+                        login_count INTEGER DEFAULT 0,
+                        failed_attempts INTEGER DEFAULT 0,
+                        locked_until TIMESTAMP,
+                        created_by VARCHAR(255) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (client_id) REFERENCES clients (id),
+                        FOREIGN KEY (role_id) REFERENCES user_roles (id)
+                    )
+                """)
+                
+                # Create user_activity_log table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS user_activity_log (
+                        id VARCHAR(255) PRIMARY KEY,
+                        client_id VARCHAR(255) NOT NULL,
+                        user_id VARCHAR(255) NOT NULL,
+                        module VARCHAR(100) NOT NULL,
+                        action VARCHAR(100) NOT NULL,
+                        details TEXT,
+                        ip_address VARCHAR(50),
+                        user_agent TEXT,
+                        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (client_id) REFERENCES clients (id),
+                        FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+                    )
+                """)
+                
+                # Create user_sessions table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS user_sessions (
+                        id VARCHAR(255) PRIMARY KEY,
+                        client_id VARCHAR(255) NOT NULL,
+                        user_id VARCHAR(255) NOT NULL,
+                        session_token VARCHAR(255) UNIQUE NOT NULL,
+                        ip_address VARCHAR(50),
+                        user_agent TEXT,
+                        expires_at TIMESTAMP NOT NULL,
+                        is_active BOOLEAN DEFAULT TRUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (client_id) REFERENCES clients (id),
+                        FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+                    )
+                """)
+                
+                conn.commit()
+                logger.info("   ✅ Created user management tables")
+            except Exception as e:
+                logger.debug(f"   User management tables may already exist: {e}")
+        
         # Check if backfill is needed
         cursor.execute("SELECT COUNT(*) as count FROM bills WHERE business_owner_id IS NULL")
         null_count = cursor.fetchone()['count']

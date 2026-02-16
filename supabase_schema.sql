@@ -342,3 +342,89 @@ CREATE INDEX IF NOT EXISTS idx_sales_business_owner_id ON sales(business_owner_i
 
 -- Success message
 SELECT 'Database schema created successfully!' AS status;
+
+-- ============================================================================
+-- USER MANAGEMENT TABLES
+-- ============================================================================
+
+-- User Roles table
+CREATE TABLE IF NOT EXISTS user_roles (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    role_name VARCHAR(100) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    permissions TEXT NOT NULL DEFAULT '{}',
+    is_system_role BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(client_id, role_name),
+    FOREIGN KEY (client_id) REFERENCES clients (id)
+);
+
+-- User Accounts table
+CREATE TABLE IF NOT EXISTS user_accounts (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) UNIQUE NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    mobile VARCHAR(20) NOT NULL,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    temp_password VARCHAR(255),
+    role_id VARCHAR(255) NOT NULL,
+    department VARCHAR(100),
+    status VARCHAR(50) DEFAULT 'active',
+    module_permissions TEXT DEFAULT '{}',
+    force_password_change BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP,
+    login_count INTEGER DEFAULT 0,
+    failed_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (role_id) REFERENCES user_roles (id)
+);
+
+-- User Activity Log table
+CREATE TABLE IF NOT EXISTS user_activity_log (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    module VARCHAR(100) NOT NULL,
+    action VARCHAR(100) NOT NULL,
+    details TEXT,
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+);
+
+-- User Sessions table
+CREATE TABLE IF NOT EXISTS user_sessions (
+    id VARCHAR(255) PRIMARY KEY,
+    client_id VARCHAR(255) NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    session_token VARCHAR(255) UNIQUE NOT NULL,
+    ip_address VARCHAR(50),
+    user_agent TEXT,
+    expires_at TIMESTAMP NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients (id),
+    FOREIGN KEY (user_id) REFERENCES user_accounts (id)
+);
+
+-- Additional indexes for user management
+CREATE INDEX IF NOT EXISTS idx_user_roles_client_id ON user_roles(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_client_id ON user_accounts(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_username ON user_accounts(username);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_status ON user_accounts(status);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_client_id ON user_activity_log(client_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_user_id ON user_activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_activity_log_timestamp ON user_activity_log(timestamp);
