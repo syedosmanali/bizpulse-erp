@@ -33,6 +33,11 @@ class AuthService:
                 }
                 
                 if hash_password(password) == user_dict['password_hash']:
+                    # Check if user is active
+                    if not user_dict.get('is_active', True):
+                        conn.close()
+                        return {'success': False, 'message': 'Account is inactive'}
+                        
                     # Determine if this is a BizPulse admin user
                     bizpulse_emails = [
                         'bizpulse.erp@gmail.com',
@@ -62,30 +67,42 @@ class AuthService:
                         'is_super_admin': is_bizpulse_admin
                 }
                 
+                # Update last login
+                try:
+                    cursor.execute(f"UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (user_dict['id'],))
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"Failed to update last login: {e}")
+                    # Continue anyway, this shouldn't prevent login
+                
                 conn.close()
                 
                 # Trigger sync on login
                 from modules.sync.utils import sync_on_login
-                sync_data = sync_on_login(user['id'])
+                try:
+                    sync_data = sync_on_login(user_dict['id'])
+                except Exception as e:
+                    logger.warning(f"Sync on login failed: {e}")
+                    # Continue anyway, sync shouldn't prevent login
                 
                 return {
                     'success': True,
                     'token': 'user-jwt-token',
                     'session_data': session_data,
                     'user': {
-                        "id": user['id'],
+                        "id": user_dict['id'],
                         "name": user_name,
-                        "email": user['email'],
-                        "username": user['email'],
+                        "email": user_dict['email'],
+                        "username": user_dict['email'],
                         "type": 'admin' if is_bizpulse_admin else 'client',
-                        "business_name": user['business_name'],
-                        "business_type": user['business_type'],
+                        "business_name": user_dict['business_name'],
+                        "business_type": user_dict['business_type'],
                         "is_super_admin": is_bizpulse_admin
                     }
                 }
             
             # Then check user_accounts table (new user management system)
-            user_account = conn.execute("""
+            user_account_query = """
                 SELECT ua.id, ua.client_id, ua.full_name, ua.username, ua.password_hash, 
                        ua.status, ua.force_password_change, c.company_name, r.display_name as role_name,
                        r.permissions, ua.temp_password
@@ -93,7 +110,11 @@ class AuthService:
                 LEFT JOIN clients c ON ua.client_id = c.id
                 LEFT JOIN user_roles r ON ua.role_id = r.id
                 WHERE ua.username = ? AND ua.status = 'active'
-            """, (login_id,)).fetchone()
+            """
+            # Convert placeholder for PostgreSQL
+            if db_type == 'postgresql':
+                user_account_query = user_account_query.replace('?', '%s')
+            user_account = conn.execute(user_account_query, (login_id,)).fetchone()
             
             if user_account:
                 # Check password - try both hashed and plain text
@@ -104,6 +125,11 @@ class AuthService:
                     password_match = True
                 
                 if password_match:
+                    # Check if user account is active
+                    if user_account['status'] != 'active':
+                        conn.close()
+                        return {'success': False, 'message': 'Account is inactive'}
+                        
                     # Parse permissions from JSON string if needed
                     permissions = user_account['permissions']
                     if isinstance(permissions, str):
@@ -128,12 +154,19 @@ class AuthService:
                     }
                     
                     # Update last login
-                    conn.execute("""
-                        UPDATE user_accounts 
-                        SET last_login = ?, login_count = login_count + 1 
-                        WHERE id = ?
-                    """, (datetime.now(), user_account['id']))
-                    conn.commit()
+                    try:
+                        last_login_query = """
+                            UPDATE user_accounts 
+                            SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 
+                            WHERE id = ?
+                        """
+                        if db_type == 'postgresql':
+                            last_login_query = last_login_query.replace('?', '%s')
+                        conn.execute(last_login_query, (user_account['id'],))
+                        conn.commit()
+                    except Exception as e:
+                        logger.warning(f"Failed to update last login for user account: {e}")
+                        # Continue anyway, this shouldn't prevent login
                     
                     conn.close()
                     return {
@@ -166,6 +199,11 @@ class AuthService:
                 }
                 
                 if hash_password(password) == client_dict['password_hash']:
+                    # Check if client is active
+                    if not client_dict.get('is_active', True):
+                        conn.close()
+                        return {'success': False, 'message': 'Account is inactive'}
+                        
                     session_data = {
                         'user_id': client_dict['id'],
                         'user_type': "client",
@@ -175,6 +213,14 @@ class AuthService:
                         'company_name': client_dict['company_name'],
                         'is_super_admin': False
                     }
+                    
+                    # Update last login
+                    try:
+                        cursor.execute(f"UPDATE clients SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (client_dict['id'],))
+                        conn.commit()
+                    except Exception as e:
+                        logger.warning(f"Failed to update last login for client: {e}")
+                        # Continue anyway, this shouldn't prevent login
                     
                     conn.close()
                     return {
@@ -194,9 +240,17 @@ class AuthService:
                     }
             
             # Finally check staff and employee tables
-            staff = conn.execute("SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1", (login_id, login_id)).fetchone()
+            staff_query = "SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1"
+            if db_type == 'postgresql':
+                staff_query = staff_query.replace('?', '%s')
+            staff = conn.execute(staff_query, (login_id, login_id)).fetchone()
             
             if staff and hash_password(password) == staff['password_hash']:
+                # Check if staff member is active
+                if not staff['is_active']:
+                    conn.close()
+                    return {'success': False, 'message': 'Staff account is inactive'}
+                    
                 session_data = {
                     'user_id': staff['id'],
                     'user_type': "staff",
@@ -207,6 +261,17 @@ class AuthService:
                     'staff_role': staff['role'],
                     'is_super_admin': False
                 }
+                
+                # Update last login
+                try:
+                    update_staff_query = "UPDATE staff SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
+                    if db_type == 'postgresql':
+                        update_staff_query = update_staff_query.replace('?', '%s')
+                    conn.execute(update_staff_query, (staff['id'],))
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"Failed to update last login for staff: {e}")
+                    # Continue anyway, this shouldn't prevent login
                 
                 conn.close()
                 return {
@@ -229,13 +294,21 @@ class AuthService:
             # Check client users (employees) - wrap in try-except for missing table
             client_user = None
             try:
-                client_user = conn.execute("SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1", (login_id, login_id)).fetchone()
+                client_user_query = "SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1"
+                if db_type == 'postgresql':
+                    client_user_query = client_user_query.replace('?', '%s')
+                client_user = conn.execute(client_user_query, (login_id, login_id)).fetchone()
             except Exception as e:
                 # Table doesn't exist or query failed, skip
                 logger.debug(f"client_users table check skipped: {e}")
                 client_user = None
             
             if client_user and hash_password(password) == client_user['password_hash']:
+                # Check if client user is active
+                if not client_user['is_active']:
+                    conn.close()
+                    return {'success': False, 'message': 'Employee account is inactive'}
+                    
                 session_data = {
                     'user_id': client_user['id'],
                     'user_type': "employee",
@@ -247,8 +320,15 @@ class AuthService:
                 }
                 
                 # Update last login
-                conn.execute("UPDATE client_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", (client_user['id'],))
-                conn.commit()
+                try:
+                    update_client_user_query = "UPDATE client_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
+                    if db_type == 'postgresql':
+                        update_client_user_query = update_client_user_query.replace('?', '%s')
+                    conn.execute(update_client_user_query, (client_user['id'],))
+                    conn.commit()
+                except Exception as e:
+                    logger.warning(f"Failed to update last login for client user: {e}")
+                    # Continue anyway, this shouldn't prevent login
                 
                 conn.close()
                 return {
@@ -281,8 +361,13 @@ class AuthService:
             return {'success': False, 'message': 'Invalid credentials'}
             
         except Exception as e:
-            conn.close()
-            raise e
+            logger.error(f"Authentication error: {e}")
+            try:
+                conn.close()
+            except:
+                pass
+            return {'success': False, 'message': f'Authentication error: {str(e)}'}
+
     
     def get_user_info(self, session):
         """Get current user information including role and profile data"""

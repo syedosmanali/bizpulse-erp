@@ -117,11 +117,15 @@ def get_db_connection():
     Get database connection - Enterprise-grade with SQLAlchemy
     Returns a wrapper that's compatible with existing code
     """
-    engine = get_engine()
-    raw_conn = engine.raw_connection()
-    
-    # Return wrapper for backward compatibility
-    return EnterpriseConnectionWrapper(raw_conn, get_db_type())
+    try:
+        engine = get_engine()
+        raw_conn = engine.raw_connection()
+        
+        # Return wrapper for backward compatibility
+        return EnterpriseConnectionWrapper(raw_conn, get_db_type())
+    except Exception as e:
+        logger.error(f"Failed to establish database connection: {e}")
+        raise
 
 
 class CursorWrapper:

@@ -147,18 +147,28 @@ def client_login():
                 'message': 'Username and password are required'
             }), 400
         
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         import hashlib
         
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Get database type to handle query differences
+        db_type = get_db_type()
+        
         # Try to find client by username or email
-        cursor.execute('''
-            SELECT id, company_name, username, contact_email, password_hash, is_active
-            FROM clients
-            WHERE username = ? OR contact_email = ?
-        ''', (username, username))
+        if db_type == 'postgresql':
+            cursor.execute('''
+                SELECT id, company_name, username, contact_email, password_hash, is_active
+                FROM clients
+                WHERE username = %s OR contact_email = %s
+            ''', (username, username))
+        else:
+            cursor.execute('''
+                SELECT id, company_name, username, contact_email, password_hash, is_active
+                FROM clients
+                WHERE username = ? OR contact_email = ?
+            ''', (username, username))
         
         client = cursor.fetchone()
         conn.close()
@@ -170,7 +180,16 @@ def client_login():
                 'message': 'Invalid username or password'
             }), 401
         
-        client_id, company_name, client_username, email, password_hash, is_active = client
+        # Handle both dict and tuple results
+        if hasattr(client, 'keys'):  # DictRow from PostgreSQL
+            client_id = client['id']
+            company_name = client['company_name']
+            client_username = client['username']
+            email = client['contact_email']
+            password_hash = client['password_hash']
+            is_active = client['is_active']
+        else:  # Tuple from SQLite
+            client_id, company_name, client_username, email, password_hash, is_active = client
         
         # Check if client is active
         if not is_active:
@@ -193,12 +212,22 @@ def client_login():
         # Update last login
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('''
-            UPDATE clients 
-            SET last_login = CURRENT_TIMESTAMP,
-                login_count = login_count + 1
-            WHERE id = ?
-        ''', (client_id,))
+        
+        if db_type == 'postgresql':
+            cursor.execute('''
+                UPDATE clients 
+                SET last_login = CURRENT_TIMESTAMP,
+                    login_count = COALESCE(login_count, 0) + 1
+                WHERE id = %s
+            ''', (client_id,))
+        else:
+            cursor.execute('''
+                UPDATE clients 
+                SET last_login = CURRENT_TIMESTAMP,
+                    login_count = COALESCE(login_count, 0) + 1
+                WHERE id = ?
+            ''', (client_id,))
+        
         conn.commit()
         conn.close()
         
