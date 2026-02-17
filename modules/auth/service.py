@@ -109,12 +109,10 @@ class AuthService:
                 FROM user_accounts ua
                 LEFT JOIN clients c ON ua.client_id = c.id
                 LEFT JOIN user_roles r ON ua.role_id = r.id
-                WHERE ua.username = ? AND ua.status = 'active'
+                WHERE ua.username = {placeholder} AND ua.status = 'active'
             """
-            # Convert placeholder for PostgreSQL
-            if db_type == 'postgresql':
-                user_account_query = user_account_query.replace('?', '%s')
-            user_account = conn.execute(user_account_query, (login_id,)).fetchone()
+            cursor.execute(user_account_query, (login_id,))
+            user_account = cursor.fetchone()
             
             if user_account:
                 # Check password - try both hashed and plain text
@@ -155,14 +153,12 @@ class AuthService:
                     
                     # Update last login
                     try:
-                        last_login_query = """
+                        last_login_query = f"""
                             UPDATE user_accounts 
                             SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 
-                            WHERE id = ?
+                            WHERE id = {placeholder}
                         """
-                        if db_type == 'postgresql':
-                            last_login_query = last_login_query.replace('?', '%s')
-                        conn.execute(last_login_query, (user_account['id'],))
+                        cursor.execute(last_login_query, (user_account['id'],))
                         conn.commit()
                     except Exception as e:
                         logger.warning(f"Failed to update last login for user account: {e}")
@@ -240,10 +236,9 @@ class AuthService:
                     }
             
             # Finally check staff and employee tables
-            staff_query = "SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1"
-            if db_type == 'postgresql':
-                staff_query = staff_query.replace('?', '%s')
-            staff = conn.execute(staff_query, (login_id, login_id)).fetchone()
+            staff_query = f"SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = {placeholder} OR s.username = {placeholder}) AND s.is_active = TRUE" if db_type == 'postgresql' else "SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1"
+            cursor.execute(staff_query, (login_id, login_id))
+            staff = cursor.fetchone()
             
             if staff and hash_password(password) == staff['password_hash']:
                 # Check if staff member is active
@@ -264,10 +259,8 @@ class AuthService:
                 
                 # Update last login
                 try:
-                    update_staff_query = "UPDATE staff SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
-                    if db_type == 'postgresql':
-                        update_staff_query = update_staff_query.replace('?', '%s')
-                    conn.execute(update_staff_query, (staff['id'],))
+                    update_staff_query = f"UPDATE staff SET last_login = CURRENT_TIMESTAMP WHERE id = {placeholder}"
+                    cursor.execute(update_staff_query, (staff['id'],))
                     conn.commit()
                 except Exception as e:
                     logger.warning(f"Failed to update last login for staff: {e}")
@@ -294,10 +287,9 @@ class AuthService:
             # Check client users (employees) - wrap in try-except for missing table
             client_user = None
             try:
-                client_user_query = "SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1"
-                if db_type == 'postgresql':
-                    client_user_query = client_user_query.replace('?', '%s')
-                client_user = conn.execute(client_user_query, (login_id, login_id)).fetchone()
+                client_user_query = f"SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = {placeholder} OR cu.username = {placeholder}) AND cu.is_active = TRUE" if db_type == 'postgresql' else "SELECT cu.id, cu.full_name, cu.email, cu.username, cu.password_hash, cu.is_active, cu.role, cu.client_id, c.company_name FROM client_users cu JOIN clients c ON cu.client_id = c.id WHERE (cu.email = ? OR cu.username = ?) AND cu.is_active = 1"
+                cursor.execute(client_user_query, (login_id, login_id))
+                client_user = cursor.fetchone()
             except Exception as e:
                 # Table doesn't exist or query failed, skip
                 logger.debug(f"client_users table check skipped: {e}")
@@ -321,10 +313,8 @@ class AuthService:
                 
                 # Update last login
                 try:
-                    update_client_user_query = "UPDATE client_users SET last_login = CURRENT_TIMESTAMP WHERE id = ?"
-                    if db_type == 'postgresql':
-                        update_client_user_query = update_client_user_query.replace('?', '%s')
-                    conn.execute(update_client_user_query, (client_user['id'],))
+                    update_client_user_query = f"UPDATE client_users SET last_login = CURRENT_TIMESTAMP WHERE id = {placeholder}"
+                    cursor.execute(update_client_user_query, (client_user['id'],))
                     conn.commit()
                 except Exception as e:
                     logger.warning(f"Failed to update last login for client user: {e}")
