@@ -36,11 +36,16 @@ def api_login():
     login_id = data.get('loginId') or data.get('login_id') or data.get('email', '').strip()
     password = data.get('password', '').strip()
     
+    logger.info(f"🔐 Login attempt for: {login_id}")
+    
     if not login_id or not password:
+        logger.warning(f"❌ Missing credentials")
         return jsonify({'message': 'Login ID and password are required'}), 400
     
     try:
         result = auth_service.authenticate_user(login_id, password)
+        logger.info(f"🔍 Auth result: {result.get('success')} - {result.get('message', 'No message')}")
+        
         if result['success']:
             # Set session data
             for key, value in result['session_data'].items():
@@ -55,10 +60,13 @@ def api_login():
                 "user": result['user']
             })
         else:
-            return jsonify({"message": result['message']}), 401
+            logger.warning(f"❌ Login failed: {result.get('message')}")
+            return jsonify({"message": result.get('message', 'Invalid credentials')}), 401
         
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        logger.error(f"💥 Login error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"message": "Login error", "error": str(e)}), 500
 
 @auth_bp.route('/api/auth/user-info', methods=['GET'])
