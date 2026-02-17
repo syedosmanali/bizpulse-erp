@@ -102,7 +102,7 @@ class AuthService:
                 }
             
             # Then check user_accounts table (new user management system)
-            user_account_query = """
+            user_account_query = f"""
                 SELECT ua.id, ua.client_id, ua.full_name, ua.username, ua.password_hash, 
                        ua.status, ua.force_password_change, c.company_name, r.display_name as role_name,
                        r.permissions, ua.temp_password
