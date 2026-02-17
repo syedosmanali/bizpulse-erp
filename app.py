@@ -185,6 +185,16 @@ def cleanup_on_exit():
 
 atexit.register(cleanup_on_exit)
 
+# Health check endpoint
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.now().isoformat(),
+        'auth_bp_registered': 'auth' in [bp.name for bp in app.blueprints.values()]
+    })
+
 # Initialize database
 def initialize_database():
     """Initialize database on startup"""
