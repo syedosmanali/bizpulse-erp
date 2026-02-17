@@ -65,41 +65,41 @@ class AuthService:
                         'business_name': user_dict['business_name'],
                         'business_type': user_dict['business_type'],
                         'is_super_admin': is_bizpulse_admin
-                }
-                
-                # Update last login
-                try:
-                    cursor.execute(f"UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (user_dict['id'],))
-                    conn.commit()
-                except Exception as e:
-                    logger.warning(f"Failed to update last login: {e}")
-                    # Continue anyway, this shouldn't prevent login
-                
-                conn.close()
-                
-                # Trigger sync on login
-                from modules.sync.utils import sync_on_login
-                try:
-                    sync_data = sync_on_login(user_dict['id'])
-                except Exception as e:
-                    logger.warning(f"Sync on login failed: {e}")
-                    # Continue anyway, sync shouldn't prevent login
-                
-                return {
-                    'success': True,
-                    'token': 'user-jwt-token',
-                    'session_data': session_data,
-                    'user': {
-                        "id": user_dict['id'],
-                        "name": user_name,
-                        "email": user_dict['email'],
-                        "username": user_dict['email'],
-                        "type": 'admin' if is_bizpulse_admin else 'client',
-                        "business_name": user_dict['business_name'],
-                        "business_type": user_dict['business_type'],
-                        "is_super_admin": is_bizpulse_admin
                     }
-                }
+                    
+                    # Update last login
+                    try:
+                        cursor.execute(f"UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (user_dict['id'],))
+                        conn.commit()
+                    except Exception as e:
+                        logger.warning(f"Failed to update last login: {e}")
+                        # Continue anyway, this shouldn't prevent login
+                    
+                    conn.close()
+                    
+                    # Trigger sync on login
+                    from modules.sync.utils import sync_on_login
+                    try:
+                        sync_data = sync_on_login(user_dict['id'])
+                    except Exception as e:
+                        logger.warning(f"Sync on login failed: {e}")
+                        # Continue anyway, sync shouldn't prevent login
+                    
+                    return {
+                        'success': True,
+                        'token': 'user-jwt-token',
+                        'session_data': session_data,
+                        'user': {
+                            "id": user_dict['id'],
+                            "name": user_name,
+                            "email": user_dict['email'],
+                            "username": user_dict['email'],
+                            "type": 'admin' if is_bizpulse_admin else 'client',
+                            "business_name": user_dict['business_name'],
+                            "business_type": user_dict['business_type'],
+                            "is_super_admin": is_bizpulse_admin
+                        }
+                    }
             
             # Then check user_accounts table (new user management system)
             user_account_query = f"""
@@ -361,6 +361,7 @@ class AuthService:
     
     def get_user_info(self, session):
         """Get current user information including role and profile data"""
+        from modules.shared.database import get_db_type
         user_id = session.get('user_id')
         user_type = session.get('user_type')
         user_name = session.get('user_name')
@@ -369,7 +370,11 @@ class AuthService:
         if user_type == 'client' and user_id:
             conn = get_db_connection()
             try:
-                client = conn.execute("SELECT contact_name, company_name, contact_email, profile_picture FROM clients WHERE id = ?", (user_id,)).fetchone()
+                db_type = get_db_type()
+                placeholder = '%s' if db_type == 'postgresql' else '?'
+                cursor = conn.cursor()
+                cursor.execute(f"SELECT contact_name, company_name, contact_email, profile_picture FROM clients WHERE id = {placeholder}", (user_id,))
+                client = cursor.fetchone()
                 
                 if client:
                     # Use contact_name if available, otherwise use company_name
@@ -406,40 +411,68 @@ class AuthService:
     
     def register_user(self, data):
         """Register a new user"""
+        from modules.shared.database import get_db_type
         user_id = generate_id()
         
         conn = get_db_connection()
         try:
-            conn.execute("INSERT INTO users (id, email, password_hash, business_name, business_type) VALUES (?, ?, ?, ?, ?)", (
+            db_type = get_db_type()
+            placeholder = '%s' if db_type == 'postgresql' else '?'
+            cursor = conn.cursor()
+            cursor.execute(f"INSERT INTO users (id, email, password_hash, business_name, business_type) VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})", (
                 user_id, data['email'], hash_password(data['password']),
                 data.get('business_name', ''), data.get('business_type', 'retail')
             ))
             conn.commit()
             return {'success': True, 'user_id': user_id}
-        except sqlite3.IntegrityError:
-            return {'success': False, 'message': 'Email already exists'}
+        except Exception as e:
+            err = str(e).lower()
+            if 'unique' in err or 'duplicate' in err:
+                return {'success': False, 'message': 'Email already exists'}
+            return {'success': False, 'message': str(e)}
         finally:
             conn.close()
     
     def forgot_password(self, email_or_username):
         """Handle forgot password functionality"""
+        from modules.shared.database import get_db_type
         conn = get_db_connection()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
         try:
+            cursor = conn.cursor()
+            
             # Create password_reset_tokens table if it doesn't exist
-            conn.execute('''
-                CREATE TABLE IF NOT EXISTS password_reset_tokens (
-                    id TEXT PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    user_type TEXT NOT NULL,
-                    token TEXT UNIQUE NOT NULL,
-                    email TEXT NOT NULL,
-                    username TEXT,
-                    expires_at TIMESTAMP NOT NULL,
-                    used BOOLEAN DEFAULT 0,
-                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
+            if db_type == 'postgresql':
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                        id VARCHAR(255) PRIMARY KEY,
+                        user_id VARCHAR(255) NOT NULL,
+                        user_type VARCHAR(50) NOT NULL,
+                        token VARCHAR(255) UNIQUE NOT NULL,
+                        email VARCHAR(255) NOT NULL,
+                        username VARCHAR(255),
+                        expires_at TIMESTAMP NOT NULL,
+                        used BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+            else:
+                cursor.execute('''
+                    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                        id TEXT PRIMARY KEY,
+                        user_id TEXT NOT NULL,
+                        user_type TEXT NOT NULL,
+                        token TEXT UNIQUE NOT NULL,
+                        email TEXT NOT NULL,
+                        username TEXT,
+                        expires_at TIMESTAMP NOT NULL,
+                        used BOOLEAN DEFAULT 0,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+            conn.commit()
             
             user_found = None
             user_type = None
@@ -447,40 +480,55 @@ class AuthService:
             username = None
             
             # Check in users table first
-            user = conn.execute("SELECT id, email, business_name FROM users WHERE email = ? AND is_active = 1", (email_or_username,)).fetchone()
+            active_val = 'TRUE' if db_type == 'postgresql' else '1'
+            cursor.execute(f"SELECT id, email, business_name FROM users WHERE email = {ph} AND is_active = {active_val}", (email_or_username,))
+            user = cursor.fetchone()
             
             if user:
-                user_found = user
+                user_dict = dict(user) if hasattr(user, 'keys') else {'id': user[0], 'email': user[1], 'business_name': user[2]}
+                user_found = user_dict
                 user_type = 'user'
-                user_id = user['id']
-                username = user['email']
+                user_id = user_dict['id']
+                username = user_dict['email']
             else:
                 # Check in clients table
-                client = conn.execute("SELECT id, contact_email, company_name, username FROM clients WHERE (contact_email = ? OR username = ?) AND is_active = 1", (email_or_username, email_or_username)).fetchone()
+                cursor.execute(f"SELECT id, contact_email, company_name, username FROM clients WHERE (contact_email = {ph} OR username = {ph}) AND is_active = {active_val}", (email_or_username, email_or_username))
+                client = cursor.fetchone()
                 
                 if client:
-                    user_found = client
+                    client_dict = dict(client) if hasattr(client, 'keys') else {'id': client[0], 'contact_email': client[1], 'company_name': client[2], 'username': client[3]}
+                    user_found = client_dict
                     user_type = 'client'
-                    user_id = client['id']
-                    username = client['username']
+                    user_id = client_dict['id']
+                    username = client_dict['username']
                 else:
                     # Check in client_users table (employees)
-                    client_user = conn.execute("SELECT id, email, full_name, username FROM client_users WHERE (email = ? OR username = ?) AND is_active = 1", (email_or_username, email_or_username)).fetchone()
+                    try:
+                        cursor.execute(f"SELECT id, email, full_name, username FROM client_users WHERE (email = {ph} OR username = {ph}) AND is_active = {active_val}", (email_or_username, email_or_username))
+                        client_user = cursor.fetchone()
+                    except Exception:
+                        client_user = None
                     
                     if client_user:
-                        user_found = client_user
+                        cu_dict = dict(client_user) if hasattr(client_user, 'keys') else {'id': client_user[0], 'email': client_user[1], 'full_name': client_user[2], 'username': client_user[3]}
+                        user_found = cu_dict
                         user_type = 'client_user'
-                        user_id = client_user['id']
-                        username = client_user['username']
+                        user_id = cu_dict['id']
+                        username = cu_dict['username']
                     else:
                         # Check in staff table
-                        staff = conn.execute("SELECT id, email, name, username FROM staff WHERE (email = ? OR username = ?) AND is_active = 1", (email_or_username, email_or_username)).fetchone()
+                        try:
+                            cursor.execute(f"SELECT id, email, name, username FROM staff WHERE (email = {ph} OR username = {ph}) AND is_active = {active_val}", (email_or_username, email_or_username))
+                            staff = cursor.fetchone()
+                        except Exception:
+                            staff = None
                         
                         if staff:
-                            user_found = staff
+                            staff_dict = dict(staff) if hasattr(staff, 'keys') else {'id': staff[0], 'email': staff[1], 'name': staff[2], 'username': staff[3]}
+                            user_found = staff_dict
                             user_type = 'staff'
-                            user_id = staff['id']
-                            username = staff['username']
+                            user_id = staff_dict['id']
+                            username = staff_dict['username']
             
             if not user_found:
                 conn.close()
@@ -494,9 +542,9 @@ class AuthService:
             expires_at = datetime.now() + timedelta(hours=24)  # Token expires in 24 hours
             
             # Store reset token
-            conn.execute('''
+            cursor.execute(f'''
                 INSERT INTO password_reset_tokens (id, user_id, user_type, token, email, username, expires_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph})
             ''', (generate_id(), user_id, user_type, reset_token, 
                   user_found.get('email') or user_found.get('contact_email'), 
                   username, expires_at.isoformat()))
@@ -513,5 +561,8 @@ class AuthService:
             }
             
         except Exception as e:
-            conn.close()
+            try:
+                conn.close()
+            except Exception:
+                pass
             raise e

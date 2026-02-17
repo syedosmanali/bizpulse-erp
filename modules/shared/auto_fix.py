@@ -43,6 +43,33 @@ def auto_fix_database_on_startup():
         conn.autocommit = False
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
+        # FIX 0: Ensure login_count and last_login columns exist on users table
+        try:
+            cursor.execute("""
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'login_count'
+            """)
+            if cursor.fetchone() is None:
+                cursor.execute("ALTER TABLE users ADD COLUMN login_count INTEGER DEFAULT 0")
+                conn.commit()
+                logger.info("   \u2705 Added login_count to users table")
+        except Exception as e:
+            logger.debug(f"   login_count column: {e}")
+            conn.rollback()
+
+        try:
+            cursor.execute("""
+                SELECT column_name FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'last_login'
+            """)
+            if cursor.fetchone() is None:
+                cursor.execute("ALTER TABLE users ADD COLUMN last_login TIMESTAMP")
+                conn.commit()
+                logger.info("   \u2705 Added last_login to users table")
+        except Exception as e:
+            logger.debug(f"   last_login column: {e}")
+            conn.rollback()
+
         # FIX 1: Check if business_owner_id exists
         cursor.execute("""
             SELECT column_name 

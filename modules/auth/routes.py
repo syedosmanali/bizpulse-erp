@@ -325,7 +325,7 @@ def get_all_clients():
 def create_client():
     """Create new client"""
     try:
-        from modules.shared.database import get_db_connection, generate_id
+        from modules.shared.database import get_db_connection, generate_id, get_db_type
         import hashlib
         
         data = request.get_json()
@@ -339,9 +339,11 @@ def create_client():
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
         # Check if username already exists
-        cursor.execute('SELECT id FROM clients WHERE username = ?', (username,))
+        cursor.execute(f'SELECT id FROM clients WHERE username = {ph}', (username,))
         existing_client = cursor.fetchone()
         
         if existing_client:
@@ -354,7 +356,7 @@ def create_client():
         # Check if email already exists
         email = data.get('contact_email', '').strip()
         if email:
-            cursor.execute('SELECT id FROM clients WHERE contact_email = ?', (email,))
+            cursor.execute(f'SELECT id FROM clients WHERE contact_email = {ph}', (email,))
             existing_email = cursor.fetchone()
             
             if existing_email:
@@ -376,12 +378,13 @@ def create_client():
             }), 400
         
         password_hash = hashlib.sha256(password.encode()).hexdigest()
+        is_active_val = True if db_type == 'postgresql' else 1
         
-        cursor.execute('''
+        cursor.execute(f'''
             INSERT INTO clients (
                 id, company_name, contact_email, contact_name, phone_number,
                 username, password_hash, is_active, business_type, country
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES ({ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph}, {ph})
         ''', (
             client_id,
             data.get('company_name'),
@@ -390,7 +393,7 @@ def create_client():
             data.get('phone_number'),
             username,
             password_hash,
-            1,
+            is_active_val,
             data.get('business_type', 'retail'),
             data.get('country', 'India')
         ))
@@ -412,12 +415,14 @@ def create_client():
 def delete_client(client_id):
     """Delete client"""
     try:
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
-        cursor.execute('DELETE FROM clients WHERE id = ?', (client_id,))
+        cursor.execute(f'DELETE FROM clients WHERE id = {ph}', (client_id,))
         
         conn.commit()
         conn.close()
@@ -438,27 +443,34 @@ def login_as_client():
         data = request.get_json()
         client_id = data.get('clientId')
         
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT id, company_name, contact_email, username
             FROM clients
-            WHERE id = ?
+            WHERE id = {ph}
         ''', (client_id,))
         
         client = cursor.fetchone()
         conn.close()
         
         if client:
+            # Handle both dict and tuple results
+            if hasattr(client, 'keys'):
+                c_id, c_name, c_email, c_username = client['id'], client['company_name'], client['contact_email'], client['username']
+            else:
+                c_id, c_name, c_email, c_username = client[0], client[1], client[2], client[3]
             # Set session as this client
-            session['user_id'] = client[0]
+            session['user_id'] = c_id
             session['user_type'] = 'client'
-            session['user_name'] = client[1]
-            session['email'] = client[2]
-            session['username'] = client[3]
+            session['user_name'] = c_name
+            session['email'] = c_email
+            session['username'] = c_username
             session.permanent = True
             
             return jsonify({
@@ -488,34 +500,51 @@ def get_client_profile():
         if not user_id or user_type != 'client':
             return jsonify({'success': False, 'message': 'Unauthorized'}), 401
         
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
-        cursor.execute('''
+        cursor.execute(f'''
             SELECT contact_name, company_name, contact_email, phone_number, 
                    profile_picture, city, state, country, business_type
             FROM clients
-            WHERE id = ?
+            WHERE id = {ph}
         ''', (user_id,))
         
         client = cursor.fetchone()
         conn.close()
         
         if client:
-            return jsonify({
-                'success': True,
-                'full_name': client[0] or client[1],  # contact_name or company_name
-                'company_name': client[1],
-                'email': client[2],
-                'phone': client[3],
-                'profile_picture': client[4],
-                'city': client[5],
-                'state': client[6],
-                'country': client[7],
-                'business_type': client[8]
-            })
+            # Handle both dict (PostgreSQL) and tuple (SQLite) results
+            if hasattr(client, 'keys'):
+                return jsonify({
+                    'success': True,
+                    'full_name': client['contact_name'] or client['company_name'],
+                    'company_name': client['company_name'],
+                    'email': client['contact_email'],
+                    'phone': client['phone_number'],
+                    'profile_picture': client['profile_picture'],
+                    'city': client['city'],
+                    'state': client['state'],
+                    'country': client['country'],
+                    'business_type': client['business_type']
+                })
+            else:
+                return jsonify({
+                    'success': True,
+                    'full_name': client[0] or client[1],
+                    'company_name': client[1],
+                    'email': client[2],
+                    'phone': client[3],
+                    'profile_picture': client[4],
+                    'city': client[5],
+                    'state': client[6],
+                    'country': client[7],
+                    'business_type': client[8]
+                })
         else:
             return jsonify({'success': False, 'message': 'Profile not found'}), 404
         
@@ -535,16 +564,18 @@ def update_client_profile():
         
         data = request.get_json()
         
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
         # Update client profile
-        cursor.execute('''
+        cursor.execute(f'''
             UPDATE clients 
-            SET contact_name = ?, contact_email = ?, phone_number = ?, company_name = ?
-            WHERE id = ?
+            SET contact_name = {ph}, contact_email = {ph}, phone_number = {ph}, company_name = {ph}
+            WHERE id = {ph}
         ''', (
             data.get('full_name'),
             data.get('email'),
@@ -611,15 +642,17 @@ def upload_profile_picture():
         # Update database
         profile_picture_url = f"/static/uploads/profiles/{filename}"
         
-        from modules.shared.database import get_db_connection
+        from modules.shared.database import get_db_connection, get_db_type
         
         conn = get_db_connection()
         cursor = conn.cursor()
+        db_type = get_db_type()
+        ph = '%s' if db_type == 'postgresql' else '?'
         
-        cursor.execute('''
+        cursor.execute(f'''
             UPDATE clients 
-            SET profile_picture = ?
-            WHERE id = ?
+            SET profile_picture = {ph}
+            WHERE id = {ph}
         ''', (profile_picture_url, user_id))
         
         conn.commit()

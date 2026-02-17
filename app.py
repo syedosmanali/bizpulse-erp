@@ -55,13 +55,17 @@ CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
 
 # App configuration
-app.config['SECRET_KEY'] = 'cms-secret-key-change-in-production-2024'  # Change this in production
+# Use environment-provided SECRET_KEY or fallback (CHANGE THIS IN PRODUCTION)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cms-secret-key-change-in-production-2024')
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # Session expires after 30 days
 app.config['SESSION_PERMANENT'] = True  # Make sessions permanent
 app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+# Use Secure cookies only on HTTPS (i.e. deployed server), not on local HTTP
+_is_production = os.environ.get('FLASK_ENV', 'development') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = _is_production
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # CSRF protection
+# Use 'None' SameSite on production so cross-origin mobile/API calls can send cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'None' if _is_production else 'Lax'
 app.config['TEMPLATES_AUTO_RELOAD'] = True  # Auto-reload templates for development
 
 # File Upload Configuration
@@ -424,8 +428,13 @@ def health_check():
     """Health check endpoint for monitoring"""
     return {'status': 'healthy', 'service': 'BizPulse ERP'}, 200
 
-if __name__ == '__main__':
+# Initialize database at module load time so it runs under Gunicorn too
+try:
     initialize_database()
+except Exception as _db_init_err:
+    print(f"⚠️  Database initialization warning: {_db_init_err}")
+
+if __name__ == '__main__':
     print_startup_info()
     # Production configuration
     port = int(os.environ.get('PORT', 5000))
