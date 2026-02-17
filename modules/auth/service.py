@@ -15,39 +15,51 @@ class AuthService:
     def authenticate_user(self, login_id, password):
         """Authenticate user against all user tables"""
         conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        from modules.shared.database import get_db_type
+        db_type = get_db_type()
+        placeholder = '%s' if db_type == 'postgresql' else '?'
         
         try:
             # First check users table (includes BizPulse admin users)
-            user = conn.execute("SELECT id, email, business_name, business_type, password_hash, is_active FROM users WHERE email = ? AND is_active = 1", (login_id,)).fetchone()
+            cursor.execute(f"SELECT id, email, business_name, business_type, password_hash, is_active FROM users WHERE email = {placeholder}", (login_id,))
+            user = cursor.fetchone()
             
-            if user and hash_password(password) == user['password_hash']:
-                # Determine if this is a BizPulse admin user
-                bizpulse_emails = [
-                    'bizpulse.erp@gmail.com',
-                    'admin@bizpulse.com', 
-                    'support@bizpulse.com',
-                    'developer@bizpulse.com',
-                    'osman@bizpulse.com'
-                ]
+            if user:
+                user_dict = dict(user) if hasattr(user, 'keys') else {
+                    'id': user[0], 'email': user[1], 'business_name': user[2],
+                    'business_type': user[3], 'password_hash': user[4], 'is_active': user[5]
+                }
                 
-                # Check admin status from multiple sources
-                is_bizpulse_admin = (
-                    user['email'].lower() in bizpulse_emails or  # Email whitelist
-                    '@bizpulse.com' in user['email'].lower()  # Domain check
-                )
-                
-                # Extract name from email or use business name
-                user_name = user['business_name'] or user['email'].split('@')[0]
-                
-                session_data = {
-                    'user_id': user['id'],
-                    'user_type': 'admin' if is_bizpulse_admin else 'client',
-                    'user_name': user_name,
-                    'email': user['email'],
-                    'username': user['email'],  # Use email as username for BizPulse check
-                    'business_name': user['business_name'],
-                    'business_type': user['business_type'],
-                    'is_super_admin': is_bizpulse_admin
+                if hash_password(password) == user_dict['password_hash']:
+                    # Determine if this is a BizPulse admin user
+                    bizpulse_emails = [
+                        'bizpulse.erp@gmail.com',
+                        'admin@bizpulse.com', 
+                        'support@bizpulse.com',
+                        'developer@bizpulse.com',
+                        'osman@bizpulse.com'
+                    ]
+                    
+                    # Check admin status from multiple sources
+                    is_bizpulse_admin = (
+                        user_dict['email'].lower() in bizpulse_emails or  # Email whitelist
+                        '@bizpulse.com' in user_dict['email'].lower()  # Domain check
+                    )
+                    
+                    # Extract name from email or use business name
+                    user_name = user_dict['business_name'] or user_dict['email'].split('@')[0]
+                    
+                    session_data = {
+                        'user_id': user_dict['id'],
+                        'user_type': 'admin' if is_bizpulse_admin else 'client',
+                        'user_name': user_name,
+                        'email': user_dict['email'],
+                        'username': user_dict['email'],  # Use email as username for BizPulse check
+                        'business_name': user_dict['business_name'],
+                        'business_type': user_dict['business_type'],
+                        'is_super_admin': is_bizpulse_admin
                 }
                 
                 conn.close()
@@ -144,35 +156,42 @@ class AuthService:
                     }
             
             # Then check client database (business owners)
-            client = conn.execute("SELECT id, company_name, contact_name, contact_email, username, password_hash, is_active FROM clients WHERE (contact_email = ? OR username = ?) AND is_active = 1", (login_id, login_id)).fetchone()
+            cursor.execute(f"SELECT id, company_name, contact_name, contact_email, username, password_hash, is_active FROM clients WHERE (contact_email = {placeholder} OR username = {placeholder})", (login_id, login_id))
+            client = cursor.fetchone()
             
-            if client and hash_password(password) == client['password_hash']:
-                session_data = {
-                    'user_id': client['id'],
-                    'user_type': "client",
-                    'user_name': client['contact_name'] or client['company_name'],
-                    'email': client['contact_email'],
-                    'username': client['username'],
-                    'company_name': client['company_name'],
-                    'is_super_admin': False
+            if client:
+                client_dict = dict(client) if hasattr(client, 'keys') else {
+                    'id': client[0], 'company_name': client[1], 'contact_name': client[2],
+                    'contact_email': client[3], 'username': client[4], 'password_hash': client[5], 'is_active': client[6]
                 }
                 
-                conn.close()
-                return {
-                    'success': True,
-                    'token': 'client-jwt-token',
-                    'session_data': session_data,
-                    'user': {
-                        "id": client['id'],
-                        "name": client['contact_name'] or client['company_name'],
-                        "email": client['contact_email'],
-                        "username": client['username'],
-                        "type": "client",
-                        "company_name": client['company_name'],
-                        "business_type": "retail",
-                        "is_super_admin": False
+                if hash_password(password) == client_dict['password_hash']:
+                    session_data = {
+                        'user_id': client_dict['id'],
+                        'user_type': "client",
+                        'user_name': client_dict['contact_name'] or client_dict['company_name'],
+                        'email': client_dict['contact_email'],
+                        'username': client_dict['username'],
+                        'company_name': client_dict['company_name'],
+                        'is_super_admin': False
                     }
-                }
+                    
+                    conn.close()
+                    return {
+                        'success': True,
+                        'token': 'client-jwt-token',
+                        'session_data': session_data,
+                        'user': {
+                            "id": client_dict['id'],
+                            "name": client_dict['contact_name'] or client_dict['company_name'],
+                            "email": client_dict['contact_email'],
+                            "username": client_dict['username'],
+                            "type": "client",
+                            "company_name": client_dict['company_name'],
+                            "business_type": "retail",
+                            "is_super_admin": False
+                        }
+                    }
             
             # Finally check staff and employee tables
             staff = conn.execute("SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1", (login_id, login_id)).fetchone()
