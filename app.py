@@ -2,8 +2,8 @@
 BizPulse ERP - Modular Monolith Entry Point
 REFACTORED FROM SINGLE FILE TO MODULAR ARCHITECTURE
 WITH REAL-TIME SYNC SUPPORT
-Version: 2.0.4 - AUTO-FIX ON STARTUP - business_owner_id migration
-Last Updated: 2026-02-07 15:00 PM
+Version: 2.0.5 - FIXED POSTGRESQL AUTH - cursor.execute fix
+Last Updated: 2026-02-17 (Auth Fix Deployed)
 """
 
 from flask import Flask, request, g, make_response, session
@@ -184,6 +184,45 @@ def cleanup_on_exit():
         print(f"❌ Error stopping background services: {e}")
 
 atexit.register(cleanup_on_exit)
+
+# Diagnostic endpoint to verify deployment
+@app.route('/api/deployment-status')
+def deployment_status():
+    """Check deployment version and database connectivity"""
+    from modules.shared.database import get_db_type, get_db_connection
+    import datetime
+    
+    try:
+        db_type = get_db_type()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Test query
+        if db_type == 'postgresql':
+            cursor.execute("SELECT COUNT(*) FROM clients")
+        else:
+            cursor.execute("SELECT COUNT(*) FROM clients")
+        
+        client_count = cursor.fetchone()[0] if cursor.fetchone() else 0
+        conn.close()
+        
+        return {
+            'status': 'ok',
+            'version': '2.0.5',
+            'deployment_date': '2026-02-17',
+            'fix_applied': 'PostgreSQL cursor.execute fix',
+            'database_type': db_type,
+            'database_connected': True,
+            'client_count': client_count,
+            'timestamp': datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'version': '2.0.5',
+            'error': str(e),
+            'timestamp': datetime.datetime.now().isoformat()
+        }, 500
 
 # Initialize database
 def initialize_database():
