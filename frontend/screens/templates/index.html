@@ -121,6 +121,7 @@
             justify-content: space-between;
             align-items: center;
             height: 70px;
+            padding: 0 20px;
         }
 
         .logo {
@@ -128,13 +129,14 @@
             align-items: center;
             text-decoration: none;
             transition: all 0.3s ease;
+            height: 100%;
         }
 
         /* Navbar Logo Styling - Professional & Clean */
         .navbar-logo {
-            height: 45px;
+            height: 55px;
             width: auto;
-            max-width: 200px;
+            max-width: 220px;
             object-fit: contain;
             object-position: left center;
             transition: all 0.3s ease;
@@ -143,11 +145,12 @@
             padding: 0;
             border: none;
             box-shadow: none;
+            margin: 0;
         }
 
         .logo:hover .navbar-logo {
-            opacity: 0.85;
-            transform: scale(1.02);
+            opacity: 0.9;
+            transform: scale(1.03);
         }
 
 
@@ -168,8 +171,8 @@
         /* Responsive Logo Adjustments */
         @media (max-width: 768px) {
             .navbar-logo {
-                height: 36px;
-                max-width: 140px;
+                height: 42px;
+                max-width: 160px;
             }
 
             .logo-text-fallback {
@@ -179,8 +182,8 @@
 
         @media (max-width: 480px) {
             .navbar-logo {
-                height: 32px;
-                max-width: 120px;
+                height: 38px;
+                max-width: 140px;
             }
 
             .logo-text-fallback {
