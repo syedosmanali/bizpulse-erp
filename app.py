@@ -42,6 +42,9 @@ from modules.user_management.routes import user_management_bp
 from modules.stock.routes import stock_bp  # NEW: Stock management module
 from modules.integrated_inventory.routes import integrated_inventory_bp  # NEW: Integrated inventory system
 
+# Import cron routes
+from modules.cron.routes import cron_bp
+
 # Import sync module
 from modules.sync.service import sync_service
 from modules.sync.api_routes import sync_api_bp
@@ -147,6 +150,7 @@ app.register_blueprint(user_management_bp)
 app.register_blueprint(stock_bp)  # NEW: Stock management routes
 app.register_blueprint(integrated_inventory_bp)  # NEW: Integrated inventory system
 app.register_blueprint(sync_api_bp)
+app.register_blueprint(cron_bp)  # Cron job routes
 
 # Background task for cleanup
 def cleanup_task():
