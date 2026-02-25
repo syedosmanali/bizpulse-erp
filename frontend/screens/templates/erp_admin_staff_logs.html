@@ -1,0 +1,128 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Staff Activity Logs{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .logs-table {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .logs-table h2 {
+        color: #732C3F;
+        font-size: 20px;
+        margin: 0 0 20px 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #732C3F;
+        color: white;
+    }
+
+    th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    tbody tr:hover {
+        background: #F9FAFB;
+    }
+
+    .action-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .action-create { background: #D1FAE5; color: #065F46; }
+    .action-update { background: #DBEAFE; color: #1E40AF; }
+    .action-delete { background: #FEE2E2; color: #991B1B; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="page-header">
+        <h1>Staff Activity Logs</h1>
+        <p>Track all staff actions and activities</p>
+    </div>
+
+    <div class="logs-table">
+        <h2>Recent Activities</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Staff Name</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>24-02-2026 10:30 AM</td>
+                    <td>Rajesh Kumar</td>
+                    <td><span class="action-badge action-create">Create</span></td>
+                    <td>Products</td>
+                    <td>Added new product: Product A</td>
+                    <td>192.168.1.10</td>
+                </tr>
+                <tr>
+                    <td>24-02-2026 11:15 AM</td>
+                    <td>Priya Sharma</td>
+                    <td><span class="action-badge action-update">Update</span></td>
+                    <td>Inventory</td>
+                    <td>Updated stock quantity</td>
+                    <td>192.168.1.15</td>
+                </tr>
+                <tr>
+                    <td>24-02-2026 12:00 PM</td>
+                    <td>Amit Patel</td>
+                    <td><span class="action-badge action-delete">Delete</span></td>
+                    <td>Sales</td>
+                    <td>Deleted invoice INV-100</td>
+                    <td>192.168.1.20</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

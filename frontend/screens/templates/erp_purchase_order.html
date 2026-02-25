@@ -1,0 +1,203 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Purchase Orders - ERP System{% endblock %}
+
+{% block extra_css %}
+<style>
+
+        :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+        .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+        .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+        .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--border); }
+        .tab { flex:1; padding:12px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--sub); border-bottom:2px solid transparent; }
+        .tab.active { color:var(--wine); border-bottom-color:var(--wine); font-weight:600; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .container { max-width:700px; margin:0 auto; padding:16px; }
+        .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; }
+        .form-group { margin-bottom:12px; }
+        label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:4px; }
+        input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Inter',sans-serif; background:#fafafa; outline:none; }
+        input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+        .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:500; }
+        .btn-danger { background:#fee2e2; color:#dc2626; }
+        .btn-success { background:#dcfce7; color:#16a34a; }
+        .items-table { width:100%; border-collapse:collapse; margin-top:10px; }
+        .items-table th { background:#f9f0f1; color:var(--wine); font-size:12px; padding:8px 10px; text-align:left; }
+        .items-table td { padding:8px 10px; font-size:13px; border-top:1px solid var(--border); }
+        .po-item { background:#fafafa; border:1.5px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
+        .po-item h3 { font-size:14px; font-weight:600; margin-bottom:4px; }
+        .po-item p { font-size:12px; color:var(--sub); }
+        .status-badge { font-size:11px; padding:2px 8px; border-radius:20px; font-weight:500; }
+        .status-pending { background:#fef9c3; color:#ca8a04; }
+        .status-approved { background:#dcfce7; color:#16a34a; }
+        .status-rejected { background:#fee2e2; color:#dc2626; }
+        .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+        .add-item-row { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; align-items:end; margin-bottom:10px; }
+        .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+        .toast.show { opacity:1; }
+        @media(max-width:500px){ .form-row{grid-template-columns:1fr;} .add-item-row{grid-template-columns:1fr 1fr;} }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1><i data-lucide="clipboard-list"></i> Purchase Order (PO)</h1>
+</div>
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('create')"><i data-lucide="plus"></i> Create PO</div>
+    <div class="tab" onclick="switchTab('list')"><i data-lucide="clipboard-list"></i> PO List</div>
+    <div class="tab" onclick="switchTab('approval')"><i data-lucide="package-check"></i> Approval</div>
+</div>
+
+<!-- CREATE TAB -->
+<div id="tab-create" class="tab-content active">
+<div class="container">
+    <div class="card">
+        <div class="card-title"><i data-lucide="clipboard-list"></i> Create Purchase Order</div>
+        <div class="form-row">
+            <div class="form-group"><label>Vendor / Supplier *</label><input id="po_vendor" placeholder="Select vendor" list="poVendorList"><datalist id="poVendorList"></datalist></div>
+            <div class="form-group"><label>PO Number</label><input id="po_number" placeholder="Auto-generated if empty"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Expected Delivery</label><input id="po_delivery" type="date"></div>
+            <div class="form-group"><label>Priority</label>
+                <select id="po_priority"><option>Normal</option><option>Urgent</option><option>Low</option></select>
+            </div>
+        </div>
+        <div class="form-group"><label>Notes</label><textarea id="po_notes" rows="2" placeholder="Special instructions..."></textarea></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title"><i data-lucide="package"></i> Items</div>
+        <div class="add-item-row">
+            <div class="form-group" style="margin:0"><label>Item</label><input id="poi_name" placeholder="Item name"></div>
+            <div class="form-group" style="margin:0"><label>Qty</label><input id="poi_qty" type="number" min="1" value="1"></div>
+            <div class="form-group" style="margin:0"><label>Rate (₹)</label><input id="poi_rate" type="number" min="0" value="0"></div>
+            <button class="btn-primary btn-sm" onclick="addPOItem()" style="height:40px;align-self:flex-end;"><i data-lucide="plus"></i> Add</button>
+        </div>
+        <table class="items-table"><thead><tr><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th><th></th></tr></thead><tbody id="poItemsBody"></tbody></table>
+        <div style="text-align:right;margin-top:12px;font-size:16px;font-weight:600;color:var(--wine);">Total: ₹<span id="poTotal">0</span></div>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="createPO()"><i data-lucide="upload"></i> Create Purchase Order</button>
+</div>
+</div>
+
+<!-- LIST TAB -->
+<div id="tab-list" class="tab-content">
+<div class="container">
+    <div class="card">
+        <div class="card-title"><i data-lucide="clipboard-list"></i> All Purchase Orders</div>
+        <div id="poList"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<!-- APPROVAL TAB -->
+<div id="tab-approval" class="tab-content">
+<div class="container">
+    <div class="card">
+        <div class="card-title"><i data-lucide="clock"></i> Pending Approvals</div>
+        <div id="approvalList"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script>
+let poItems=[], pos=[];
+function showToast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#1a1a1a':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function switchTab(tab){
+    const tabs=['create','list','approval'];
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+    document.getElementById('tab-' <i data-lucide="plus"></i> tab).classList.add('active');
+    if(tab==='list'||tab==='approval')loadPOs();
+}
+function addPOItem(){
+    const name=document.getElementById('poi_name').value.trim();
+    const qty=parseFloat(document.getElementById('poi_qty').value)||1;
+    const rate=parseFloat(document.getElementById('poi_rate').value)||0;
+    if(!name){showToast('Enter item name',false);return;}
+    poItems.push({name,qty,rate,total:qty*rate});
+    document.getElementById('poi_name').value='';
+    document.getElementById('poi_qty').value='1';
+    document.getElementById('poi_rate').value='0';
+    renderPOItems();
+}
+function removePOItem(i){poItems.splice(i,1);renderPOItems();}
+function renderPOItems(){
+    const tbody=document.getElementById('poItemsBody');
+    tbody.innerHTML=poItems.map((it,i)=>`<tr><td>${it.name}</td><td>${it.qty}</td><td>₹${it.rate}</td><td>₹${it.total.toFixed(2)}</td><td><button class="btn-sm btn-danger" onclick="removePOItem(${i})">✕</button></td></tr>`).join('');
+    document.getElementById('poTotal').textContent=poItems.reduce((s,it)=>s<i data-lucide="plus"></i>it.total,0).toFixed(2);
+}
+async function loadVendors(){
+    try{const r=await fetch('/api/erp/vendors');const d=await r.json();if(d.success){const dl=document.getElementById('poVendorList');dl.innerHTML=d.data.map(v=>`<option value="${v.name}">`).join('');}}catch(e){}
+}
+async function createPO(){
+    const vendor=document.getElementById('po_vendor').value.trim();
+    if(!vendor||!poItems.length){showToast('Add vendor and at least 1 item',false);return;}
+    const total=poItems.reduce((s,it)=>s<i data-lucide="plus"></i>it.total,0);
+    const payload={vendor_name:vendor,po_number:document.getElementById('po_number').value,total_amount:total,items:poItems,notes:document.getElementById('po_notes').value};
+    try{
+        const r=await fetch('/api/erp/purchase-orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const d=await r.json();
+        if(d.success){showToast(`<i data-lucide="package-check"></i> PO ${d.po_number} created!`);poItems=[];renderPOItems();['po_vendor','po_number','po_notes'].forEach(id=>document.getElementById(id).value='');}
+        else showToast('<i data-lucide="x"></i> ' <i data-lucide="plus"></i> d.error,false);
+    }catch(e){showToast('<i data-lucide="x"></i> Network error',false);}
+}
+async function loadPOs(){
+    try{const r=await fetch('/api/erp/purchase-orders');const d=await r.json();if(d.success){pos=d.data||[];renderPOs();renderApprovals();}}catch(e){}
+}
+function renderPOs(){
+    const el=document.getElementById('poList');
+    if(!pos.length){el.innerHTML='<div class="empty">No POs created yet</div>';return;}
+    el.innerHTML=pos.map(p=>`<div class="po-item">
+        <div style="display:flex;justify-content:space-between;">
+            <div><h3>${p.po_number}</h3><p>${p.vendor_name} — ₹${parseFloat(p.total_amount||0).toLocaleString('en-IN')}</p><p><i data-lucide="calendar-clock"></i> ${(p.created_at||'').substring(0,10)}</p></div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <span class="status-badge ${p.approval_status==='approved'?'status-approved':p.approval_status==='rejected'?'status-rejected':'status-pending'}">${p.approval_status||'pending'}</span>
+            </div>
+        </div>
+    </div>`).join('');
+}
+function renderApprovals(){
+    const el=document.getElementById('approvalList');
+    const pending=pos.filter(p=>p.approval_status==='pending');
+    if(!pending.length){el.innerHTML='<div class="empty">No pending approvals</div>';return;}
+    el.innerHTML=pending.map(p=>`<div class="po-item">
+        <h3>${p.po_number} — ${p.vendor_name}</h3>
+        <p>Amount: ₹${parseFloat(p.total_amount||0).toLocaleString('en-IN')}</p>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+            <button class="btn-sm btn-success" onclick="approvePO('${p.id}')"><i data-lucide="package-check"></i> Approve</button>
+            <button class="btn-sm btn-danger"><i data-lucide="x"></i> Reject</button>
+        </div>
+    </div>`).join('');
+}
+async function approvePO(id){
+    try{await fetch(`/api/erp/purchase-orders/${id}/approve`,{method:'POST'});showToast('<i data-lucide="package-check"></i> PO Approved');loadPOs();}catch(e){}
+}
+document.getElementById('po_delivery').valueAsDate=new Date(Date.now()<i data-lucide="plus"></i>7*86400000);
+loadVendors();
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize icons after DOM is loaded
+if (typeof lucide !== 'undefined') {
+    lucide.createIcons();
+}
+</script>
+{% endblock %}

@@ -74,9 +74,15 @@ class StockMonitorService:
             total_alerts_sent = 0
             
             for client_row in clients_with_settings:
-                client_id = client_row[0]
-                threshold = client_row[1]
-                company_name = client_row[2]
+                # Handle both dict and tuple cursor results
+                if isinstance(client_row, dict):
+                    client_id = client_row['client_id']
+                    threshold = client_row['low_stock_threshold']
+                    company_name = client_row['company_name']
+                else:
+                    client_id = client_row[0]
+                    threshold = client_row[1]
+                    company_name = client_row[2]
                 
                 alerts_sent = self.check_client_stock(cursor, client_id, threshold, company_name)
                 total_alerts_sent += alerts_sent
@@ -115,10 +121,17 @@ class StockMonitorService:
             print(f"📦 [STOCK MONITOR] Client {company_name}: Found {len(low_stock_products)} products at/below threshold {threshold}")
             
             for product in low_stock_products:
-                product_id = product[0]
-                product_name = product[1]
-                current_stock = product[2]
-                category = product[3]
+                # Handle both dict and tuple cursor results
+                if isinstance(product, dict):
+                    product_id = product['id']
+                    product_name = product['name']
+                    current_stock = product['stock']
+                    category = product['category']
+                else:
+                    product_id = product[0]
+                    product_name = product[1]
+                    current_stock = product[2]
+                    category = product[3]
                 
                 # Check if we already sent an alert today for this product
                 cursor.execute("""

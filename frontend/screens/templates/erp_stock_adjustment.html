@@ -1,0 +1,535 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Stock Adjustment - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+    body { background:var(--bg); color:var(--text); font-family:'Outfit', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+    .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+    .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+    .container { max-width:900px; margin:0 auto; padding:16px; }
+    .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-group { margin-bottom:12px; }
+    label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:4px; }
+    input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Outfit', sans-serif; background:#fafafa; outline:none; }
+    input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; min-height:44px; }
+    .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:500; min-height:44px; }
+    .btn-danger { background:#fee2e2; color:#dc2626; }
+    .btn-edit { background:#e0e7ff; color:#4338ca; }
+    .btn-success { background:#d1fae5; color:#065f46; }
+    
+    /* Search and Filter Bar */
+    .filter-bar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input { padding-left:36px; }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:16px; }
+    .filter-select { min-width:140px; }
+    
+    /* Adjustment List */
+    .adjustment-list { display:flex; flex-direction:column; gap:10px; }
+    .adjustment-item { background:#fafafa; border:1.5px solid var(--border); border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s; }
+    .adjustment-item:hover { border-color:var(--wine); background:#fff; }
+    .adjustment-info { flex:1; }
+    .adjustment-info h3 { font-size:14px; font-weight:600; margin-bottom:3px; }
+    .adjustment-info p { font-size:12px; color:var(--sub); margin-bottom:2px; }
+    .adjustment-quantity { text-align:right; margin-right:12px; }
+    .adjustment-quantity.positive { color:#065f46; }
+    .adjustment-quantity.negative { color:#dc2626; }
+    .adjustment-actions { display:flex; gap:6px; }
+    
+    /* Reason Selection */
+    .reason-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:8px; margin-top:8px; }
+    .reason-option { padding:8px; border:1px solid var(--border); border-radius:6px; text-align:center; font-size:12px; cursor:pointer; transition:all 0.2s; }
+    .reason-option:hover { border-color:var(--wine); background:#f9f6f7; }
+    .reason-option.selected { border-color:var(--wine); background:var(--wine); color:white; }
+    
+    /* Photo Upload */
+    .photo-upload { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+    .photo-preview { width:80px; height:80px; border:1px solid var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+    .photo-preview img { width:100%; height:100%; object-fit:cover; }
+    .photo-placeholder { font-size:24px; color:var(--sub); }
+    .photo-upload-btn { width:80px; height:80px; border:1px dashed var(--border); border-radius:6px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .photo-upload-btn:hover { border-color:var(--wine); background:#f9f6f7; }
+    .photo-delete { position:absolute; top:2px; right:2px; background:rgba(0,0,0,0.7); color:white; border:none; width:18px; height:18px; border-radius:50%; font-size:10px; cursor:pointer; }
+    
+    /* Approval Status */
+    .approval-badge { display:inline-block; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+    .approved { background:#d1fae5; color:#065f46; }
+    .pending { background:#fef3c7; color:#d97706; }
+    .rejected { background:#fee2e2; color:#dc2626; }
+    
+    .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+    .toast.show { opacity:1; }
+    .error-msg { color:#dc2626; font-size:11px; display:none; margin-top:4px; }
+    
+    @media(max-width:768px){ 
+        .form-row, .form-row-3 { grid-template-columns:1fr; } 
+        .adjustment-item { flex-direction:column; align-items:flex-start; gap:10px; }
+        .adjustment-quantity { text-align:left; margin-right:0; margin-top:8px; }
+        .filter-bar { flex-direction:column; }
+        .search-box, .filter-select { width:100%; min-width:auto; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1><i data-lucide="package-minus"></i> Stock Adjustment</h1>
+    <button class="btn-primary btn-sm" onclick="showAddForm()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);"><i data-lucide="plus"></i> New Adjustment</button>
+</div>
+
+<div class="container">
+    <!-- Add/Edit Form -->
+    <div class="card" id="addForm" style="display:none;">
+        <div class="card-title" id="formTitle"><i data-lucide="plus"></i> New Stock Adjustment</div>
+        <input type="hidden" id="edit_adjustment_id">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Product *</label>
+                <input id="product_search" list="productList" placeholder="Search product..." autocomplete="off">
+                <datalist id="productList"></datalist>
+                <span id="product_error" class="error-msg">Please select a product</span>
+            </div>
+            <div class="form-group">
+                <label>Adjustment Type *</label>
+                <select id="adjustment_type" onchange="toggleQuantitySign()">
+                    <option value="">Select Type</option>
+                    <option value="increase">Increase Stock</option>
+                    <option value="decrease">Decrease Stock</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Adjustment Quantity *</label>
+                <input id="adjustment_quantity" type="number" min="1" placeholder="Enter quantity">
+                <span id="quantity_error" class="error-msg">Quantity is required</span>
+            </div>
+            <div class="form-group">
+                <label>Current Stock</label>
+                <input id="current_stock" type="number" readonly style="background:#f3f4f6;">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Reason *</label>
+            <div class="reason-grid">
+                <div class="reason-option" onclick="selectReason(this, 'damage')">Damage</div>
+                <div class="reason-option" onclick="selectReason(this, 'loss')">Loss</div>
+                <div class="reason-option" onclick="selectReason(this, 'theft')">Theft</div>
+                <div class="reason-option" onclick="selectReason(this, 'expired')">Expired</div>
+                <div class="reason-option" onclick="selectReason(this, 'count_adjustment')">Count Adjustment</div>
+                <div class="reason-option" onclick="selectReason(this, 'other')">Other</div>
+            </div>
+            <input type="hidden" id="selected_reason">
+            <span id="reason_error" class="error-msg">Please select a reason</span>
+        </div>
+        
+        <div class="form-group">
+            <label>Adjustment Date</label>
+            <input type="date" id="adjustment_date" value="">
+        </div>
+        
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea id="adjustment_notes" placeholder="Additional details about the adjustment" rows="2"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Proof Photos</label>
+            <div class="photo-upload" id="photoUploadContainer">
+                <div class="photo-upload-btn" onclick="document.getElementById('photoUpload').click()">
+                    <i data-lucide="camera"></i>
+                </div>
+                <input type="file" id="photoUpload" accept="image/*" style="display:none;" multiple onchange="previewPhotos(this)">
+            </div>
+        </div>
+        
+        <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="requires_approval" checked style="width:16px;height:16px;">
+            <label for="requires_approval" style="margin:0;cursor:pointer;">Requires Approval</label>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn-primary" onclick="saveAdjustment()" style="flex:1;" id="saveBtn"><i data-lucide="save"></i> Save Adjustment</button>
+            <button onclick="hideAddForm()" style="background:#f3f4f6;color:var(--sub);border:none;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:14px;min-height:44px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card">
+        <div class="filter-bar">
+            <div class="search-box">
+                <span class="search-icon"><i data-lucide="search"></i></span>
+                <input type="text" id="searchInput" placeholder="Search adjustments..." onkeyup="filterAdjustments()">
+            </div>
+            <select class="filter-select" id="typeFilter" onchange="filterAdjustments()">
+                <option value="">All Types</option>
+                <option value="increase">Increase</option>
+                <option value="decrease">Decrease</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="filterAdjustments()">
+                <option value="">All Status</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+            </select>
+            <button class="btn-sm" style="background:#e0e7ff;color:#4338ca;" onclick="exportData()"><i data-lucide="download"></i> Export</button>
+        </div>
+    </div>
+
+    <!-- Adjustment List -->
+    <div class="card">
+        <div class="card-title"><i data-lucide="list"></i> Stock Adjustments (<span id="adjustmentCount">0</span>)</div>
+        <div class="adjustment-list" id="adjustmentList">
+            <div class="empty">No stock adjustments found</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let adjustments = [];
+let products = [];
+let selectedPhotos = [];
+
+function showToast(msg, ok=true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = ok ? '#1a1a1a' : '#dc2626';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showAddForm() {
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> New Stock Adjustment';
+    document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Save Adjustment';
+    document.getElementById('addForm').scrollIntoView({behavior: 'smooth'});
+    clearForm();
+    loadProductsForSearch();
+    lucide.createIcons();
+}
+
+function hideAddForm() {
+    document.getElementById('addForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    ['product_search', 'adjustment_quantity', 'adjustment_notes', 'edit_adjustment_id', 'selected_reason'].forEach(id => 
+        document.getElementById(id).value = '');
+    document.getElementById('adjustment_type').value = '';
+    document.getElementById('adjustment_date').value = new Date().toISOString().split('T')[0];
+    document.getElementById('current_stock').value = '';
+    document.getElementById('requires_approval').checked = true;
+    document.getElementById('product_error').style.display = 'none';
+    document.getElementById('quantity_error').style.display = 'none';
+    document.getElementById('reason_error').style.display = 'none';
+    
+    // Reset reason selection
+    document.querySelectorAll('.reason-option').forEach(el => el.classList.remove('selected'));
+    
+    // Clear photo previews
+    selectedPhotos = [];
+    document.getElementById('photoUploadContainer').innerHTML = `
+        <div class="photo-upload-btn" onclick="document.getElementById('photoUpload').click()">
+            <i data-lucide="camera"></i>
+        </div>
+        <input type="file" id="photoUpload" accept="image/*" style="display:none;" multiple onchange="previewPhotos(this)">
+    `;
+    lucide.createIcons();
+}
+
+function selectReason(element, reasonValue) {
+    // Remove selection from all options
+    document.querySelectorAll('.reason-option').forEach(el => el.classList.remove('selected'));
+    
+    // Add selection to clicked option
+    element.classList.add('selected');
+    document.getElementById('selected_reason').value = reasonValue;
+    document.getElementById('reason_error').style.display = 'none';
+}
+
+function toggleQuantitySign() {
+    const type = document.getElementById('adjustment_type').value;
+    const quantityInput = document.getElementById('adjustment_quantity');
+    
+    if (type === 'decrease') {
+        // For decrease, we might want to show negative sign or just ensure positive input
+        // The business logic will handle the actual decrease
+    }
+}
+
+function previewPhotos(input) {
+    if (input.files) {
+        for (let i = 0; i < input.files.length; i++) {
+            const file = input.files[i];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                selectedPhotos.push(e.target.result);
+                
+                // Add photo preview to container
+                const photoPreview = document.createElement('div');
+                photoPreview.className = 'photo-preview';
+                photoPreview.innerHTML = `
+                    <img src="${e.target.result}" alt="Photo Preview">
+                    <button class="photo-delete" onclick="removePhoto(this)">×</button>
+                `;
+                document.getElementById('photoUploadContainer').insertBefore(photoPreview, document.querySelector('#photoUploadContainer .photo-upload-btn'));
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+function removePhoto(button) {
+    const photoPreview = button.parentElement;
+    const imgSrc = photoPreview.querySelector('img').src;
+    
+    // Remove from selected photos array
+    selectedPhotos = selectedPhotos.filter(src => src !== imgSrc);
+    
+    // Remove the preview element
+    photoPreview.remove();
+}
+
+function loadProductsForSearch() {
+    // In a real implementation, this would fetch products from API
+    // For now, using mock data
+    const mockProducts = [
+        { id: 1, product_code: 'PROD001', product_name: 'Premium Coffee Beans', current_stock: 45 },
+        { id: 2, product_code: 'PROD002', product_name: 'Organic Honey', current_stock: 23 },
+        { id: 3, product_code: 'PROD003', product_name: 'Whole Wheat Bread', current_stock: 12 },
+        { id: 4, product_code: 'PROD004', product_name: 'Fresh Milk', current_stock: 8 },
+        { id: 5, product_code: 'PROD005', product_name: 'Extra Virgin Olive Oil', current_stock: 32 }
+    ];
+    
+    products = mockProducts;
+    const datalist = document.getElementById('productList');
+    datalist.innerHTML = products.map(p => `<option value="${p.product_name} (${p.product_code})">`).join('');
+}
+
+async function loadAdjustments() {
+    try {
+        // Simulate loading adjustments - in real implementation, this would fetch from API
+        const mockAdjustments = [
+            { id: 1, product_code: 'PROD001', product_name: 'Premium Coffee Beans', type: 'decrease', quantity: 5, reason: 'damage', date: '2024-01-15', approved: true, notes: 'Damaged during storage' },
+            { id: 2, product_code: 'PROD002', product_name: 'Organic Honey', type: 'increase', quantity: 10, reason: 'count_adjustment', date: '2024-01-14', approved: false, notes: 'Count correction' },
+            { id: 3, product_code: 'PROD003', product_name: 'Whole Wheat Bread', type: 'decrease', quantity: 3, reason: 'expired', date: '2024-01-13', approved: true, notes: 'Expired products removed' },
+            { id: 4, product_code: 'PROD004', product_name: 'Fresh Milk', type: 'decrease', quantity: 2, reason: 'theft', date: '2024-01-12', approved: false, notes: 'Reported theft' },
+            { id: 5, product_code: 'PROD005', product_name: 'Extra Virgin Olive Oil', type: 'increase', quantity: 5, reason: 'supplier_return', date: '2024-01-11', approved: true, notes: 'Returned from supplier' }
+        ];
+        
+        adjustments = mockAdjustments;
+        renderAdjustments();
+    } catch (e) {
+        showToast('Failed to load adjustments', false);
+    }
+}
+
+function filterAdjustments() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    const filtered = adjustments.filter(adj => {
+        const matchSearch = !search || 
+            adj.product_name.toLowerCase().includes(search) ||
+            adj.product_code.toLowerCase().includes(search) ||
+            adj.reason.toLowerCase().includes(search);
+        const matchType = !typeFilter || adj.type === typeFilter;
+        const matchStatus = !statusFilter || 
+            (statusFilter === 'approved' && adj.approved) || 
+            (statusFilter === 'pending' && !adj.approved) ||
+            (statusFilter === 'rejected' && adj.status === 'rejected');
+        return matchSearch && matchType && matchStatus;
+    });
+    
+    renderAdjustments(filtered);
+}
+
+function renderAdjustments(filteredAdjustments = null) {
+    const displayAdjustments = filteredAdjustments || adjustments;
+    const el = document.getElementById('adjustmentList');
+    document.getElementById('adjustmentCount').textContent = displayAdjustments.length;
+    
+    if (!displayAdjustments.length) {
+        el.innerHTML = '<div class="empty">No stock adjustments found</div>';
+        return;
+    }
+    
+    el.innerHTML = displayAdjustments.map(adj => {
+        const typeSymbol = adj.type === 'increase' ? '+' : '-';
+        const typeClass = adj.type === 'increase' ? 'positive' : 'negative';
+        const typeText = adj.type === 'increase' ? 'Added' : 'Removed';
+        const reasonText = adj.reason.charAt(0).toUpperCase() + adj.reason.slice(1);
+        const approvalStatus = adj.approved ? 'approved' : 'pending';
+        const approvalText = adj.approved ? 'Approved' : 'Pending';
+        
+        return `
+        <div class="adjustment-item">
+            <div class="adjustment-info">
+                <h3>${adj.product_name}</h3>
+                <p>${adj.product_code} | ${typeText} ${Math.abs(adj.quantity)} units</p>
+                <p><i data-lucide="calendar" style="width:12px;height:12px;"></i> ${adj.date} | <i data-lucide="tag" style="width:12px;height:12px;"></i> ${reasonText}</p>
+                ${adj.notes ? `<p style="font-size:11px;color:var(--sub);margin-top:4px;"><i data-lucide="file-text" style="width:12px;height:12px;"></i> ${adj.notes}</p>` : ''}
+                <span class="approval-badge ${approvalStatus}">${approvalText}</span>
+            </div>
+            <div class="adjustment-quantity ${typeClass}">
+                ${typeSymbol}${Math.abs(adj.quantity)}
+            </div>
+            <div class="adjustment-actions">
+                <button class="btn-sm btn-edit" onclick="editAdjustment(${adj.id})"><i data-lucide="edit-2"></i> Edit</button>
+                <button class="btn-sm btn-danger" onclick="deleteAdjustment(${adj.id})"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function editAdjustment(id) {
+    const adj = adjustments.find(a => a.id === id);
+    if (!adj) return;
+    
+    showAddForm();
+    document.getElementById('edit_adjustment_id').value = adj.id;
+    document.getElementById('product_search').value = `${adj.product_name} (${adj.product_code})`;
+    document.getElementById('adjustment_type').value = adj.type;
+    document.getElementById('adjustment_quantity').value = Math.abs(adj.quantity);
+    document.getElementById('adjustment_date').value = adj.date;
+    document.getElementById('adjustment_notes').value = adj.notes || '';
+    
+    // Select the reason
+    document.querySelectorAll('.reason-option').forEach(el => {
+        if (el.getAttribute('onclick').includes(adj.reason)) {
+            el.classList.add('selected');
+            document.getElementById('selected_reason').value = adj.reason;
+        }
+    });
+    
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="edit-2"></i> Edit Stock Adjustment';
+    document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Update Adjustment';
+    lucide.createIcons();
+}
+
+async function saveAdjustment() {
+    const productSearch = document.getElementById('product_search').value.trim();
+    const adjustmentType = document.getElementById('adjustment_type').value;
+    const quantity = document.getElementById('adjustment_quantity').value;
+    const selectedReason = document.getElementById('selected_reason').value;
+    const editId = document.getElementById('edit_adjustment_id').value;
+    
+    if (!productSearch) {
+        document.getElementById('product_error').style.display = 'block';
+        document.getElementById('product_search').focus();
+        return;
+    }
+    document.getElementById('product_error').style.display = 'none';
+    
+    if (!adjustmentType) {
+        showToast('Please select adjustment type', false);
+        document.getElementById('adjustment_type').focus();
+        return;
+    }
+    
+    if (!quantity || quantity <= 0) {
+        document.getElementById('quantity_error').style.display = 'block';
+        document.getElementById('adjustment_quantity').focus();
+        return;
+    }
+    document.getElementById('quantity_error').style.display = 'none';
+    
+    if (!selectedReason) {
+        document.getElementById('reason_error').style.display = 'block';
+        return;
+    }
+    document.getElementById('reason_error').style.display = 'none';
+    
+    // Find the selected product
+    const selectedProduct = products.find(p => 
+        `${p.product_name} (${p.product_code})` === productSearch
+    );
+    
+    if (!selectedProduct) {
+        document.getElementById('product_error').style.display = 'block';
+        return;
+    }
+    
+    const payload = {
+        product_id: selectedProduct.id,
+        product_code: selectedProduct.product_code,
+        product_name: selectedProduct.product_name,
+        type: adjustmentType,
+        quantity: parseInt(quantity),
+        reason: selectedReason,
+        date: document.getElementById('adjustment_date').value,
+        notes: document.getElementById('adjustment_notes').value.trim(),
+        requires_approval: document.getElementById('requires_approval').checked,
+        photos: selectedPhotos // In a real implementation, these would be uploaded separately
+    };
+    
+    try {
+        const url = editId ? `/api/erp/stock-adjustments/${editId}` : '/api/erp/stock-adjustments';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        
+        if (d.success) {
+            showToast(editId ? 'Adjustment updated!' : 'Adjustment recorded!');
+            hideAddForm();
+            loadAdjustments();
+        } else {
+            showToast((d.error || 'Failed to save adjustment'), false);
+        }
+    } catch (e) {
+        showToast('Network error', false);
+    }
+}
+
+async function deleteAdjustment(id) {
+    if (!confirm('Delete this stock adjustment? This action cannot be undone.')) return;
+    
+    try {
+        const r = await fetch(`/api/erp/stock-adjustments/${id}`, {method: 'DELETE'});
+        const d = await r.json();
+        
+        if (d.success) {
+            showToast('Stock adjustment deleted');
+            loadAdjustments();
+        } else {
+            showToast((d.error || 'Failed to delete adjustment'), false);
+        }
+    } catch (e) {
+        showToast('Network error', false);
+    }
+}
+
+function exportData() {
+    showToast('Exporting adjustment data...', true);
+    // In a real implementation, this would export to Excel
+}
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    loadAdjustments();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

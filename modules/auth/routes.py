@@ -30,64 +30,134 @@ def api_set_language():
 @auth_bp.route('/api/auth/unified-login', methods=['POST'])
 def api_login():
     """Unified login for all user types with proper database authentication"""
-    data = request.get_json()
-    
-    # Handle both login_id and loginId (mobile uses loginId)
-    login_id = data.get('loginId') or data.get('login_id') or data.get('email', '').strip()
-    password = data.get('password', '').strip()
-    
-    logger.info(f"🔐 Login attempt for: {login_id}")
-    
-    if not login_id or not password:
-        logger.warning(f"❌ Missing credentials")
-        return jsonify({'message': 'Login ID and password are required'}), 400
-    
     try:
-        result = auth_service.authenticate_user(login_id, password)
-        logger.info(f"🔍 Auth result: {result.get('success')} - {result.get('message', 'No message')}")
+        # Validate request data
+        if not request.is_json:
+            logger.warning("Login request without JSON content type")
+            return jsonify({'message': 'Content-Type must be application/json'}), 400
         
-        if result['success']:
-            # Set session data
-            for key, value in result['session_data'].items():
-                session[key] = value
-            session.permanent = True
-            
-            logger.info(f"✅ User login successful: {result['user']['email']} (Type: {result['user']['type']})")
-            
+        data = request.get_json()
+        if not data:
+            logger.warning("Empty or invalid JSON in login request")
+            return jsonify({'message': 'Request body cannot be empty'}), 400
+        
+        # Handle both login_id and loginId (mobile uses loginId)
+        login_id = data.get('loginId') or data.get('login_id') or data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        logger.info(f"🔐 Login attempt for: {login_id}")
+        
+        # Validate credentials
+        if not login_id or not password:
+            logger.warning(f"❌ Missing credentials - login_id: {bool(login_id)}, password: {bool(password)}")
             return jsonify({
-                "message": "Login successful",
-                "token": result['token'],
-                "user": result['user']
-            })
-        else:
-            logger.warning(f"❌ Login failed: {result.get('message')}")
-            return jsonify({"message": result.get('message', 'Invalid credentials')}), 401
+                'message': 'Login ID and password are required',
+                'field_errors': {
+                    'login_id': 'Login ID is required' if not login_id else None,
+                    'password': 'Password is required' if not password else None
+                }
+            }), 400
+        
+        # Rate limiting simulation - in production, implement proper rate limiting
+        # For now, just log the attempt for monitoring
+        logger.info(f"Processing login for user: {login_id}")
+        
+        try:
+            result = auth_service.authenticate_user(login_id, password)
+            logger.info(f"🔍 Auth result: {result.get('success')} - {result.get('message', 'No message')}")
+            
+            if result['success']:
+                # Set session data
+                for key, value in result['session_data'].items():
+                    session[key] = value
+                session.permanent = True
+                
+                # Ensure session cookie is properly set for mobile
+                response = jsonify({
+                    "success": True,
+                    "message": "Login successful",
+                    "token": result['token'],
+                    "user": result['user']
+                })
+                
+                # Set additional security headers
+                response.headers['Cache-Control'] = 'no-store'
+                response.headers['Pragma'] = 'no-cache'
+                
+                logger.info(f"✅ User login successful: {result['user']['email']} (Type: {result['user']['type']})")
+                return response
+            else:
+                # Log failed attempt for security monitoring
+                logger.warning(f"❌ Login failed: {result.get('message')}")
+                return jsonify({
+                    "success": False,
+                    "message": result.get('message', 'Invalid credentials'),
+                    "error_code": "AUTH_FAILED"
+                }), 401
+                
+        except Exception as auth_error:
+            logger.error(f"Authentication service error: {auth_error}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                "success": False,
+                "message": "Authentication service error",
+                "error": str(auth_error),
+                "error_code": "INTERNAL_ERROR"
+            }), 500
         
     except Exception as e:
         logger.error(f"💥 Login error: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({"message": "Login error", "error": str(e)}), 500
+        return jsonify({
+            "success": False,
+            "message": "Login error occurred",
+            "error": str(e),
+            "error_code": "REQUEST_ERROR"
+        }), 500
 
 @auth_bp.route('/api/auth/user-info', methods=['GET'])
 def get_user_info():
     """Get current user information including role and profile data"""
     try:
         result = auth_service.get_user_info(session)
-        return jsonify(result)
+        
+        # Ensure consistent response format with proper HTTP status
+        if result.get('user_id'):  # User is authenticated
+            return jsonify(result), 200
+        else:  # User is not authenticated
+            return jsonify({
+                "user_id": None,
+                "user_type": None,
+                "user_name": None,
+                "email": None,
+                "username": None,
+                "profile_picture": None,
+                "is_super_admin": False,
+                "staff_role": None,
+                "authenticated": False
+            }), 401  # Unauthorized if no user is authenticated
         
     except Exception as e:
-        print(f"Error in get_user_info: {e}")
+        # Log the error for debugging
+        logger.error(f"Error in get_user_info: {e}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return consistent error response
         return jsonify({
+            "error": "Failed to retrieve user information",
             "user_id": session.get('user_id'),
             "user_type": session.get('user_type'),
             "user_name": session.get('user_name'),
-            "email": session.get('email'),           # Include session email
-            "username": session.get('username'),     # Include username
+            "email": session.get('email'),
+            "username": session.get('username'),
             "profile_picture": None,
             "is_super_admin": session.get('is_super_admin', False),
-            "staff_role": session.get('staff_role')
-        })
+            "staff_role": session.get('staff_role'),
+            "authenticated": bool(session.get('user_id'))
+        }), 500  # Internal Server Error
 
 @auth_bp.route('/api/auth/register', methods=['POST'])
 def api_register():

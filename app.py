@@ -6,7 +6,7 @@ Version: 2.0.5 - FIXED POSTGRESQL AUTH - cursor.execute fix
 Last Updated: 2026-02-17 (Auth Fix Deployed)
 """
 
-from flask import Flask, request, g, make_response, session
+from flask import Flask, request, g, make_response, session, after_this_request
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
@@ -24,11 +24,7 @@ from modules.auth.routes import auth_bp
 from modules.products.routes import products_bp
 from modules.mobile.routes import mobile_bp
 from modules.main.routes import main_bp
-from modules.retail.routes import retail_bp
-from modules.hotel.routes import hotel_bp
-from modules.billing.routes import billing_bp
-from modules.sales.routes import sales_bp
-from modules.invoices.routes import invoices_bp
+# OLD MODULES REMOVED: retail, hotel, billing, sales, invoices
 from modules.dashboard.routes import dashboard_bp
 from modules.customers.routes import customers_bp
 from modules.credit.routes import credit_bp
@@ -41,6 +37,7 @@ from modules.client_management.routes import client_management_bp
 from modules.user_management.routes import user_management_bp
 from modules.stock.routes import stock_bp  # NEW: Stock management module
 from modules.integrated_inventory.routes import integrated_inventory_bp  # NEW: Integrated inventory system
+from modules.erp_modules.routes import erp_bp  # ERP Full-Featured Modules
 
 # Import cron routes
 from modules.cron.routes import cron_bp
@@ -55,7 +52,8 @@ logger = logging.getLogger(__name__)
 
 # Enable CORS for all domains and methods (for mobile app)
 CORS(app, origins="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"], 
-     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+     supports_credentials=True)  # Allow credentials to be sent with CORS requests
 
 # App configuration
 # Use environment-provided SECRET_KEY or fallback (CHANGE THIS IN PRODUCTION)
@@ -63,13 +61,18 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'cms-secret-key-change-i
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # Session expires after 30 days
 app.config['SESSION_PERMANENT'] = True  # Make sessions permanent
 app.config['SESSION_TYPE'] = 'filesystem'  # Use filesystem for session storage
+app.config['SESSION_FILE_DIR'] = os.path.join(os.getcwd(), 'flask_session_data')  # Specify session file directory
 # Use Secure cookies only on HTTPS (i.e. deployed server), not on local HTTP
 _is_production = os.environ.get('FLASK_ENV', 'development') == 'production'
-app.config['SESSION_COOKIE_SECURE'] = _is_production
+app.config['SESSION_COOKIE_SECURE'] = _is_production  # Secure flag for HTTPS in production
 app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to session cookie
-# Use 'None' SameSite on production so cross-origin mobile/API calls can send cookies
-app.config['SESSION_COOKIE_SAMESITE'] = 'None' if _is_production else 'Lax'
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site requests for mobile app
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True  # Refresh session expiry with each request
+app.config['SESSION_COOKIE_DOMAIN'] = None  # Allow cookies on all subdomains for mobile compatibility
 app.config['TEMPLATES_AUTO_RELOAD'] = True  # Auto-reload templates for development
+
+# Create session directory if it doesn't exist
+os.makedirs(app.config['SESSION_FILE_DIR'], exist_ok=True)
 
 # File Upload Configuration
 UPLOAD_FOLDER = 'frontend/assets/static/uploads'
@@ -116,6 +119,7 @@ def inject_translator():
 def detect_language():
     # Refresh session on every request to keep it alive
     if 'user_id' in session:
+        session.permanent = True  # Ensure session stays permanent
         session.modified = True
     
     # language preference comes from cookie `app_lang` (set by frontend)
@@ -126,17 +130,20 @@ def detect_language():
         if al:
             lang = al.split(',')[0].split('-')[0]
     g.lang = lang or 'en'
+    
+    # Add security headers for mobile app
+    @after_this_request
+    def add_security_headers(response):
+        # Allow cookies to be sent with cross-origin requests for mobile app
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
 
 # Register all blueprints
 app.register_blueprint(auth_bp)
 app.register_blueprint(products_bp)
 app.register_blueprint(mobile_bp)
 app.register_blueprint(main_bp)
-app.register_blueprint(retail_bp)
-app.register_blueprint(hotel_bp)
-app.register_blueprint(billing_bp)
-app.register_blueprint(sales_bp)
-app.register_blueprint(invoices_bp)
+# OLD MODULES REMOVED: retail_bp, hotel_bp, billing_bp, sales_bp, invoices_bp
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(customers_bp)
 app.register_blueprint(credit_bp)
@@ -149,6 +156,7 @@ app.register_blueprint(client_management_bp)
 app.register_blueprint(user_management_bp)
 app.register_blueprint(stock_bp)  # NEW: Stock management routes
 app.register_blueprint(integrated_inventory_bp)  # NEW: Integrated inventory system
+app.register_blueprint(erp_bp)  # Comprehensive ERP modules
 app.register_blueprint(sync_api_bp)
 app.register_blueprint(cron_bp)  # Cron job routes
 
@@ -244,6 +252,10 @@ def initialize_database():
     # Initialize integrated inventory system
     from modules.integrated_inventory.database import init_integrated_inventory_tables
     init_integrated_inventory_tables()
+    
+    # Initialize comprehensive ERP module tables
+    from modules.erp_modules.database import init_erp_tables
+    init_erp_tables()
     
     # 🔧 AUTO-FIX: Run database migration for business_owner_id
     try:
@@ -431,7 +443,12 @@ def print_startup_info():
 def health_check():
     """Health check endpoint for monitoring"""
     return {'status': 'healthy', 'service': 'BizPulse ERP'}, 200
+# new one for 404 error 
 
+@app.route("/cron/health")
+def cron_health():
+    return "OK", 200
+    
 # Initialize database at module load time so it runs under Gunicorn too
 try:
     initialize_database()

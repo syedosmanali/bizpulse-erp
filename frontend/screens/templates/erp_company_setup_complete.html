@@ -1,0 +1,1275 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Company Setup - Complete Configuration{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine-primary: #732C3F;
+        --wine-dark: #5a2332;
+        --wine-light: #8f3a4f;
+        --wine-lighter: #f8e8eb;
+        --success: #28a745;
+        --danger: #dc3545;
+        --warning: #ffc107;
+    }
+
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .setup-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .setup-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(115, 44, 63, 0.1);
+        overflow: hidden;
+    }
+
+    .setup-header {
+        background: linear-gradient(135deg, var(--wine-primary) 0%, var(--wine-dark) 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .setup-header h1 {
+        margin: 0;
+        font-size: 2rem;
+        font-weight: 600;
+    }
+
+    .setup-header p {
+        margin: 0.5rem 0 0 0;
+        opacity: 0.9;
+    }
+
+    /* Tab Navigation */
+    .tab-navigation {
+        display: flex;
+        background: var(--wine-lighter);
+        border-bottom: 2px solid var(--wine-primary);
+        overflow-x: auto;
+        flex-wrap: wrap;
+    }
+
+    .tab-btn {
+        flex: 1;
+        min-width: 150px;
+        padding: 1rem 1.5rem;
+        background: transparent;
+        border: none;
+        color: var(--wine-dark);
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+        background: rgba(115, 44, 63, 0.1);
+    }
+
+    .tab-btn.active {
+        background: white;
+        color: var(--wine-primary);
+    }
+
+    .tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--wine-primary);
+    }
+
+    /* Tab Content */
+    .tab-content {
+        display: none;
+        padding: 2rem;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Form Styles */
+    .form-section {
+        margin-bottom: 2rem;
+    }
+
+    .form-section-title {
+        color: var(--wine-primary);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--wine-lighter);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        color: #333;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group label.required::after {
+        content: ' *';
+        color: var(--danger);
+    }
+
+    .form-control {
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--wine-primary);
+        box-shadow: 0 0 0 3px rgba(115, 44, 63, 0.1);
+    }
+
+    .form-control.error {
+        border-color: var(--danger);
+    }
+
+    .error-message {
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    /* Logo Upload */
+    .logo-upload-area {
+        border: 2px dashed var(--wine-primary);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: var(--wine-lighter);
+    }
+
+    .logo-upload-area:hover {
+        background: rgba(115, 44, 63, 0.1);
+        border-color: var(--wine-dark);
+    }
+
+    .logo-preview {
+        max-width: 200px;
+        max-height: 200px;
+        margin: 1rem auto;
+        display: none;
+    }
+
+    .logo-preview.show {
+        display: block;
+    }
+
+    /* Role Management */
+    .role-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .role-card:hover {
+        border-color: var(--wine-primary);
+        box-shadow: 0 2px 8px rgba(115, 44, 63, 0.1);
+    }
+
+    .role-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .role-name {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--wine-primary);
+    }
+
+    .permission-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .permission-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .permission-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--wine-primary);
+    }
+
+    /* Template Selection */
+    .template-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .template-card {
+        border: 3px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .template-card:hover {
+        border-color: var(--wine-light);
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(115, 44, 63, 0.2);
+    }
+
+    .template-card.selected {
+        border-color: var(--wine-primary);
+        background: var(--wine-lighter);
+    }
+
+    .template-preview {
+        width: 100%;
+        height: 150px;
+        background: #f5f5f5;
+        border-radius: 4px;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--wine-primary);
+    }
+
+    /* Save Button */
+    .save-section {
+        background: var(--wine-lighter);
+        padding: 1.5rem 2rem;
+        border-top: 2px solid var(--wine-primary);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: var(--wine-primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(115, 44, 63, 0.3);
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 1000;
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+    }
+
+    .toast.success {
+        border-left: 4px solid var(--success);
+    }
+
+    .toast.error {
+        border-left: 4px solid var(--danger);
+    }
+
+    .toast.warning {
+        border-left: 4px solid var(--warning);
+    }
+
+    .toast-icon {
+        font-size: 1.5rem;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .setup-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .tab-btn {
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .tab-content {
+            padding: 1rem;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .template-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .save-section {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="setup-container">
+    <div class="setup-card">
+        <!-- Header -->
+        <div class="setup-header">
+            <h1>🏢 Complete Company Setup</h1>
+            <p>Configure all aspects of your company profile and ERP settings</p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="company-profile">
+                📋 Company Profile
+            </button>
+            <button class="tab-btn" data-tab="gst-details">
+                📄 GST Details
+            </button>
+            <button class="tab-btn" data-tab="invoice-settings">
+                🧾 Invoice Settings
+            </button>
+            <button class="tab-btn" data-tab="financial-year">
+                📅 Financial Year
+            </button>
+            <button class="tab-btn" data-tab="role-management">
+                👥 Role Management
+            </button>
+            <button class="tab-btn" data-tab="session-settings">
+                ⏱️ Session Settings
+            </button>
+            <button class="tab-btn" data-tab="invoice-templates">
+                🎨 Invoice Templates
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form id="companySetupForm">
+            <!-- Tab 1: Company Profile -->
+            <div class="tab-content active" id="company-profile">
+                <div class="form-section">
+                    <h2 class="form-section-title">Company Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyName" class="required">Company Name</label>
+                            <input type="text" id="companyName" name="companyName" class="form-control" 
+                                   placeholder="Enter company name" required>
+                            <span class="error-message" id="companyNameError"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="companyEmail" class="required">Email</label>
+                            <input type="email" id="companyEmail" name="companyEmail" class="form-control" 
+                                   placeholder="company@example.com" required>
+                            <span class="error-message" id="companyEmailError"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyPhone" class="required">Phone Number</label>
+                            <input type="tel" id="companyPhone" name="companyPhone" class="form-control" 
+                                   placeholder="+91 1234567890" required>
+                            <span class="error-message" id="companyPhoneError"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="companyWebsite">Website</label>
+                            <input type="url" id="companyWebsite" name="companyWebsite" class="form-control" 
+                                   placeholder="https://www.example.com">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyAddress" class="required">Address</label>
+                            <textarea id="companyAddress" name="companyAddress" class="form-control" 
+                                      rows="3" placeholder="Enter complete address" required></textarea>
+                            <span class="error-message" id="companyAddressError"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="companyCity" class="required">City</label>
+                            <input type="text" id="companyCity" name="companyCity" class="form-control" 
+                                   placeholder="Enter city" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="companyState" class="required">State</label>
+                            <select id="companyState" name="companyState" class="form-control" required>
+                                <option value="">Select State</option>
+                                <option value="AN">Andaman and Nicobar Islands</option>
+                                <option value="AP">Andhra Pradesh</option>
+                                <option value="AR">Arunachal Pradesh</option>
+                                <option value="AS">Assam</option>
+                                <option value="BR">Bihar</option>
+                                <option value="CH">Chandigarh</option>
+                                <option value="CT">Chhattisgarh</option>
+                                <option value="DN">Dadra and Nagar Haveli</option>
+                                <option value="DD">Daman and Diu</option>
+                                <option value="DL">Delhi</option>
+                                <option value="GA">Goa</option>
+                                <option value="GJ">Gujarat</option>
+                                <option value="HR">Haryana</option>
+                                <option value="HP">Himachal Pradesh</option>
+                                <option value="JK">Jammu and Kashmir</option>
+                                <option value="JH">Jharkhand</option>
+                                <option value="KA">Karnataka</option>
+                                <option value="KL">Kerala</option>
+                                <option value="LA">Ladakh</option>
+                                <option value="LD">Lakshadweep</option>
+                                <option value="MP">Madhya Pradesh</option>
+                                <option value="MH">Maharashtra</option>
+                                <option value="MN">Manipur</option>
+                                <option value="ML">Meghalaya</option>
+                                <option value="MZ">Mizoram</option>
+                                <option value="NL">Nagaland</option>
+                                <option value="OR">Odisha</option>
+                                <option value="PY">Puducherry</option>
+                                <option value="PB">Punjab</option>
+                                <option value="RJ">Rajasthan</option>
+                                <option value="SK">Sikkim</option>
+                                <option value="TN">Tamil Nadu</option>
+                                <option value="TG">Telangana</option>
+                                <option value="TR">Tripura</option>
+                                <option value="UP">Uttar Pradesh</option>
+                                <option value="UT">Uttarakhand</option>
+                                <option value="WB">West Bengal</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="companyPincode" class="required">Pincode</label>
+                            <input type="text" id="companyPincode" name="companyPincode" class="form-control" 
+                                   placeholder="123456" pattern="[0-9]{6}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">Company Logo</h2>
+                    <div class="logo-upload-area" id="logoUploadArea">
+                        <input type="file" id="companyLogo" name="companyLogo" accept="image/*" style="display: none;">
+                        <div id="uploadPrompt">
+                            <p style="font-size: 3rem; margin: 0;">📷</p>
+                            <p style="margin: 0.5rem 0; font-weight: 600; color: var(--wine-primary);">
+                                Click to upload company logo
+                            </p>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                PNG, JPG or SVG (Max 2MB)
+                            </p>
+                        </div>
+                        <img id="logoPreview" class="logo-preview" alt="Logo Preview">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: GST Details -->
+            <div class="tab-content" id="gst-details">
+                <div class="form-section">
+                    <h2 class="form-section-title">GST Information</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gstin" class="required">GSTIN</label>
+                            <input type="text" id="gstin" name="gstin" class="form-control" 
+                                   placeholder="22AAAAA0000A1Z5" pattern="[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}" 
+                                   maxlength="15" required>
+                            <span class="error-message" id="gstinError"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gstState" class="required">GST State</label>
+                            <select id="gstState" name="gstState" class="form-control" required>
+                                <option value="">Select State</option>
+                                <option value="01">01 - Jammu and Kashmir</option>
+                                <option value="02">02 - Himachal Pradesh</option>
+                                <option value="03">03 - Punjab</option>
+                                <option value="04">04 - Chandigarh</option>
+                                <option value="05">05 - Uttarakhand</option>
+                                <option value="06">06 - Haryana</option>
+                                <option value="07">07 - Delhi</option>
+                                <option value="08">08 - Rajasthan</option>
+                                <option value="09">09 - Uttar Pradesh</option>
+                                <option value="10">10 - Bihar</option>
+                                <option value="11">11 - Sikkim</option>
+                                <option value="12">12 - Arunachal Pradesh</option>
+                                <option value="13">13 - Nagaland</option>
+                                <option value="14">14 - Manipur</option>
+                                <option value="15">15 - Mizoram</option>
+                                <option value="16">16 - Tripura</option>
+                                <option value="17">17 - Meghalaya</option>
+                                <option value="18">18 - Assam</option>
+                                <option value="19">19 - West Bengal</option>
+                                <option value="20">20 - Jharkhand</option>
+                                <option value="21">21 - Odisha</option>
+                                <option value="22">22 - Chhattisgarh</option>
+                                <option value="23">23 - Madhya Pradesh</option>
+                                <option value="24">24 - Gujarat</option>
+                                <option value="27">27 - Maharashtra</option>
+                                <option value="29">29 - Karnataka</option>
+                                <option value="32">32 - Kerala</option>
+                                <option value="33">33 - Tamil Nadu</option>
+                                <option value="36">36 - Telangana</option>
+                                <option value="37">37 - Andhra Pradesh</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="pan" class="required">PAN Number</label>
+                            <input type="text" id="pan" name="pan" class="form-control" 
+                                   placeholder="AAAAA0000A" pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}" 
+                                   maxlength="10" required>
+                            <span class="error-message" id="panError"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gstType" class="required">GST Type</label>
+                            <select id="gstType" name="gstType" class="form-control" required>
+                                <option value="">Select GST Type</option>
+                                <option value="regular">Regular</option>
+                                <option value="composition">Composition</option>
+                                <option value="unregistered">Unregistered</option>
+                                <option value="sez">SEZ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="gstRegistrationDate">GST Registration Date</label>
+                            <input type="date" id="gstRegistrationDate" name="gstRegistrationDate" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Invoice Settings -->
+            <div class="tab-content" id="invoice-settings">
+                <div class="form-section">
+                    <h2 class="form-section-title">Invoice Configuration</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="invoicePrefix" class="required">Invoice Prefix</label>
+                            <input type="text" id="invoicePrefix" name="invoicePrefix" class="form-control" 
+                                   placeholder="INV" maxlength="10" required>
+                            <span class="error-message" id="invoicePrefixError"></span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="invoiceStartNumber" class="required">Starting Number</label>
+                            <input type="number" id="invoiceStartNumber" name="invoiceStartNumber" 
+                                   class="form-control" placeholder="1" min="1" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="invoiceTerms">Terms & Conditions</label>
+                            <textarea id="invoiceTerms" name="invoiceTerms" class="form-control" 
+                                      rows="5" placeholder="Enter invoice terms and conditions..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paymentTerms">Payment Terms (Days)</label>
+                            <input type="number" id="paymentTerms" name="paymentTerms" 
+                                   class="form-control" placeholder="30" min="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="bankName">Bank Name</label>
+                            <input type="text" id="bankName" name="bankName" class="form-control" 
+                                   placeholder="Enter bank name">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="accountNumber">Account Number</label>
+                            <input type="text" id="accountNumber" name="accountNumber" class="form-control" 
+                                   placeholder="Enter account number">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ifscCode">IFSC Code</label>
+                            <input type="text" id="ifscCode" name="ifscCode" class="form-control" 
+                                   placeholder="ABCD0123456" pattern="[A-Z]{4}0[A-Z0-9]{6}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Financial Year -->
+            <div class="tab-content" id="financial-year">
+                <div class="form-section">
+                    <h2 class="form-section-title">Financial Year Settings</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fyStartMonth" class="required">Financial Year Start Month</label>
+                            <select id="fyStartMonth" name="fyStartMonth" class="form-control" required>
+                                <option value="">Select Month</option>
+                                <option value="1">January</option>
+                                <option value="2">February</option>
+                                <option value="3">March</option>
+                                <option value="4" selected>April</option>
+                                <option value="5">May</option>
+                                <option value="6">June</option>
+                                <option value="7">July</option>
+                                <option value="8">August</option>
+                                <option value="9">September</option>
+                                <option value="10">October</option>
+                                <option value="11">November</option>
+                                <option value="12">December</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="currentFY" class="required">Current Financial Year</label>
+                            <select id="currentFY" name="currentFY" class="form-control" required>
+                                <option value="">Select Year</option>
+                                <option value="2022-2023">2022-2023</option>
+                                <option value="2023-2024">2023-2024</option>
+                                <option value="2024-2025" selected>2024-2025</option>
+                                <option value="2025-2026">2025-2026</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="lockPreviousYears" name="lockPreviousYears" 
+                                       style="width: 20px; height: 20px; accent-color: var(--wine-primary);">
+                                <span>Lock Previous Financial Years</span>
+                            </label>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                Prevent modifications to transactions from previous financial years
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Role Management -->
+            <div class="tab-content" id="role-management">
+                <div class="form-section">
+                    <h2 class="form-section-title">User Roles & Permissions</h2>
+                    
+                    <!-- Owner Role -->
+                    <div class="role-card">
+                        <div class="role-header">
+                            <div class="role-name">👑 Owner</div>
+                            <span style="color: #666; font-size: 0.9rem;">Full Access</span>
+                        </div>
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            Complete control over all modules and settings
+                        </p>
+                        <div class="permission-grid">
+                            <div class="permission-item">
+                                <input type="checkbox" checked disabled>
+                                <label>All Permissions</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Staff Role -->
+                    <div class="role-card">
+                        <div class="role-header">
+                            <div class="role-name">👤 Staff</div>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="enableStaffRole" name="enableStaffRole" checked>
+                                <span style="font-size: 0.9rem;">Enable Role</span>
+                            </label>
+                        </div>
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            Standard user with limited access
+                        </p>
+                        <div class="permission-grid">
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="view_invoices" checked>
+                                <label>View Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="create_invoices">
+                                <label>Create Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="edit_invoices">
+                                <label>Edit Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="delete_invoices">
+                                <label>Delete Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="view_customers" checked>
+                                <label>View Customers</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="manage_customers">
+                                <label>Manage Customers</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="view_products" checked>
+                                <label>View Products</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="staffPerms" value="manage_products">
+                                <label>Manage Products</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accountant Role -->
+                    <div class="role-card">
+                        <div class="role-header">
+                            <div class="role-name">📊 Accountant</div>
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="enableAccountantRole" name="enableAccountantRole" checked>
+                                <span style="font-size: 0.9rem;">Enable Role</span>
+                            </label>
+                        </div>
+                        <p style="color: #666; margin-bottom: 1rem;">
+                            Financial and accounting access
+                        </p>
+                        <div class="permission-grid">
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="view_invoices" checked>
+                                <label>View Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="create_invoices" checked>
+                                <label>Create Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="edit_invoices" checked>
+                                <label>Edit Invoices</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="view_reports" checked>
+                                <label>View Reports</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="manage_payments" checked>
+                                <label>Manage Payments</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="gst_filing" checked>
+                                <label>GST Filing</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="view_customers" checked>
+                                <label>View Customers</label>
+                            </div>
+                            <div class="permission-item">
+                                <input type="checkbox" name="accountantPerms" value="export_data" checked>
+                                <label>Export Data</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 6: Session Settings -->
+            <div class="tab-content" id="session-settings">
+                <div class="form-section">
+                    <h2 class="form-section-title">Session Configuration</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="sessionTimeout" class="required">Session Timeout (minutes)</label>
+                            <input type="number" id="sessionTimeout" name="sessionTimeout" 
+                                   class="form-control" placeholder="30" min="5" max="1440" value="30" required>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                Users will be logged out after this period of inactivity
+                            </p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="maxLoginAttempts" class="required">Max Login Attempts</label>
+                            <input type="number" id="maxLoginAttempts" name="maxLoginAttempts" 
+                                   class="form-control" placeholder="5" min="3" max="10" value="5" required>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                Account will be locked after this many failed attempts
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="rememberMe" name="rememberMe" checked
+                                       style="width: 20px; height: 20px; accent-color: var(--wine-primary);">
+                                <span>Enable "Remember Me" Option</span>
+                            </label>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                Allow users to stay logged in for extended periods
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="checkbox" id="twoFactorAuth" name="twoFactorAuth"
+                                       style="width: 20px; height: 20px; accent-color: var(--wine-primary);">
+                                <span>Enable Two-Factor Authentication</span>
+                            </label>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                Add an extra layer of security with 2FA
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 7: Invoice Templates -->
+            <div class="tab-content" id="invoice-templates">
+                <div class="form-section">
+                    <h2 class="form-section-title">Choose Invoice Template</h2>
+                    
+                    <div class="template-grid">
+                        <div class="template-card selected" data-template="classic">
+                            <div class="template-preview">📄</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Classic</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Traditional professional layout
+                            </p>
+                        </div>
+
+                        <div class="template-card" data-template="modern">
+                            <div class="template-preview">🎨</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Modern</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Clean and contemporary design
+                            </p>
+                        </div>
+
+                        <div class="template-card" data-template="minimal">
+                            <div class="template-preview">📋</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Minimal</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Simple and elegant
+                            </p>
+                        </div>
+
+                        <div class="template-card" data-template="corporate">
+                            <div class="template-preview">🏢</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Corporate</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Professional business style
+                            </p>
+                        </div>
+
+                        <div class="template-card" data-template="colorful">
+                            <div class="template-preview">🌈</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Colorful</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Vibrant and eye-catching
+                            </p>
+                        </div>
+
+                        <div class="template-card" data-template="elegant">
+                            <div class="template-preview">✨</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--wine-primary);">Elegant</h3>
+                            <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                                Sophisticated and refined
+                            </p>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="selectedTemplate" name="selectedTemplate" value="classic">
+                </div>
+            </div>
+        </form>
+
+        <!-- Save Section -->
+        <div class="save-section">
+            <div>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                    <span style="color: var(--danger);">*</span> Required fields
+                </p>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                    Reset
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveSetup()">
+                    💾 Save Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span id="toastMessage"></span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab Navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.dataset.tab;
+            
+            // Update buttons
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Logo Upload
+    const logoUploadArea = document.getElementById('logoUploadArea');
+    const logoInput = document.getElementById('companyLogo');
+    const logoPreview = document.getElementById('logoPreview');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+
+    logoUploadArea.addEventListener('click', () => {
+        logoInput.click();
+    });
+
+    logoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('File size must be less than 2MB', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                logoPreview.src = e.target.result;
+                logoPreview.classList.add('show');
+                uploadPrompt.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Template Selection
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.addEventListener('click', () => {
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            document.getElementById('selectedTemplate').value = card.dataset.template;
+        });
+    });
+
+    // Form Validation
+    function validateForm() {
+        let isValid = true;
+        const errors = {};
+
+        // Company Name
+        const companyName = document.getElementById('companyName').value.trim();
+        if (!companyName) {
+            errors.companyName = 'Company name is required';
+            isValid = false;
+        }
+
+        // Email
+        const email = document.getElementById('companyEmail').value.trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            errors.companyEmail = 'Email is required';
+            isValid = false;
+        } else if (!emailRegex.test(email)) {
+            errors.companyEmail = 'Invalid email format';
+            isValid = false;
+        }
+
+        // Phone
+        const phone = document.getElementById('companyPhone').value.trim();
+        if (!phone) {
+            errors.companyPhone = 'Phone number is required';
+            isValid = false;
+        }
+
+        // Address
+        const address = document.getElementById('companyAddress').value.trim();
+        if (!address) {
+            errors.companyAddress = 'Address is required';
+            isValid = false;
+        }
+
+        // GSTIN
+        const gstin = document.getElementById('gstin').value.trim();
+        const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+        if (gstin && !gstinRegex.test(gstin)) {
+            errors.gstin = 'Invalid GSTIN format';
+            isValid = false;
+        }
+
+        // PAN
+        const pan = document.getElementById('pan').value.trim();
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        if (pan && !panRegex.test(pan)) {
+            errors.pan = 'Invalid PAN format';
+            isValid = false;
+        }
+
+        // Invoice Prefix
+        const invoicePrefix = document.getElementById('invoicePrefix').value.trim();
+        if (!invoicePrefix) {
+            errors.invoicePrefix = 'Invoice prefix is required';
+            isValid = false;
+        }
+
+        // Display errors
+        Object.keys(errors).forEach(key => {
+            const errorElement = document.getElementById(key + 'Error');
+            if (errorElement) {
+                errorElement.textContent = errors[key];
+                document.getElementById(key).classList.add('error');
+            }
+        });
+
+        // Clear previous errors
+        document.querySelectorAll('.error-message').forEach(el => {
+            if (!errors[el.id.replace('Error', '')]) {
+                el.textContent = '';
+            }
+        });
+        document.querySelectorAll('.form-control.error').forEach(el => {
+            if (!errors[el.id]) {
+                el.classList.remove('error');
+            }
+        });
+
+        return isValid;
+    }
+
+    // Save Setup
+    async function saveSetup() {
+        if (!validateForm()) {
+            showToast('Please fix the errors before saving', 'error');
+            return;
+        }
+
+        const formData = new FormData(document.getElementById('companySetupForm'));
+        
+        // Collect staff permissions
+        const staffPerms = [];
+        document.querySelectorAll('input[name="staffPerms"]:checked').forEach(cb => {
+            staffPerms.push(cb.value);
+        });
+        formData.append('staffPermissions', JSON.stringify(staffPerms));
+
+        // Collect accountant permissions
+        const accountantPerms = [];
+        document.querySelectorAll('input[name="accountantPerms"]:checked').forEach(cb => {
+            accountantPerms.push(cb.value);
+        });
+        formData.append('accountantPermissions', JSON.stringify(accountantPerms));
+
+        try {
+            const response = await fetch('/erp/company-setup/save', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Company setup saved successfully!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/erp/dashboard';
+                }, 2000);
+            } else {
+                showToast(result.message || 'Failed to save setup', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showToast('An error occurred while saving', 'error');
+        }
+    }
+
+    // Reset Form
+    function resetForm() {
+        if (confirm('Are you sure you want to reset all fields?')) {
+            document.getElementById('companySetupForm').reset();
+            logoPreview.classList.remove('show');
+            uploadPrompt.style.display = 'block';
+            document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+            document.querySelector('.template-card[data-template="classic"]').classList.add('selected');
+            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+            document.querySelectorAll('.form-control.error').forEach(el => el.classList.remove('error'));
+            showToast('Form reset successfully', 'warning');
+        }
+    }
+
+    // Toast Notification
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        toast.className = 'toast ' + type;
+        
+        if (type === 'success') {
+            toastIcon.textContent = '✓';
+        } else if (type === 'error') {
+            toastIcon.textContent = '✗';
+        } else if (type === 'warning') {
+            toastIcon.textContent = '⚠';
+        }
+
+        toastMessage.textContent = message;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Real-time validation
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('blur', () => {
+            if (input.hasAttribute('required') && !input.value.trim()) {
+                input.classList.add('error');
+            } else {
+                input.classList.remove('error');
+            }
+        });
+
+        input.addEventListener('input', () => {
+            if (input.classList.contains('error') && input.value.trim()) {
+                input.classList.remove('error');
+                const errorElement = document.getElementById(input.id + 'Error');
+                if (errorElement) {
+                    errorElement.textContent = '';
+                }
+            }
+        });
+    });
+
+    // Auto-format GSTIN
+    document.getElementById('gstin').addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase();
+    });
+
+    // Auto-format PAN
+    document.getElementById('pan').addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase();
+    });
+
+    // Auto-format IFSC
+    document.getElementById('ifscCode').addEventListener('input', (e) => {
+        e.target.value = e.target.value.toUpperCase();
+    });
+
+    // Load existing data if available
+    window.addEventListener('load', () => {
+        // You can add AJAX call here to load existing company data
+        console.log('Company setup page loaded');
+    });
+</script>
+{% endblock %}

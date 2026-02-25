@@ -1,0 +1,992 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Categories & Brands - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #f8f9fa;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 8px;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        background: transparent;
+        color: var(--sub);
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .tab-btn:hover {
+        background: #f3f4f6;
+    }
+
+    .tab-btn.active {
+        background: var(--wine);
+        color: white;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .stat-icon.primary {
+        background: rgba(115, 44, 63, 0.1);
+        color: var(--wine);
+    }
+
+    .stat-icon.success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .stat-info .value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+
+    .stat-info .label {
+        font-size: 13px;
+        color: var(--sub);
+        font-weight: 500;
+    }
+
+    /* Main Content Card */
+    .content-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .content-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    /* Search Bar */
+    .search-bar {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 16px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .search-bar:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    /* Table */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .data-table thead {
+        background: #f8f9fa;
+    }
+
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--sub);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 8px;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+        background: var(--wine);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--sub);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text);
+    }
+
+    .empty-state p {
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: var(--radius);
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tab-nav {
+            flex-direction: column;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .content-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-bar {
+            max-width: 100%;
+        }
+
+        .data-table {
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="tag"></i> Categories & Brands</h1>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="categories">
+            <i data-lucide="folder"></i>
+            Categories
+        </button>
+        <button class="tab-btn" data-tab="brands">
+            <i data-lucide="award"></i>
+            Brands
+        </button>
+    </div>
+
+    <!-- Categories Tab -->
+    <div class="tab-content active" id="categories-tab">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i data-lucide="folder"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="value" id="totalCategories">0</div>
+                    <div class="label">Total Categories</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="value" id="activeCategories">0</div>
+                    <div class="label">Active Categories</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categories Content -->
+        <div class="content-card">
+            <div class="content-header">
+                <h2>All Categories</h2>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" class="search-bar" id="categorySearch" placeholder="Search categories...">
+                    <button class="btn btn-primary" onclick="openCategoryModal()">
+                        <i data-lucide="plus"></i>
+                        Add Category
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table" id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Description</th>
+                        <th>Products</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="categoriesTableBody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="folder"></i>
+                                <h3>No Categories Yet</h3>
+                                <p>Start by adding your first category</p>
+                                <button class="btn btn-primary" onclick="openCategoryModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Category
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Brands Tab -->
+    <div class="tab-content" id="brands-tab">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary">
+                    <i data-lucide="award"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="value" id="totalBrands">0</div>
+                    <div class="label">Total Brands</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="value" id="activeBrands">0</div>
+                    <div class="label">Active Brands</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Brands Content -->
+        <div class="content-card">
+            <div class="content-header">
+                <h2>All Brands</h2>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" class="search-bar" id="brandSearch" placeholder="Search brands...">
+                    <button class="btn btn-primary" onclick="openBrandModal()">
+                        <i data-lucide="plus"></i>
+                        Add Brand
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table" id="brandsTable">
+                <thead>
+                    <tr>
+                        <th>Brand Name</th>
+                        <th>Description</th>
+                        <th>Products</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="brandsTableBody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="award"></i>
+                                <h3>No Brands Yet</h3>
+                                <p>Start by adding your first brand</p>
+                                <button class="btn btn-primary" onclick="openBrandModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Brand
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Category Modal -->
+<div class="modal" id="categoryModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="categoryModalTitle">Add Category</h3>
+            <button class="icon-btn" onclick="closeCategoryModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="categoryForm">
+                <input type="hidden" id="categoryId">
+                <div class="form-group">
+                    <label for="categoryName">Category Name *</label>
+                    <input type="text" id="categoryName" required placeholder="e.g., Electronics">
+                </div>
+                <div class="form-group">
+                    <label for="categoryDescription">Description</label>
+                    <textarea id="categoryDescription" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="categoryStatus">Status</label>
+                    <select id="categoryStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveCategory()">Save Category</button>
+        </div>
+    </div>
+</div>
+
+<!-- Brand Modal -->
+<div class="modal" id="brandModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="brandModalTitle">Add Brand</h3>
+            <button class="icon-btn" onclick="closeBrandModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="brandForm">
+                <input type="hidden" id="brandId">
+                <div class="form-group">
+                    <label for="brandName">Brand Name *</label>
+                    <input type="text" id="brandName" required placeholder="e.g., Samsung">
+                </div>
+                <div class="form-group">
+                    <label for="brandDescription">Description</label>
+                    <textarea id="brandDescription" rows="3" placeholder="Optional description"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="brandStatus">Status</label>
+                    <select id="brandStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBrandModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveBrand()">Save Brand</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Tab Switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        
+        // Update buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update content
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+        
+        lucide.createIcons();
+    });
+});
+
+// Load Data
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/erp/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('categoriesTableBody');
+            const categories = data.data || [];
+            
+            document.getElementById('totalCategories').textContent = categories.length;
+            document.getElementById('activeCategories').textContent = categories.filter(c => c.status === 'active').length;
+            
+            if (categories.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="folder"></i>
+                                <h3>No Categories Yet</h3>
+                                <p>Start by adding your first category</p>
+                                <button class="btn btn-primary" onclick="openCategoryModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Category
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = categories.map(cat => `
+                    <tr>
+                        <td><strong>${cat.name}</strong></td>
+                        <td>${cat.description || '-'}</td>
+                        <td>${cat.product_count || 0}</td>
+                        <td>
+                            <span class="badge ${cat.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                                ${cat.status}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="icon-btn" onclick="editCategory('${cat.id}')" title="Edit">
+                                    <i data-lucide="edit-2"></i>
+                                </button>
+                                <button class="icon-btn" onclick="deleteCategory('${cat.id}')" title="Delete">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            lucide.createIcons();
+        }
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+async function loadBrands() {
+    try {
+        const response = await fetch('/api/erp/brands');
+        const data = await response.json();
+        
+        if (data.success) {
+            const tbody = document.getElementById('brandsTableBody');
+            const brands = data.data || [];
+            
+            document.getElementById('totalBrands').textContent = brands.length;
+            document.getElementById('activeBrands').textContent = brands.filter(b => b.status === 'active').length;
+            
+            if (brands.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i data-lucide="award"></i>
+                                <h3>No Brands Yet</h3>
+                                <p>Start by adding your first brand</p>
+                                <button class="btn btn-primary" onclick="openBrandModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Brand
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tbody.innerHTML = brands.map(brand => `
+                    <tr>
+                        <td><strong>${brand.name}</strong></td>
+                        <td>${brand.description || '-'}</td>
+                        <td>${brand.product_count || 0}</td>
+                        <td>
+                            <span class="badge ${brand.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                                ${brand.status}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="icon-btn" onclick="editBrand('${brand.id}')" title="Edit">
+                                    <i data-lucide="edit-2"></i>
+                                </button>
+                                <button class="icon-btn" onclick="deleteBrand('${brand.id}')" title="Delete">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            
+            lucide.createIcons();
+        }
+    } catch (error) {
+        console.error('Error loading brands:', error);
+    }
+}
+
+// Category Modal Functions
+function openCategoryModal(id = null) {
+    document.getElementById('categoryModal').classList.add('active');
+    document.getElementById('categoryModalTitle').textContent = id ? 'Edit Category' : 'Add Category';
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryId').value = id || '';
+    
+    if (id) {
+        // Load category data
+        fetch(`/api/erp/categories/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('categoryName').value = data.data.name;
+                    document.getElementById('categoryDescription').value = data.data.description || '';
+                    document.getElementById('categoryStatus').value = data.data.status;
+                }
+            });
+    }
+    
+    lucide.createIcons();
+}
+
+function closeCategoryModal() {
+    document.getElementById('categoryModal').classList.remove('active');
+}
+
+async function saveCategory() {
+    const id = document.getElementById('categoryId').value;
+    const name = document.getElementById('categoryName').value.trim();
+    const description = document.getElementById('categoryDescription').value.trim();
+    const status = document.getElementById('categoryStatus').value;
+    
+    if (!name) {
+        alert('Please enter category name');
+        return;
+    }
+    
+    const url = id ? `/api/erp/categories/${id}` : '/api/erp/categories';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, description, status })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            closeCategoryModal();
+            loadCategories();
+            alert(id ? 'Category updated successfully' : 'Category added successfully');
+        } else {
+            alert(data.error || 'Failed to save category');
+        }
+    } catch (error) {
+        console.error('Error saving category:', error);
+        alert('Failed to save category');
+    }
+}
+
+async function editCategory(id) {
+    openCategoryModal(id);
+}
+
+async function deleteCategory(id) {
+    if (!confirm('Are you sure you want to delete this category?')) return;
+    
+    try {
+        const response = await fetch(`/api/erp/categories/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadCategories();
+            alert('Category deleted successfully');
+        } else {
+            alert(data.error || 'Failed to delete category');
+        }
+    } catch (error) {
+        console.error('Error deleting category:', error);
+        alert('Failed to delete category');
+    }
+}
+
+// Brand Modal Functions
+function openBrandModal(id = null) {
+    document.getElementById('brandModal').classList.add('active');
+    document.getElementById('brandModalTitle').textContent = id ? 'Edit Brand' : 'Add Brand';
+    document.getElementById('brandForm').reset();
+    document.getElementById('brandId').value = id || '';
+    
+    if (id) {
+        fetch(`/api/erp/brands/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('brandName').value = data.data.name;
+                    document.getElementById('brandDescription').value = data.data.description || '';
+                    document.getElementById('brandStatus').value = data.data.status;
+                }
+            });
+    }
+    
+    lucide.createIcons();
+}
+
+function closeBrandModal() {
+    document.getElementById('brandModal').classList.remove('active');
+}
+
+async function saveBrand() {
+    const id = document.getElementById('brandId').value;
+    const name = document.getElementById('brandName').value.trim();
+    const description = document.getElementById('brandDescription').value.trim();
+    const status = document.getElementById('brandStatus').value;
+    
+    if (!name) {
+        alert('Please enter brand name');
+        return;
+    }
+    
+    const url = id ? `/api/erp/brands/${id}` : '/api/erp/brands';
+    const method = id ? 'PUT' : 'POST';
+    
+    try {
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, description, status })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            closeBrandModal();
+            loadBrands();
+            alert(id ? 'Brand updated successfully' : 'Brand added successfully');
+        } else {
+            alert(data.error || 'Failed to save brand');
+        }
+    } catch (error) {
+        console.error('Error saving brand:', error);
+        alert('Failed to save brand');
+    }
+}
+
+async function editBrand(id) {
+    openBrandModal(id);
+}
+
+async function deleteBrand(id) {
+    if (!confirm('Are you sure you want to delete this brand?')) return;
+    
+    try {
+        const response = await fetch(`/api/erp/brands/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadBrands();
+            alert('Brand deleted successfully');
+        } else {
+            alert(data.error || 'Failed to delete brand');
+        }
+    } catch (error) {
+        console.error('Error deleting brand:', error);
+        alert('Failed to delete brand');
+    }
+}
+
+// Search Functionality
+document.getElementById('categorySearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#categoriesTableBody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+});
+
+document.getElementById('brandSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#brandsTableBody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadCategories();
+    loadBrands();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

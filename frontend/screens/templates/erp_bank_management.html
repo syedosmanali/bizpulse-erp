@@ -1,0 +1,427 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Bank Management - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .bank-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .bank-item {
+        background: #fafafa;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .bank-item.default {
+        border-color: var(--wine);
+        background: #fdf4f5;
+    }
+
+    .bank-info h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .bank-info p {
+        font-size: 13px;
+        color: var(--sub);
+    }
+
+    .bank-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .default-badge {
+        font-size: 10px;
+        background: var(--wine);
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+        font-size: 14px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .bank-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1><i data-lucide="landmark"></i> Bank Management</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showAddForm()"><i data-lucide="plus"></i> Add Bank</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Form -->
+    <div class="form-section" id="addForm" style="display:none;">
+        <div class="section-title" id="formTitle"><i data-lucide="plus"></i> Add Bank Account</div>
+        <input type="hidden" id="edit_bank_id">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Bank Name *</label>
+                <input type="text" class="form-input" id="bank_name" placeholder="e.g. SBI, HDFC">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Account Number *</label>
+                <input type="text" class="form-input" id="account_number" placeholder="Account number">
+            </div>
+            <div class="form-group">
+                <label class="form-label">IFSC Code *</label>
+                <input type="text" class="form-input" id="ifsc_code" placeholder="SBIN0001234" maxlength="11" style="text-transform:uppercase;">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Branch</label>
+                <input type="text" class="form-input" id="branch" placeholder="Branch name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Account Type</label>
+                <select class="form-input" id="account_type">
+                    <option value="current">Current</option>
+                    <option value="savings">Savings</option>
+                    <option value="overdraft">Overdraft</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Opening Balance (₹)</label>
+                <input type="number" class="form-input" id="opening_balance" value="0" min="0" step="0.01">
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn btn-primary" onclick="saveBank()" style="flex:1;"><i data-lucide="save"></i> Save Bank</button>
+            <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Bank List -->
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="list"></i> Your Banks</div>
+        <div class="bank-list" id="bankList">
+            <div class="empty">No banks added yet</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let banks = [];
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showAddForm() {
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> Add Bank Account';
+    lucide.createIcons();
+}
+
+function hideAddForm() {
+    document.getElementById('addForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    ['bank_name', 'account_number', 'ifsc_code', 'branch', 'edit_bank_id'].forEach(id => 
+        document.getElementById(id).value = ''
+    );
+    document.getElementById('opening_balance').value = '0';
+    document.getElementById('account_type').value = 'current';
+}
+
+async function loadBanks() {
+    try {
+        const r = await fetch('/api/erp/banks');
+        const d = await r.json();
+        if (d.success) {
+            banks = d.data || [];
+            renderBanks();
+        }
+    } catch (e) {
+        showToast('Failed to load banks');
+    }
+}
+
+function renderBanks() {
+    const el = document.getElementById('bankList');
+    if (!banks.length) {
+        el.innerHTML = '<div class="empty">No banks added yet. Click "Add Bank" to add one.</div>';
+        return;
+    }
+    el.innerHTML = banks.map(b => `
+        <div class="bank-item ${b.is_default ? 'default' : ''}">
+            <div class="bank-info">
+                <h3>${b.bank_name} ${b.is_default ? '<span class="default-badge">DEFAULT</span>' : ''}</h3>
+                <p>A/C: ${b.account_number} | IFSC: ${b.ifsc_code || 'N/A'} ${b.branch ? '| ' + b.branch : ''}</p>
+                <p>Type: ${(b.account_type || 'current').charAt(0).toUpperCase() + (b.account_type || 'current').slice(1)} | Balance: ₹${parseFloat(b.opening_balance || 0).toLocaleString('en-IN')}</p>
+            </div>
+            <div class="bank-actions">
+                <button class="btn-sm" style="background:#e0e7ff;color:#4338ca;" onclick="editBank('${b.id}')"><i data-lucide="edit-2"></i></button>
+                <button class="btn-sm" style="background:#fee2e2;color:#dc2626;" onclick="deleteBank('${b.id}')"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>
+    `).join('');
+    lucide.createIcons();
+}
+
+async function saveBank() {
+    const name = document.getElementById('bank_name').value.trim();
+    const acc = document.getElementById('account_number').value.trim();
+    const editId = document.getElementById('edit_bank_id').value;
+
+    if (!name || !acc) {
+        showToast('Bank name & account number are required');
+        return;
+    }
+
+    const payload = {
+        bank_name: name,
+        account_number: acc,
+        ifsc_code: document.getElementById('ifsc_code').value.trim().toUpperCase(),
+        branch: document.getElementById('branch').value.trim(),
+        account_type: document.getElementById('account_type').value,
+        opening_balance: parseFloat(document.getElementById('opening_balance').value) || 0
+    };
+
+    try {
+        const url = editId ? `/api/erp/banks/${editId}` : '/api/erp/banks';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(editId ? 'Bank updated!' : 'Bank added!');
+            hideAddForm();
+            loadBanks();
+        } else {
+            showToast(d.error || 'Failed to save bank');
+        }
+    } catch (e) {
+        showToast('Network error');
+    }
+}
+
+async function deleteBank(id) {
+    if (!confirm('Delete this bank?')) return;
+    try {
+        const r = await fetch(`/api/erp/banks/${id}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (d.success) {
+            showToast('Bank deleted');
+            loadBanks();
+        }
+    } catch (e) {
+        showToast('Failed to delete');
+    }
+}
+
+function editBank(id) {
+    const bank = banks.find(b => b.id === id);
+    if (!bank) return;
+
+    document.getElementById('edit_bank_id').value = bank.id;
+    document.getElementById('bank_name').value = bank.bank_name;
+    document.getElementById('account_number').value = bank.account_number;
+    document.getElementById('ifsc_code').value = bank.ifsc_code || '';
+    document.getElementById('branch').value = bank.branch || '';
+    document.getElementById('account_type').value = bank.account_type || 'current';
+    document.getElementById('opening_balance').value = bank.opening_balance || 0;
+
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="edit-2"></i> Edit Bank Account';
+    document.getElementById('addForm').style.display = 'block';
+    lucide.createIcons();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadBanks();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

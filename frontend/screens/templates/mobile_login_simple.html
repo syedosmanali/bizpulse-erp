@@ -236,28 +236,49 @@
         document.getElementById('mobileLoginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const loginId = document.getElementById('loginId').value;
+            const loginId = document.getElementById('loginId').value.trim();
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
+            const loginForm = document.getElementById('mobileLoginForm');
+            
+            // Clear previous messages
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
             
             console.log('🔐 Mobile login attempt:', loginId);
+            
+            // Validate inputs before submitting
+            if (!loginId) {
+                showError('Please enter your email or username');
+                document.getElementById('loginId').focus();
+                return;
+            }
+            
+            if (!password) {
+                showError('Please enter your password');
+                document.getElementById('password').focus();
+                return;
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters long');
+                document.getElementById('password').focus();
+                return;
+            }
             
             // Show loading state
             document.body.classList.add('loading');
             loginBtn.textContent = '🔄 Logging in...';
+            loginBtn.disabled = true;
             
             try {
-                // First test server connectivity
-                console.log('🔍 Testing server connectivity...');
-                const testResponse = await fetch('/api/test');
-                console.log('🔍 Test response:', testResponse.status);
-                
                 console.log('📡 Sending login request...');
                 const response = await fetch('/api/auth/unified-login', {
                     method: 'POST',
-                    credentials: 'same-origin',
+                    credentials: 'same-origin', // Important: include session cookies
                     headers: {
                         'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest' // Help identify AJAX requests
                     },
                     body: JSON.stringify({
                         loginId: loginId,
@@ -266,35 +287,110 @@
                 });
                 
                 console.log('📡 Login response status:', response.status);
-                const data = await response.json();
+                
+                // Attempt to parse response as JSON
+                let data;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('❌ Could not parse response as JSON:', parseError);
+                    showError('Server returned unexpected response. Please try again.');
+                    return;
+                }
+                
                 console.log('📡 Login response data:', data);
                 
-                if (response.ok) {
+                if (response.ok && data.success) {
                     showSuccess('✅ Login successful! Redirecting to Mobile Dashboard...');
-                    localStorage.setItem('authToken', data.token);
-                    (function(){
-                        const u = data.user || {};
-                        u.user_type = u.user_type || u.type;
-                        u.type = u.type || u.user_type;
-                        localStorage.setItem('userInfo', JSON.stringify(u));
-                    })();
+                    
+                    // Store authentication data
+                    if (data.token) {
+                        localStorage.setItem('authToken', data.token);
+                    }
+                    
+                    if (data.user) {
+                        (function(){
+                            const u = data.user || {};
+                            u.user_type = u.user_type || u.type;
+                            u.type = u.type || u.user_type;
+                            localStorage.setItem('userInfo', JSON.stringify(u));
+                        })();
+                    }
                     
                     console.log('🚀 Redirecting to mobile dashboard...');
+                    // Redirect after a brief delay to show success message
                     setTimeout(() => {
-                        // Redirect to mobile dashboard
-                        window.location.href = '/mobile-dashboard';
+                        // Redirect to mobile dashboard or return URL
+                        const returnUrl = getParameterByName('returnUrl') || '/mobile-dashboard';
+                        window.location.href = returnUrl;
                     }, 1500);
                 } else {
-                    console.error('❌ Login failed:', data.message);
-                    showError(data.message || 'Login failed. Please try again.');
+                    // Handle different error scenarios
+                    let errorMessage = data.message || 'Login failed. Please try again.';
+                    
+                    // Add specific error messages based on error code
+                    if (data.error_code === 'AUTH_FAILED') {
+                        errorMessage = 'Invalid credentials. Please check your email/username and password.';
+                    } else if (data.error_code === 'REQUEST_ERROR') {
+                        errorMessage = 'Request error. Please check your input and try again.';
+                    } else if (data.error_code === 'INTERNAL_ERROR') {
+                        errorMessage = 'Server error occurred. Please try again later.';
+                    }
+                    
+                    console.error('❌ Login failed:', errorMessage);
+                    showError(errorMessage);
+                    
+                    // Clear password field on failure for security
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
                 }
-            } catch (error) {
-                console.error('❌ Network error:', error);
-                showError('Network error. Please check your connection.');
+            } catch (networkError) {
+                console.error('❌ Network error:', networkError);
+                
+                // Check if it's a timeout or connection issue
+                if (networkError.name === 'TypeError' && networkError.message.includes('fetch')) {
+                    showError('Network connection failed. Please check your internet connection and try again.');
+                } else {
+                    showError('Network error occurred. Please check your connection and try again.');
+                }
+                
+                // Re-enable the button
+                loginBtn.disabled = false;
             } finally {
                 // Remove loading state
                 document.body.classList.remove('loading');
                 loginBtn.textContent = '🚀 Login to Mobile App';
+                loginBtn.disabled = false;
+            }
+        });
+        
+        // Helper function to get URL parameter
+        function getParameterByName(name, url = window.location.href) {
+            name = name.replace(/[\\[\]]/g, '\\$&');
+            const regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
+        
+        // Add input validation as user types
+        document.getElementById('loginId').addEventListener('input', function() {
+            if (this.value.trim()) {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            if (this.value) {
+                document.getElementById('errorMessage').style.display = 'none';
+            }
+        });
+        
+        // Allow login with Enter key
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('mobileLoginForm').dispatchEvent(new Event('submit'));
             }
         });
         

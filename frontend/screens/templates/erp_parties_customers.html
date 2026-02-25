@@ -1,0 +1,879 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Customer Management - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+        min-height: 36px;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        text-align: center;
+        border-left: 4px solid var(--wine);
+        transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+        border-color: var(--wine);
+        box-shadow: 0 4px 12px rgba(115, 44, 63, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .stat-card h3 {
+        color: var(--sub);
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-card .value {
+        color: var(--wine);
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    /* Card Styling */
+    .card {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .card-title i {
+        color: var(--wine);
+    }
+
+    /* Form Styling */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        background: #fff;
+        transition: all 0.2s;
+        min-height: 44px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--wine);
+        box-shadow: 0 0 0 3px rgba(115, 44, 63, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-row-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+    }
+
+    /* Search and Filter Bar */
+    .filter-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+    }
+
+    .search-box input {
+        padding-left: 40px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--sub);
+        font-size: 16px;
+    }
+
+    .filter-select {
+        min-width: 150px;
+    }
+
+    /* Customer List */
+    .customer-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .customer-item {
+        background: #f8fafc;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s;
+    }
+
+    .customer-item:hover {
+        border-color: var(--wine);
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(115, 44, 63, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .customer-info {
+        flex: 1;
+    }
+
+    .customer-info h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: var(--text);
+    }
+
+    .customer-info p {
+        font-size: 13px;
+        color: var(--sub);
+        margin-bottom: 2px;
+    }
+
+    .customer-meta {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 8px;
+    }
+
+    .customer-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Customer Status */
+    .customer-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .badge-active {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .badge-inactive {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .badge-prospect {
+        background: #fef3c7;
+        color: #d97706;
+    }
+
+    .badge-retail {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .badge-wholesale {
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
+
+    .badge-corporate {
+        background: #fce7f3;
+        color: #be185d;
+    }
+
+    /* Empty State */
+    .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+        font-size: 14px;
+    }
+
+    .empty i {
+        font-size: 48px;
+        color: var(--border);
+        margin-bottom: 16px;
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+
+    .toast.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .toast.error {
+        background: #dc2626;
+    }
+
+    .toast.success {
+        background: #059669;
+    }
+
+    /* Error Messages */
+    .error-msg {
+        color: #dc2626;
+        font-size: 11px;
+        display: none;
+        margin-top: 4px;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .form-row,
+        .form-row-3 {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-bar {
+            flex-direction: column;
+        }
+
+        .search-box,
+        .filter-select {
+            width: 100%;
+            min-width: auto;
+        }
+
+        .customer-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .customer-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header h1 {
+            font-size: 20px;
+        }
+
+        .stat-card .value {
+            font-size: 24px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="user-check"></i> Customer Management</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showNewCustomer()">
+                <i data-lucide="plus"></i> New Customer
+            </button>
+            <button class="btn btn-secondary" onclick="refreshCustomers()">
+                <i data-lucide="refresh-cw"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Customers</h3>
+            <div class="value" id="totalCustomers">156</div>
+        </div>
+        <div class="stat-card">
+            <h3>Active</h3>
+            <div class="value" id="activeCustomers">124</div>
+        </div>
+        <div class="stat-card">
+            <h3>Prospects</h3>
+            <div class="value" id="prospectCustomers">25</div>
+        </div>
+        <div class="stat-card">
+            <h3>Outstanding</h3>
+            <div class="value" id="totalOutstanding">₹1,25,000</div>
+        </div>
+    </div>
+
+    <!-- New Customer Form -->
+    <div class="card" id="customerForm" style="display:none;">
+        <div class="card-title" id="formTitle">
+            <i data-lucide="plus"></i> Add New Customer
+        </div>
+        <input type="hidden" id="edit_customer_id">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Customer Name *</label>
+                <input id="customer_name" placeholder="Enter full name">
+                <span id="name_error" class="error-msg">Customer name is required</span>
+            </div>
+            <div class="form-group">
+                <label>Customer Code</label>
+                <input id="customer_code" placeholder="Auto-generated" readonly style="background:#f3f4f6;">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Phone *</label>
+                <input type="tel" id="customer_phone" placeholder="9876543210">
+                <span id="phone_error" class="error-msg">Valid phone number required</span>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="customer_email" placeholder="customer@example.com">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Customer Type</label>
+                <select id="customer_type">
+                    <option value="retail">Retail Customer</option>
+                    <option value="wholesale">Wholesale Customer</option>
+                    <option value="corporate">Corporate</option>
+                    <option value="prospect">Prospect</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>GST Number</label>
+                <input id="customer_gst" placeholder="GST Number (if applicable)">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Address</label>
+            <textarea id="customer_address" placeholder="Full address" rows="2"></textarea>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Credit Limit</label>
+                <input type="number" id="credit_limit" value="0" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="customer_status">
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="prospect">Prospect</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea id="customer_notes" placeholder="Additional notes about this customer" rows="2"></textarea>
+        </div>
+        
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn btn-primary" onclick="saveCustomer()" style="flex:1;" id="saveBtn">
+                <i data-lucide="save"></i> Save Customer
+            </button>
+            <button class="btn btn-secondary" onclick="hideCustomerForm()">
+                Cancel
+            </button>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card">
+        <div class="card-title">
+            <i data-lucide="search"></i> Search & Filter
+        </div>
+        <div class="filter-bar">
+            <div class="search-box">
+                <span class="search-icon"><i data-lucide="search"></i></span>
+                <input type="text" id="searchInput" placeholder="Search customers..." onkeyup="filterCustomers()">
+            </div>
+            <select class="filter-select" id="typeFilter" onchange="filterCustomers()">
+                <option value="">All Types</option>
+                <option value="retail">Retail</option>
+                <option value="wholesale">Wholesale</option>
+                <option value="corporate">Corporate</option>
+                <option value="prospect">Prospect</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="filterCustomers()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="prospect">Prospect</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="exportData()">
+                <i data-lucide="download"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Customer List -->
+    <div class="card">
+        <div class="card-title">
+            <i data-lucide="users"></i> Customers (<span id="customerCount">0</span>)
+        </div>
+        <div class="customer-list" id="customerList">
+            <div class="empty">
+                <i data-lucide="users"></i>
+                <div>No customers found</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let customers = [];
+let filteredCustomers = [];
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showNewCustomer() {
+    document.getElementById('customerForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> Add New Customer';
+    document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Save Customer';
+    document.getElementById('customerForm').scrollIntoView({behavior: 'smooth'});
+    clearForm();
+    lucide.createIcons();
+}
+
+function hideCustomerForm() {
+    document.getElementById('customerForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    document.getElementById('edit_customer_id').value = '';
+    document.getElementById('customer_name').value = '';
+    document.getElementById('customer_code').value = 'CUST-' + Date.now();
+    document.getElementById('customer_phone').value = '';
+    document.getElementById('customer_email').value = '';
+    document.getElementById('customer_type').value = 'retail';
+    document.getElementById('customer_gst').value = '';
+    document.getElementById('customer_address').value = '';
+    document.getElementById('credit_limit').value = '0';
+    document.getElementById('customer_status').value = 'active';
+    document.getElementById('customer_notes').value = '';
+    
+    // Hide error messages
+    document.getElementById('name_error').style.display = 'none';
+    document.getElementById('phone_error').style.display = 'none';
+}
+
+function loadCustomers() {
+    try {
+        // Mock customers data
+        const mockCustomers = [
+            { 
+                id: 1, 
+                name: 'Rajesh Kumar', 
+                code: 'CUST-001', 
+                phone: '9876543210', 
+                email: 'rajesh@example.com', 
+                type: 'retail', 
+                status: 'active', 
+                credit_limit: 50000, 
+                total_sales: 125000, 
+                last_purchase: '2024-01-20',
+                address: 'Mumbai, Maharashtra'
+            },
+            { 
+                id: 2, 
+                name: 'Priya Sharma', 
+                code: 'CUST-002', 
+                phone: '9876543211', 
+                email: 'priya@example.com', 
+                type: 'wholesale', 
+                status: 'active', 
+                credit_limit: 100000, 
+                total_sales: 250000, 
+                last_purchase: '2024-01-18',
+                address: 'Delhi, India'
+            },
+            { 
+                id: 3, 
+                name: 'ABC Corporation', 
+                code: 'CUST-003', 
+                phone: '9876543212', 
+                email: 'contact@abc.com', 
+                type: 'corporate', 
+                status: 'active', 
+                credit_limit: 200000, 
+                total_sales: 450000, 
+                last_purchase: '2024-01-15',
+                address: 'Bangalore, Karnataka'
+            },
+            { 
+                id: 4, 
+                name: 'Suresh Patel', 
+                code: 'CUST-004', 
+                phone: '9876543213', 
+                email: 'suresh@example.com', 
+                type: 'prospect', 
+                status: 'prospect', 
+                credit_limit: 0, 
+                total_sales: 0, 
+                last_purchase: null,
+                address: 'Ahmedabad, Gujarat'
+            },
+            { 
+                id: 5, 
+                name: 'Meena Devi', 
+                code: 'CUST-005', 
+                phone: '9876543214', 
+                email: 'meena@example.com', 
+                type: 'retail', 
+                status: 'inactive', 
+                credit_limit: 30000, 
+                total_sales: 75000, 
+                last_purchase: '2023-11-10',
+                address: 'Jaipur, Rajasthan'
+            }
+        ];
+        
+        customers = mockCustomers;
+        filteredCustomers = [...customers];
+        renderCustomers();
+    } catch (e) {
+        showToast('Failed to load customers', 'error');
+    }
+}
+
+function filterCustomers() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredCustomers = customers.filter(customer => {
+        const matchSearch = !search || 
+            customer.name.toLowerCase().includes(search) ||
+            customer.code.toLowerCase().includes(search) ||
+            customer.phone.includes(search) ||
+            (customer.email && customer.email.toLowerCase().includes(search));
+        const matchType = !typeFilter || customer.type === typeFilter;
+        const matchStatus = !statusFilter || customer.status === statusFilter;
+        
+        return matchSearch && matchType && matchStatus;
+    });
+    
+    renderCustomers();
+}
+
+function renderCustomers() {
+    const el = document.getElementById('customerList');
+    document.getElementById('customerCount').textContent = filteredCustomers.length;
+    
+    if (!filteredCustomers.length) {
+        el.innerHTML = `
+            <div class="empty">
+                <i data-lucide="users"></i>
+                <div>No customers found</div>
+            </div>
+        `;
+        lucide.createIcons();
+        return;
+    }
+    
+    el.innerHTML = filteredCustomers.map(customer => {
+        const statusClass = `badge-${customer.status}`;
+        const typeClass = `badge-${customer.type}`;
+        
+        return `
+        <div class="customer-item">
+            <div class="customer-info">
+                <h3>${customer.name}</h3>
+                <p><strong>${customer.code}</strong> | 📞 ${customer.phone}</p>
+                <p>✉️ ${customer.email || 'No email'} | 📍 ${customer.address}</p>
+                <div class="customer-meta">
+                    <span class="customer-badge ${statusClass}">${customer.status}</span>
+                    <span class="customer-badge ${typeClass}">${customer.type}</span>
+                    ${customer.credit_limit > 0 ? `<span style="font-size:11px;color:var(--sub);">Credit: ₹${customer.credit_limit.toLocaleString('en-IN')}</span>` : ''}
+                    <span style="font-size:11px;color:var(--sub);">Sales: ₹${customer.total_sales.toLocaleString('en-IN')}</span>
+                </div>
+            </div>
+            <div class="customer-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editCustomer(${customer.id})">
+                    <i data-lucide="edit"></i> Edit
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="viewCustomer(${customer.id})">
+                    <i data-lucide="eye"></i> View
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="deleteCustomer(${customer.id})" style="color:#dc2626;">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+    
+    lucide.createIcons();
+}
+
+function saveCustomer() {
+    // Validation
+    const name = document.getElementById('customer_name').value.trim();
+    const phone = document.getElementById('customer_phone').value.trim();
+    
+    if (!name) {
+        document.getElementById('name_error').style.display = 'block';
+        return;
+    }
+    
+    if (!phone || phone.length < 10) {
+        document.getElementById('phone_error').style.display = 'block';
+        return;
+    }
+    
+    try {
+        showToast('Customer saved successfully');
+        hideCustomerForm();
+        loadCustomers();
+    } catch (e) {
+        showToast('Failed to save customer', 'error');
+    }
+}
+
+function editCustomer(id) {
+    const customer = customers.find(c => c.id === id);
+    if (customer) {
+        showNewCustomer();
+        document.getElementById('formTitle').innerHTML = '<i data-lucide="edit"></i> Edit Customer';
+        document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Update Customer';
+        document.getElementById('edit_customer_id').value = customer.id;
+        document.getElementById('customer_name').value = customer.name;
+        document.getElementById('customer_code').value = customer.code;
+        document.getElementById('customer_phone').value = customer.phone;
+        document.getElementById('customer_email').value = customer.email || '';
+        document.getElementById('customer_type').value = customer.type;
+        document.getElementById('customer_gst').value = customer.gst_number || '';
+        document.getElementById('customer_address').value = customer.address || '';
+        document.getElementById('credit_limit').value = customer.credit_limit || 0;
+        document.getElementById('customer_status').value = customer.status;
+    }
+}
+
+function viewCustomer(id) {
+    const customer = customers.find(c => c.id === id);
+    if (customer) {
+        showToast(`Viewing details for ${customer.name}`);
+    }
+}
+
+function deleteCustomer(id) {
+    if (!confirm('Delete this customer? This action cannot be undone.')) return;
+    
+    try {
+        showToast('Customer deleted');
+        loadCustomers();
+    } catch (e) {
+        showToast('Failed to delete customer', 'error');
+    }
+}
+
+function exportData() {
+    showToast('Exporting customer data...', 'success');
+}
+
+function refreshCustomers() {
+    showToast('Refreshing customers...', 'success');
+    loadCustomers();
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadCustomers();
+    document.getElementById('customer_code').value = 'CUST-' + Date.now();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

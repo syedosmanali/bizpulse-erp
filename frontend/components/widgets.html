@@ -1,0 +1,502 @@
+<!-- Dashboard Widget Components with Wine Color Scheme -->
+
+<!-- Metric Card Widget -->
+<div class="metric-card" style="display:none;">
+    <div class="card" style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div>
+                <h3 id="metricTitle" style="font-size:12px;color:var(--sub);font-weight:600;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">TOTAL SALES</h3>
+                <div id="metricValue" style="font-size:24px;font-weight:700;color:var(--wine);margin:0;">₹0</div>
+                <div id="metricSubtitle" style="font-size:12px;color:var(--sub);margin:4px 0 0 0;">Compared to last period</div>
+            </div>
+            <div id="metricIcon" style="font-size:24px;">💰</div>
+        </div>
+        <div id="metricTrend" style="margin-top:12px;display:flex;align-items:center;gap:4px;">
+            <span id="trendIndicator" style="color:#10b981;">↗</span>
+            <span id="trendValue" style="font-size:12px;font-weight:600;color:#10b981;">+12%</span>
+            <span style="font-size:11px;color:var(--sub);">vs last month</span>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Widget -->
+<div class="chart-widget" style="display:none;">
+    <div class="card">
+        <div class="card-title" id="chartTitle">Chart Title</div>
+        <div id="chartContainer" style="height:200px;position:relative;">
+            <canvas id="chartCanvas" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- List Widget -->
+<div class="list-widget" style="display:none;">
+    <div class="card">
+        <div class="card-title" id="listTitle">List Title</div>
+        <div class="list-container" id="listContainer" style="max-height:300px;overflow-y:auto;">
+            <div class="list-item" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <div id="itemTitle" style="font-weight:600;font-size:14px;">Item Title</div>
+                    <div id="itemSubtitle" style="font-size:12px;color:var(--sub);">Item Subtitle</div>
+                </div>
+                <div id="itemValue" style="font-weight:600;color:var(--wine);">Value</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Widget -->
+<div class="alert-widget" style="display:none;">
+    <div class="card">
+        <div class="card-title" id="alertTitle">Alerts</div>
+        <div class="alert-container" id="alertContainer" style="display:flex;flex-direction:column;gap:8px;">
+            <div class="alert-item" style="background:#fef2f2;color:#dc2626;padding:12px;border-radius:8px;display:flex;align-items:center;gap:8px;">
+                <span style="font-size:16px;">⚠️</span>
+                <div>
+                    <div style="font-weight:600;font-size:13px;">Alert Title</div>
+                    <div style="font-size:11px;">Alert description</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Widget Manager Class
+class WidgetManager {
+    constructor() {
+        this.widgets = new Map();
+    }
+    
+    // Metric Card Widget
+    createMetricCard(id, config) {
+        const widget = {
+            id,
+            type: 'metric',
+            config,
+            element: this.createMetricCardElement(config)
+        };
+        
+        this.widgets.set(id, widget);
+        return widget;
+    }
+    
+    createMetricCardElement(config) {
+        const container = document.createElement('div');
+        container.className = 'metric-card';
+        container.id = `widget-${config.id}`;
+        container.style.display = 'block';
+        container.style.marginBottom = '16px';
+        
+        container.innerHTML = `
+            <div class="card" style="padding:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <div>
+                        <h3 style="font-size:12px;color:var(--sub);font-weight:600;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">${config.title}</h3>
+                        <div style="font-size:24px;font-weight:700;color:var(--wine);margin:0;">${config.format === 'currency' ? formatCurrency(config.value) : config.value}</div>
+                        <div style="font-size:12px;color:var(--sub);margin:4px 0 0 0;">${config.subtitle || ''}</div>
+                    </div>
+                    <div style="font-size:24px;">${config.icon || '📊'}</div>
+                </div>
+                ${config.trend ? `
+                <div style="margin-top:12px;display:flex;align-items:center;gap:4px;">
+                    <span style="color:${config.trend.value >= 0 ? '#10b981' : '#ef4444'};">${config.trend.value >= 0 ? '↗' : '↘'}</span>
+                    <span style="font-size:12px;font-weight:600;color:${config.trend.value >= 0 ? '#10b981' : '#ef4444'};">${config.trend.value >= 0 ? '+' : ''}${config.trend.value}%</span>
+                    <span style="font-size:11px;color:var(--sub);">${config.trend.period || 'vs last period'}</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        return container;
+    }
+    
+    // Chart Widget
+    createChartWidget(id, config) {
+        const widget = {
+            id,
+            type: 'chart',
+            config,
+            element: this.createChartWidgetElement(config)
+        };
+        
+        this.widgets.set(id, widget);
+        return widget;
+    }
+    
+    createChartWidgetElement(config) {
+        const container = document.createElement('div');
+        container.className = 'chart-widget';
+        container.id = `widget-${config.id}`;
+        container.style.display = 'block';
+        container.style.marginBottom = '16px';
+        
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-title">${config.title}</div>
+                <div style="height:${config.height || '200px'};position:relative;">
+                    <canvas id="chart-${config.id}" width="400" height="${config.height ? parseInt(config.height) - 50 : 150}"></canvas>
+                </div>
+            </div>
+        `;
+        
+        // Initialize chart after element is added to DOM
+        setTimeout(() => {
+            this.renderChart(config.id, config.data, config.type || 'bar');
+        }, 0);
+        
+        return container;
+    }
+    
+    renderChart(widgetId, data, chartType) {
+        const canvas = document.getElementById(`chart-${widgetId}`);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw chart based on type
+        switch(chartType) {
+            case 'line':
+                this.drawLineChart(ctx, canvas.width, canvas.height, data);
+                break;
+            case 'bar':
+            default:
+                this.drawBarChart(ctx, canvas.width, canvas.height, data);
+                break;
+        }
+    }
+    
+    drawBarChart(ctx, width, height, data) {
+        const padding = 40;
+        const chartWidth = width - (padding * 2);
+        const chartHeight = height - (padding * 2);
+        
+        // Draw axes
+        ctx.strokeStyle = 'var(--border)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // Draw bars
+        if (data && data.labels && data.datasets) {
+            const dataset = data.datasets[0];
+            const barWidth = chartWidth / data.labels.length * 0.6;
+            const maxValue = Math.max(...dataset.data, 1);
+            
+            for (let i = 0; i < data.labels.length; i++) {
+                const x = padding + (i * (chartWidth / data.labels.length)) + (chartWidth / data.labels.length - barWidth) / 2;
+                const barHeight = (dataset.data[i] / maxValue) * chartHeight;
+                const y = height - padding - barHeight;
+                
+                // Draw bar
+                ctx.fillStyle = 'var(--wine)';
+                ctx.fillRect(x, y, barWidth, barHeight);
+                
+                // Draw label
+                ctx.fillStyle = 'var(--sub)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(data.labels[i], x + barWidth/2, height - padding + 15);
+                
+                // Draw value
+                ctx.fillStyle = 'var(--text)';
+                ctx.fillText(dataset.data[i], x + barWidth/2, y - 5);
+            }
+        }
+    }
+    
+    drawLineChart(ctx, width, height, data) {
+        const padding = 40;
+        const chartWidth = width - (padding * 2);
+        const chartHeight = height - (padding * 2);
+        
+        // Draw axes
+        ctx.strokeStyle = 'var(--border)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+        
+        // Draw line
+        if (data && data.labels && data.datasets) {
+            const dataset = data.datasets[0];
+            const maxValue = Math.max(...dataset.data, 1);
+            const points = [];
+            
+            for (let i = 0; i < data.labels.length; i++) {
+                const x = padding + (i * (chartWidth / (data.labels.length - 1)));
+                const y = height - padding - ((dataset.data[i] / maxValue) * chartHeight);
+                points.push({x, y});
+            }
+            
+            // Draw line
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.strokeStyle = 'var(--wine)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Draw points
+            for (const point of points) {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+                ctx.fillStyle = 'var(--wine)';
+                ctx.fill();
+            }
+            
+            // Draw labels
+            for (let i = 0; i < data.labels.length; i++) {
+                ctx.fillStyle = 'var(--sub)';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(data.labels[i], points[i].x, height - padding + 15);
+            }
+        }
+    }
+    
+    // List Widget
+    createListWidget(id, config) {
+        const widget = {
+            id,
+            type: 'list',
+            config,
+            element: this.createListWidgetElement(config)
+        };
+        
+        this.widgets.set(id, widget);
+        return widget;
+    }
+    
+    createListWidgetElement(config) {
+        const container = document.createElement('div');
+        container.className = 'list-widget';
+        container.id = `widget-${config.id}`;
+        container.style.display = 'block';
+        container.style.marginBottom = '16px';
+        
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-title">${config.title}</div>
+                <div class="list-container" style="max-height:${config.maxHeight || '300px'};overflow-y:auto;">
+                    <div id="list-items-${config.id}"></div>
+                </div>
+            </div>
+        `;
+        
+        // Populate list items
+        setTimeout(() => {
+            this.populateListItems(config.id, config.items);
+        }, 0);
+        
+        return container;
+    }
+    
+    populateListItems(widgetId, items) {
+        const container = document.getElementById(`list-items-${widgetId}`);
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (items && items.length > 0) {
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'list-item';
+                itemElement.style = 'display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);';
+                
+                itemElement.innerHTML = `
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">${item.title}</div>
+                        <div style="font-size:12px;color:var(--sub);">${item.subtitle || ''}</div>
+                    </div>
+                    <div style="font-weight:600;color:var(--wine);">${item.value}</div>
+                `;
+                
+                container.appendChild(itemElement);
+            });
+        } else {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--sub);font-size:14px;">No items found</div>';
+        }
+    }
+    
+    // Alert Widget
+    createAlertWidget(id, config) {
+        const widget = {
+            id,
+            type: 'alert',
+            config,
+            element: this.createAlertWidgetElement(config)
+        };
+        
+        this.widgets.set(id, widget);
+        return widget;
+    }
+    
+    createAlertWidgetElement(config) {
+        const container = document.createElement('div');
+        container.className = 'alert-widget';
+        container.id = `widget-${config.id}`;
+        container.style.display = 'block';
+        container.style.marginBottom = '16px';
+        
+        container.innerHTML = `
+            <div class="card">
+                <div class="card-title">${config.title}</div>
+                <div class="alert-container" id="alerts-${config.id}" style="display:flex;flex-direction:column;gap:8px;"></div>
+            </div>
+        `;
+        
+        // Populate alerts
+        setTimeout(() => {
+            this.populateAlerts(config.id, config.alerts);
+        }, 0);
+        
+        return container;
+    }
+    
+    populateAlerts(widgetId, alerts) {
+        const container = document.getElementById(`alerts-${widgetId}`);
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (alerts && alerts.length > 0) {
+            alerts.forEach(alert => {
+                const alertElement = document.createElement('div');
+                alertElement.className = 'alert-item';
+                
+                const bgColor = alert.type === 'error' ? '#fef2f2' : alert.type === 'warning' ? '#fffbeb' : '#f0fdf4';
+                const textColor = alert.type === 'error' ? '#dc2626' : alert.type === 'warning' ? '#f59e0b' : '#16a34a';
+                const icon = alert.type === 'error' ? '⚠️' : alert.type === 'warning' ? '🟡' : '✅';
+                
+                alertElement.style = `background:${bgColor};color:${textColor};padding:12px;border-radius:8px;display:flex;align-items:center;gap:8px;`;
+                alertElement.innerHTML = `
+                    <span style="font-size:16px;">${icon}</span>
+                    <div>
+                        <div style="font-weight:600;font-size:13px;">${alert.title}</div>
+                        <div style="font-size:11px;">${alert.description}</div>
+                    </div>
+                `;
+                
+                container.appendChild(alertElement);
+            });
+        } else {
+            container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--sub);font-size:14px;">No alerts</div>';
+        }
+    }
+    
+    // Add widget to container
+    addToContainer(widgetId, containerId) {
+        const widget = this.widgets.get(widgetId);
+        if (widget && widget.element) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.appendChild(widget.element);
+            }
+        }
+    }
+    
+    // Update widget data
+    updateWidgetData(widgetId, newData) {
+        const widget = this.widgets.get(widgetId);
+        if (!widget) return;
+        
+        switch(widget.type) {
+            case 'metric':
+                this.updateMetricCard(widgetId, newData);
+                break;
+            case 'chart':
+                this.renderChart(widgetId, newData, widget.config.type);
+                break;
+            case 'list':
+                this.populateListItems(widgetId, newData);
+                break;
+            case 'alert':
+                this.populateAlerts(widgetId, newData);
+                break;
+        }
+    }
+    
+    updateMetricCard(widgetId, data) {
+        const widgetElement = document.querySelector(`#widget-${widgetId} .card`);
+        if (!widgetElement) return;
+        
+        const config = this.widgets.get(widgetId).config;
+        widgetElement.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <h3 style="font-size:12px;color:var(--sub);font-weight:600;margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.5px;">${config.title}</h3>
+                    <div style="font-size:24px;font-weight:700;color:var(--wine);margin:0;">${config.format === 'currency' ? formatCurrency(data.value) : data.value}</div>
+                    <div style="font-size:12px;color:var(--sub);margin:4px 0 0 0;">${data.subtitle || config.subtitle || ''}</div>
+                </div>
+                <div style="font-size:24px;">${data.icon || config.icon || '📊'}</div>
+            </div>
+            ${data.trend ? `
+            <div style="margin-top:12px;display:flex;align-items:center;gap:4px;">
+                <span style="color:${data.trend.value >= 0 ? '#10b981' : '#ef4444'};">${data.trend.value >= 0 ? '↗' : '↘'}</span>
+                <span style="font-size:12px;font-weight:600;color:${data.trend.value >= 0 ? '#10b981' : '#ef4444'};">${data.trend.value >= 0 ? '+' : ''}${data.trend.value}%</span>
+                <span style="font-size:11px;color:var(--sub);">${data.trend.period || 'vs last period'}</span>
+            </div>
+            ` : ''}
+        `;
+    }
+}
+
+// Create global widget manager instance
+const widgetManager = new WidgetManager();
+
+// Example usage:
+/*
+// Create a metric card
+widgetManager.createMetricCard('total-sales', {
+    id: 'total-sales',
+    title: 'Total Sales',
+    value: 125000,
+    format: 'currency',
+    subtitle: 'This month',
+    icon: '💰',
+    trend: { value: 12, period: 'vs last month' }
+});
+
+// Create a chart widget
+widgetManager.createChartWidget('sales-chart', {
+    id: 'sales-chart',
+    title: 'Monthly Sales',
+    type: 'bar',
+    height: '250px',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        datasets: [{
+            label: 'Sales',
+            data: [12000, 19000, 15000, 18000, 22000]
+        }]
+    }
+});
+
+// Create a list widget
+widgetManager.createListWidget('recent-orders', {
+    id: 'recent-orders',
+    title: 'Recent Orders',
+    items: [
+        { title: 'Order #001', subtitle: 'John Doe', value: '₹2,500' },
+        { title: 'Order #002', subtitle: 'Jane Smith', value: '₹1,800' },
+        { title: 'Order #003', subtitle: 'Bob Johnson', value: '₹3,200' }
+    ]
+});
+
+// Add widgets to dashboard
+widgetManager.addToContainer('total-sales', 'dashboard-container');
+widgetManager.addToContainer('sales-chart', 'dashboard-container');
+widgetManager.addToContainer('recent-orders', 'dashboard-container');
+*/
+</script>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>BizPulse - Company Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+        .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+        .top-bar h1 { font-size:17px; font-weight:600; }
+        .container { max-width:700px; margin:0 auto; padding:20px 16px; }
+        .card { background:var(--card); border-radius:var(--radius); padding:20px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+        .form-group { margin-bottom:14px; }
+        label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:5px; }
+        input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Inter',sans-serif; background:#fafafa; outline:none; transition:border 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+        input.error { border-color:#dc2626; }
+        .error-msg { color:#dc2626; font-size:11px; margin-top:4px; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .btn-primary { background:var(--wine); color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; width:100%; margin-top:8px; }
+        .btn-primary:hover { background:var(--wine2); }
+        .btn-secondary { background:#f3f4f6; color:var(--text); border:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; }
+        .logo-upload { display:flex; align-items:center; gap:16px; }
+        .logo-preview { width:80px; height:80px; border:2px dashed var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafafa; }
+        .logo-preview img { width:100%; height:100%; object-fit:contain; }
+        .logo-preview-placeholder { font-size:32px; color:var(--sub); }
+        .upload-btn { display:inline-block; padding:8px 16px; background:var(--wine); color:#fff; border-radius:6px; font-size:12px; cursor:pointer; }
+        input[type="file"] { display:none; }
+        .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+        .toast.show { opacity:1; }
+        .help-text { font-size:11px; color:var(--sub); margin-top:4px; }
+        @media(max-width:500px){ .form-row { grid-template-columns:1fr; } }
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1>🏢 Company / Firm Setup</h1>
+</div>
+<div class="container">
+    <div class="card">
+        <div class="card-title">🖼️ Company Logo</div>
+        <div class="logo-upload">
+            <div class="logo-preview" id="logoPreview">
+                <span class="logo-preview-placeholder">🏢</span>
+            </div>
+            <div>
+                <label for="logoFile" class="upload-btn">📤 Upload Logo</label>
+                <input type="file" id="logoFile" accept="image/*" onchange="handleLogoUpload(event)">
+                <div class="help-text">PNG, JPG, or GIF (max 2MB)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📋 Company Profile</div>
+        <div class="form-group">
+            <label>Company / Firm Name *</label>
+            <input id="company_name" placeholder="Enter company name" required>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>GST Number</label>
+                <input id="gst_number" placeholder="27AABCU9603R1Z5" maxlength="15" oninput="validateGST()">
+                <div id="gst_error" class="error-msg"></div>
+                <div class="help-text">Format: 2 digits + 10 alphanumeric + 1 digit + Z + 1 digit</div>
+            </div>
+            <div class="form-group">
+                <label>PAN Number</label>
+                <input id="pan_number" placeholder="AABCU9603R" maxlength="10" style="text-transform:uppercase">
+                <div class="help-text">10 character PAN</div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Address *</label>
+            <textarea id="address" rows="2" placeholder="Full business address" required></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>City *</label>
+                <input id="city" placeholder="Enter city" required>
+            </div>
+            <div class="form-group">
+                <label>State *</label>
+                <input id="state" placeholder="Enter state" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Pincode *</label>
+                <input id="pincode" placeholder="400001" maxlength="6" pattern="[0-9]{6}" required>
+            </div>
+            <div class="form-group">
+                <label>Phone *</label>
+                <input id="phone" type="tel" placeholder="+91 9999999999" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input id="email" type="email" placeholder="info@company.com">
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">📅 Financial Settings</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Financial Year *</label>
+                <select id="financial_year" required>
+                    <option value="2023-24">2023-24</option>
+                    <option value="2024-25">2024-25</option>
+                    <option value="2025-26" selected>2025-26</option>
+                    <option value="2026-27">2026-27</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Default Tax Rate (%) *</label>
+                <input id="default_tax_rate" type="number" step="0.01" min="0" max="100" value="18" required>
+                <div class="help-text">Default GST rate for invoices</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">🧾 Invoice Settings</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Invoice Prefix *</label>
+                <input id="invoice_prefix" placeholder="INV" value="INV" required>
+                <div class="help-text">e.g., INV-001, BILL-001</div>
+            </div>
+            <div class="form-group">
+                <label>Starting Invoice Number *</label>
+                <input id="invoice_starting_number" type="number" value="1" min="1" required>
+                <div class="help-text">First invoice number</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-primary" onclick="saveCompany()">💾 Save Company Profile</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let currentLogoUrl = '';
+
+function showToast(msg, ok=true){
+    const t=document.getElementById('toast');
+    t.textContent=msg; 
+    t.style.background=ok?'#1a1a1a':'#dc2626';
+    t.classList.add('show'); 
+    setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function validateGST() {
+    const gstInput = document.getElementById('gst_number');
+    const gstError = document.getElementById('gst_error');
+    const gst = gstInput.value.trim();
+    
+    if (!gst) {
+        gstInput.classList.remove('error');
+        gstError.textContent = '';
+        return true;
+    }
+    
+    // GST format: 2 digits + 10 alphanumeric + 1 digit + Z + 1 digit (total 15)
+    const gstRegex = /^[0-9]{2}[A-Z0-9]{10}[0-9][Z][0-9]$/i;
+    
+    if (!gstRegex.test(gst)) {
+        gstInput.classList.add('error');
+        gstError.textContent = 'Invalid GST format';
+        return false;
+    }
+    
+    gstInput.classList.remove('error');
+    gstError.textContent = '';
+    return true;
+}
+
+async function handleLogoUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('❌ File size must be less than 2MB', false);
+        return;
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        showToast('❌ Please upload an image file', false);
+        return;
+    }
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('logoPreview');
+        preview.innerHTML = `<img src="${e.target.result}" alt="Logo">`;
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload to server
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    try {
+        const response = await fetch('/api/erp/company/logo', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            currentLogoUrl = data.logo_url;
+            showToast('✅ Logo uploaded successfully');
+        } else {
+            showToast('❌ ' + data.error, false);
+        }
+    } catch (error) {
+        showToast('❌ Failed to upload logo', false);
+    }
+}
+
+async function loadCompany(){
+    try{
+        const r=await fetch('/api/erp/company');
+        const d=await r.json();
+        if(d.success && d.data && d.data.company_name){
+            const c=d.data;
+            document.getElementById('company_name').value=c.company_name||'';
+            document.getElementById('gst_number').value=c.gst_number||'';
+            document.getElementById('pan_number').value=c.pan_number||'';
+            document.getElementById('financial_year').value=c.financial_year||'2025-26';
+            document.getElementById('invoice_prefix').value=c.invoice_prefix||'INV';
+            document.getElementById('invoice_starting_number').value=c.invoice_starting_number||1;
+            document.getElementById('address').value=c.address||'';
+            document.getElementById('city').value=c.city||'';
+            document.getElementById('state').value=c.state||'';
+            document.getElementById('pincode').value=c.pincode||'';
+            document.getElementById('phone').value=c.phone||'';
+            document.getElementById('email').value=c.email||'';
+            document.getElementById('default_tax_rate').value=c.default_tax_rate||18;
+            
+            // Load logo if exists
+            if (c.logo_url) {
+                currentLogoUrl = c.logo_url;
+                const preview = document.getElementById('logoPreview');
+                preview.innerHTML = `<img src="${c.logo_url}" alt="Logo">`;
+            }
+        }
+    }catch(e){
+        console.error('Failed to load company data:', e);
+    }
+}
+
+async function saveCompany(){
+    // Validate required fields
+    const companyName = document.getElementById('company_name').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const city = document.getElementById('city').value.trim();
+    const state = document.getElementById('state').value.trim();
+    const pincode = document.getElementById('pincode').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    
+    if (!companyName) {
+        showToast('❌ Company name is required', false);
+        return;
+    }
+    
+    if (!address) {
+        showToast('❌ Address is required', false);
+        return;
+    }
+    
+    if (!city || !state || !pincode) {
+        showToast('❌ City, State, and Pincode are required', false);
+        return;
+    }
+    
+    if (!phone) {
+        showToast('❌ Phone number is required', false);
+        return;
+    }
+    
+    // Validate GST if provided
+    if (!validateGST()) {
+        showToast('❌ Please fix GST number format', false);
+        return;
+    }
+    
+    const payload = {
+        company_name: companyName,
+        gst_number: document.getElementById('gst_number').value.trim(),
+        pan_number: document.getElementById('pan_number').value.trim().toUpperCase(),
+        financial_year: document.getElementById('financial_year').value,
+        invoice_prefix: document.getElementById('invoice_prefix').value.trim() || 'INV',
+        invoice_starting_number: parseInt(document.getElementById('invoice_starting_number').value) || 1,
+        address: address,
+        city: city,
+        state: state,
+        pincode: pincode,
+        phone: phone,
+        email: document.getElementById('email').value.trim(),
+        logo_url: currentLogoUrl,
+        default_tax_rate: parseFloat(document.getElementById('default_tax_rate').value) || 18
+    };
+    
+    try{
+        const r = await fetch('/api/erp/company', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        
+        const d = await r.json();
+        
+        if (d.success) {
+            showToast('✅ Company profile saved successfully!');
+            // Reload after 1 second to show updated data
+            setTimeout(() => loadCompany(), 1000);
+        } else {
+            showToast('❌ ' + d.error, false);
+        }
+    } catch(e) {
+        showToast('❌ Network error', false);
+        console.error('Save error:', e);
+    }
+}
+
+// Load company data on page load
+loadCompany();
+</script>
+</body>
+</html>

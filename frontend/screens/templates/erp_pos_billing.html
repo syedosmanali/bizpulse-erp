@@ -1,0 +1,438 @@
+{% extends "erp_base_layout.html" %}
+{% block title %}POS Billing - ERP{% endblock %}
+{% block extra_css %}
+<style>
+:root{--wine:#732C3F;--wine-light:#8d3a4f;--bg:#f8f9fa;--text:#1A1A1A;--sub:#6B7280;--border:#e5e7eb;--radius:12px}
+body{background:var(--bg);margin:0;padding:0;font-family:'Poppins',sans-serif}
+.pos-container{display:grid;grid-template-columns:1fr 400px;height:100vh;gap:0}
+.products-section{background:#fff;padding:20px;overflow-y:auto}
+.billing-section{background:var(--bg);padding:20px;border-left:2px solid var(--border);display:flex;flex-direction:column}
+.pos-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--border)}
+.pos-header h2{font-size:24px;font-weight:700;color:var(--text);margin:0}
+.search-box{position:relative;margin-bottom:20px}
+.search-box input{width:100%;padding:12px 16px 12px 44px;border:1.5px solid var(--border);border-radius:8px;font-size:14px}
+.search-box i{position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--sub)}
+.categories{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.cat-btn{padding:8px 16px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.cat-btn:hover,.cat-btn.active{background:var(--wine);color:#fff;border-color:var(--wine)}
+.products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.product-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:12px;cursor:pointer;transition:all 0.2s;text-align:center}
+.product-card:hover{border-color:var(--wine);transform:translateY(-2px);box-shadow:0 4px 12px rgba(115,44,63,0.1)}
+.product-card img{width:80px;height:80px;object-fit:cover;border-radius:6px;margin-bottom:8px}
+.product-card .name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.product-card .price{font-size:14px;font-weight:700;color:var(--wine)}
+.product-card .stock{font-size:11px;color:var(--sub)}
+.bill-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.bill-header h3{font-size:18px;font-weight:700;color:var(--text);margin:0}
+.bill-number{font-size:13px;color:var(--sub)}
+.customer-select{margin-bottom:16px}
+.customer-select select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px}
+.cart-items{flex:1;overflow-y:auto;margin-bottom:16px;background:#fff;border-radius:8px;padding:12px}
+.cart-item{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid var(--border);gap:12px}
+.cart-item:last-child{border-bottom:none}
+.item-info{flex:1}
+.item-info .name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.item-info .price{font-size:12px;color:var(--sub)}
+.qty-controls{display:flex;align-items:center;gap:8px}
+.qty-btn{width:28px;height:28px;border:none;background:var(--wine);color:#fff;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-input{width:40px;text-align:center;border:1px solid var(--border);border-radius:4px;padding:4px}
+.item-total{font-size:14px;font-weight:700;color:var(--wine);min-width:60px;text-align:right}
+.remove-btn{width:28px;height:28px;border:none;background:#f3f4f6;border-radius:6px;cursor:pointer;color:var(--sub)}
+.remove-btn:hover{background:#dc2626;color:#fff}
+.empty-cart{text-align:center;padding:40px 20px;color:var(--sub)}
+.empty-cart i{font-size:48px;opacity:0.3;margin-bottom:12px}
+.bill-summary{background:#fff;border-radius:8px;padding:16px;margin-bottom:16px}
+.summary-row{display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px}
+.summary-row.total{font-size:18px;font-weight:700;color:var(--wine);border-top:2px solid var(--border);padding-top:12px;margin-top:12px}
+.payment-section{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.payment-btn{padding:12px;border:1.5px solid var(--border);background:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.payment-btn:hover,.payment-btn.active{background:var(--wine);color:#fff;border-color:var(--wine)}
+.action-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{padding:14px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--wine);color:#fff}
+.btn-primary:hover{background:var(--wine-light)}
+.btn-secondary{background:#f3f4f6;color:var(--text)}
+.btn-secondary:hover{background:#e5e7eb}
+@media(max-width:1024px){.pos-container{grid-template-columns:1fr}.billing-section{border-left:none;border-top:2px solid var(--border)}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="pos-container">
+<div class="products-section">
+<div class="pos-header">
+<h2><i data-lucide="shopping-cart"></i> POS Billing</h2>
+<div style="display:flex;gap:12px">
+<button class="btn btn-secondary" onclick="holdBill()"><i data-lucide="pause"></i>Hold</button>
+<button class="btn btn-secondary" onclick="newBill()"><i data-lucide="plus"></i>New Bill</button>
+</div>
+</div>
+<div class="search-box">
+<i data-lucide="search"></i>
+<input type="text" id="productSearch" placeholder="Search products by name, code, or barcode...">
+</div>
+<div class="categories">
+<button class="cat-btn active" data-cat="all">All</button>
+<button class="cat-btn" data-cat="electronics">Electronics</button>
+<button class="cat-btn" data-cat="grocery">Grocery</button>
+<button class="cat-btn" data-cat="fashion">Fashion</button>
+<button class="cat-btn" data-cat="home">Home</button>
+</div>
+<div class="products-grid" id="productsGrid">
+<!-- Products will be loaded dynamically -->
+<div class="product-card">
+<img src="/static/img/no-image.png" alt="Loading...">
+<div class="name">Loading products...</div>
+<div class="price">Please wait</div>
+<div class="stock">...</div>
+</div>
+</div>
+</div>
+<div class="billing-section">
+<div class="bill-header">
+<h3>Current Bill</h3>
+<div class="bill-number">#INV-001</div>
+</div>
+<div class="customer-select">
+<select id="customerSelect">
+<option value="">Walk-in Customer</option>
+<option value="1">Customer 1</option>
+<option value="2">Customer 2</option>
+</select>
+</div>
+<div class="cart-items" id="cartItems">
+<div class="empty-cart">
+<i data-lucide="shopping-bag"></i>
+<p>No items in cart</p>
+<p style="font-size:12px">Scan or click products to add</p>
+</div>
+</div>
+<div class="bill-summary">
+<div class="summary-row"><span>Subtotal:</span><span id="subtotal">₹0.00</span></div>
+<div class="summary-row"><span>Discount:</span><span id="discount">₹0.00</span></div>
+<div class="summary-row"><span>Tax (GST):</span><span id="tax">₹0.00</span></div>
+<div class="summary-row total"><span>Total:</span><span id="total">₹0.00</span></div>
+</div>
+<div class="payment-section">
+<button class="payment-btn active" data-method="cash"><i data-lucide="dollar-sign"></i>Cash</button>
+<button class="payment-btn" data-method="card"><i data-lucide="credit-card"></i>Card</button>
+<button class="payment-btn" data-method="upi"><i data-lucide="smartphone"></i>UPI</button>
+<button class="payment-btn" data-method="credit"><i data-lucide="clock"></i>Credit</button>
+</div>
+<div class="action-btns">
+<button class="btn btn-secondary" onclick="clearCart()"><i data-lucide="x"></i>Clear</button>
+<button class="btn btn-primary" onclick="checkout()"><i data-lucide="check"></i>Checkout</button>
+</div>
+</div>
+</div>
+<script>
+let cart=[];
+let paymentMethod='cash';
+let products = [];
+let customers = [];
+
+// Load products from backend
+async function loadProducts() {
+    try {
+        const response = await fetch('/api/products');
+        if (response.ok) {
+            const data = await response.json();
+            products = data.products || data;
+            renderProducts();
+        } else {
+            console.error('Failed to load products');
+        }
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
+}
+
+// Load customers from backend
+async function loadCustomers() {
+    try {
+        const response = await fetch('/api/customers');
+        if (response.ok) {
+            const data = await response.json();
+            customers = data.customers || data;
+            renderCustomers();
+        }
+    } catch (error) {
+        console.error('Error loading customers:', error);
+    }
+}
+
+// Render products grid
+function renderProducts(productsToShow = products) {
+    const container = document.getElementById('productsGrid');
+    if (!container) return;
+    
+    container.innerHTML = productsToShow.map(product => `
+        <div class="product-card" onclick="addToCart('${product.id}')">
+            <img src="/static/img/no-image.png" alt="${product.name}">
+            <div class="name">${product.name}</div>
+            <div class="price">₹${parseFloat(product.price).toFixed(2)}</div>
+            <div class="stock">Stock: ${product.stock || 0}</div>
+        </div>
+    `).join('');
+}
+
+// Render customer dropdown
+function renderCustomers() {
+    const select = document.getElementById('customerSelect');
+    if (!select) return;
+    
+    select.innerHTML = `
+        <option value="">Walk-in Customer</option>
+        ${customers.map(customer => `
+            <option value="${customer.id}">${customer.name} ${customer.phone ? `(${customer.phone})` : ''}</option>
+        `).join('')}
+    `;
+}
+
+// Add item to cart
+function addToCart(productId) {
+    const product = products.find(p => p.id === productId);
+    if (!product) {
+        alert('Product not found!');
+        return;
+    }
+    
+    const existing = cart.find(item => item.id === productId);
+    if (existing) {
+        // Check stock
+        if (existing.qty >= (product.stock || 0)) {
+            alert(`Only ${product.stock} items available in stock!`);
+            return;
+        }
+        existing.qty++;
+    } else {
+        // Check stock for new item
+        if ((product.stock || 0) <= 0) {
+            alert('Product out of stock!');
+            return;
+        }
+        cart.push({
+            id: product.id,
+            name: product.name,
+            price: parseFloat(product.price),
+            qty: 1
+        });
+    }
+    renderCart();
+    updateSummary();
+}
+
+// Remove item from cart
+function removeFromCart(productId) {
+    cart = cart.filter(item => item.id !== productId);
+    renderCart();
+    updateSummary();
+}
+
+// Update item quantity
+function updateQty(productId, qty) {
+    const item = cart.find(i => i.id === productId);
+    const product = products.find(p => p.id === productId);
+    
+    if (item && product) {
+        const newQty = Math.max(1, parseInt(qty));
+        // Check stock
+        if (newQty > (product.stock || 0)) {
+            alert(`Only ${product.stock} items available in stock!`);
+            return;
+        }
+        item.qty = newQty;
+        renderCart();
+        updateSummary();
+    }
+}
+
+// Render cart items
+function renderCart() {
+    const container = document.getElementById('cartItems');
+    if (!container) return;
+    
+    if (cart.length === 0) {
+        container.innerHTML = '<div class="empty-cart"><i data-lucide="shopping-bag"></i><p>No items in cart</p><p style="font-size:12px">Scan or click products to add</p></div>';
+    } else {
+        container.innerHTML = cart.map(item => `
+            <div class="cart-item">
+                <div class="item-info">
+                    <div class="name">${item.name}</div>
+                    <div class="price">₹${item.price.toFixed(2)} each</div>
+                </div>
+                <div class="qty-controls">
+                    <button class="qty-btn" onclick="updateQty('${item.id}', ${item.qty-1})">
+                        <i data-lucide="minus"></i>
+                    </button>
+                    <input type="number" class="qty-input" value="${item.qty}" onchange="updateQty('${item.id}', this.value)">
+                    <button class="qty-btn" onclick="updateQty('${item.id}', ${item.qty+1})">
+                        <i data-lucide="plus"></i>
+                    </button>
+                </div>
+                <div class="item-total">₹${(item.price * item.qty).toFixed(2)}</div>
+                <button class="remove-btn" onclick="removeFromCart('${item.id}')">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>
+        `).join('');
+    }
+    lucide.createIcons();
+}
+
+// Update bill summary
+function updateSummary() {
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const discount = 0;
+    const tax = subtotal * 0.18; // 18% GST
+    const total = subtotal - discount + tax;
+    
+    document.getElementById('subtotal').textContent = '₹' + subtotal.toFixed(2);
+    document.getElementById('discount').textContent = '₹' + discount.toFixed(2);
+    document.getElementById('tax').textContent = '₹' + tax.toFixed(2);
+    document.getElementById('total').textContent = '₹' + total.toFixed(2);
+}
+
+// Checkout - create bill
+async function checkout() {
+    if (cart.length === 0) {
+        alert('Cart is empty');
+        return;
+    }
+    
+    // Get selected customer
+    const customerId = document.getElementById('customerSelect').value;
+    const customer = customers.find(c => c.id === customerId) || {name: 'Walk-in Customer'};
+    
+    // Prepare bill data
+    const billData = {
+        items: cart.map(item => ({
+            product_id: item.id,
+            product_name: item.name,
+            quantity: item.qty,
+            unit_price: item.price,
+            total_price: item.price * item.qty
+        })),
+        subtotal: cart.reduce((sum, item) => sum + (item.price * item.qty), 0),
+        tax_amount: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 0.18,
+        discount_amount: 0,
+        total_amount: cart.reduce((sum, item) => sum + (item.price * item.qty), 0) * 1.18,
+        gst_rate: 18,
+        payment_method: paymentMethod,
+        customer_id: customerId || null,
+        customer_name: customer.name,
+        customer_phone: customer.phone || null
+    };
+    
+    try {
+        // Show loading
+        const checkoutBtn = document.querySelector('.btn-primary');
+        const originalText = checkoutBtn.innerHTML;
+        checkoutBtn.innerHTML = '<i data-lucide="loader"></i>Processing...';
+        checkoutBtn.disabled = true;
+        lucide.createIcons();
+        
+        // Create bill
+        const response = await fetch('/api/bills', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(billData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Bill created successfully!\nBill Number: ${result.bill_number}\nTotal: ₹${billData.total_amount.toFixed(2)}`);
+            // Clear cart
+            cart = [];
+            renderCart();
+            updateSummary();
+            // Reload products to update stock
+            loadProducts();
+        } else {
+            alert(`❌ Error: ${result.error || 'Failed to create bill'}`);
+        }
+    } catch (error) {
+        console.error('Checkout error:', error);
+        alert('❌ Network error. Please try again.');
+    } finally {
+        // Restore button
+        const checkoutBtn = document.querySelector('.btn-primary');
+        checkoutBtn.innerHTML = '<i data-lucide="check"></i>Checkout';
+        checkoutBtn.disabled = false;
+        lucide.createIcons();
+    }
+}
+
+// Clear cart
+function clearCart() {
+    if (confirm('Clear all items from cart?')) {
+        cart = [];
+        renderCart();
+        updateSummary();
+    }
+}
+
+// Hold bill (save for later)
+function holdBill() {
+    if (cart.length === 0) {
+        alert('Cart is empty');
+        return;
+    }
+    alert('Bill held for later (feature coming soon)');
+}
+
+// New bill
+function newBill() {
+    clearCart();
+}
+
+// Filter products by category
+function filterProducts(category) {
+    if (category === 'all') {
+        renderProducts();
+    } else {
+        const filtered = products.filter(p => p.category && p.category.toLowerCase().includes(category.toLowerCase()));
+        renderProducts(filtered);
+    }
+}
+
+// Search products
+document.getElementById('productSearch')?.addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const filtered = products.filter(p => 
+        p.name.toLowerCase().includes(searchTerm) || 
+        p.code?.toLowerCase().includes(searchTerm)
+    );
+    renderProducts(filtered);
+});
+
+// Payment method selection
+document.querySelectorAll('.payment-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        paymentMethod = btn.dataset.method;
+    });
+});
+
+// Category selection
+document.querySelectorAll('.cat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filterProducts(btn.dataset.cat);
+    });
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+    loadProducts();
+    loadCustomers();
+    renderCart();
+    updateSummary();
+});
+</script>
+{% endblock %}

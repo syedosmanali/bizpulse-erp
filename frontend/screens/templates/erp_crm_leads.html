@@ -1,0 +1,676 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}CRM & Lead Management - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+    body { background:var(--bg); color:var(--text); font-family:'Outfit', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+    .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+    .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+    .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--border); margin-bottom:16px; border-radius:var(--radius) var(--radius) 0 0; overflow:hidden; }
+    .tab { flex:1; padding:12px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--sub); border-bottom:2px solid transparent; transition:all 0.2s; }
+    .tab:hover { background:#f9f6f7; }
+    .tab.active { color:var(--wine); border-bottom-color:var(--wine); background:#fff9f9; font-weight:600; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .container { max-width:900px; margin:0 auto; padding:16px; }
+    .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-group { margin-bottom:12px; }
+    label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:4px; }
+    input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Outfit', sans-serif; background:#fafafa; outline:none; }
+    input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; min-height:44px; }
+    .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:500; min-height:44px; }
+    .btn-danger { background:#fee2e2; color:#dc2626; }
+    .btn-edit { background:#e0e7ff; color:#4338ca; }
+    .btn-success { background:#d1fae5; color:#065f46; }
+    .btn-warning { background:#fef3c7; color:#d97706; }
+    
+    /* Search and Filter Bar */
+    .filter-bar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input { padding-left:36px; }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:16px; }
+    .filter-select { min-width:140px; }
+    
+    /* Lead List */
+    .lead-list { display:flex; flex-direction:column; gap:10px; }
+    .lead-item { background:#fafafa; border:1.5px solid var(--border); border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s; }
+    .lead-item:hover { border-color:var(--wine); background:#fff; }
+    .lead-info { flex:1; }
+    .lead-info h3 { font-size:14px; font-weight:600; margin-bottom:3px; }
+    .lead-info p { font-size:12px; color:var(--sub); margin-bottom:2px; }
+    .lead-actions { display:flex; gap:6px; }
+    
+    /* Lead Status */
+    .lead-badge { display:inline-block; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+    .new { background:#eff6ff; color:#2563eb; }
+    .contacted { background:#fef9c3; color:#ca8a04; }
+    .qualified { background:#dcfce7; color:#16a34a; }
+    .proposal { background:#f0f9ff; color:#0ea5e9; }
+    .negotiation { background:#fdf2f8; color:#db2777; }
+    .won { background:#d1fae5; color:#065f46; }
+    .lost { background:#fee2e2; color:#dc2626; }
+    
+    /* CRM Summary Cards */
+    .crm-summary { display:grid; grid-template-columns: repeat(5, 1fr); gap:12px; margin-bottom:16px; }
+    .summary-card { background:var(--card); border-radius:var(--radius); padding:16px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .summary-card h3 { font-size:24px; font-weight:700; margin-bottom:4px; }
+    .summary-card p { font-size:12px; color:var(--sub); margin:0; }
+    .summary-new { color:#2563eb; }
+    .summary-contacted { color:#ca8a04; }
+    .summary-qualified { color:#16a34a; }
+    .summary-won { color:#065f46; }
+    .summary-lost { color:#dc2626; }
+    
+    /* Lead Source */
+    .source-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin:16px 0; }
+    .source-option { padding:12px; border:1.5px solid var(--border); border-radius:8px; text-align:center; cursor:pointer; transition:all 0.2s; }
+    .source-option:hover { border-color:var(--wine); }
+    .source-option.selected { border-color:var(--wine); background:#fff3f3; }
+    .source-option i { font-size:24px; margin-bottom:6px; display:block; }
+    
+    /* Follow-up Reminders */
+    .reminder-list { display:flex; flex-direction:column; gap:8px; }
+    .reminder-item { display:flex; justify-content:space-between; padding:12px; background:#f9f6f7; border-radius:8px; font-size:13px; }
+    .reminder-item.urgent { border-left:3px solid #dc2626; background:#fee2e2; }
+    .reminder-item.normal { border-left:3px solid #f59e0b; background:#fef3c7; }
+    .reminder-date { font-weight:600; }
+    
+    /* Activity Timeline */
+    .timeline { position:relative; padding-left:20px; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:2px; background:var(--border); }
+    .timeline-item { position:relative; margin-bottom:16px; }
+    .timeline-item::before { content:''; position:absolute; left:-28px; top:8px; width:12px; height:12px; border-radius:50%; background:var(--wine); border:2px solid var(--card); }
+    .timeline-content { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .timeline-date { font-size:11px; color:var(--sub); margin-bottom:4px; }
+    .timeline-title { font-size:13px; font-weight:600; margin-bottom:2px; }
+    .timeline-desc { font-size:12px; color:var(--sub); }
+    
+    /* Deal Value */
+    .deal-info { background:#f0f9ff; border-radius:8px; padding:12px; margin:16px 0; }
+    .deal-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; }
+    .deal-row:last-child { margin-bottom:0; font-weight:700; font-size:16px; color:var(--wine); padding-top:8px; border-top:1px solid var(--border); }
+    
+    .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+    .toast.show { opacity:1; }
+    .error-msg { color:#dc2626; font-size:11px; display:none; margin-top:4px; }
+    
+    @media(max-width:768px){ 
+        .form-row, .form-row-3 { grid-template-columns:1fr; } 
+        .lead-item { flex-direction:column; align-items:flex-start; gap:10px; }
+        .filter-bar { flex-direction:column; }
+        .search-box, .filter-select { width:100%; min-width:auto; }
+        .crm-summary { grid-template-columns: 1fr 1fr; }
+        .source-grid { grid-template-columns: 1fr; }
+        .tabs { flex-direction: column; }
+        .tab { border-bottom: 1px solid var(--border); border-right: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1><i data-lucide="users-round"></i> CRM & Lead Management</h1>
+    <button class="btn-primary btn-sm" onclick="showNewLead()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);"><i data-lucide="plus"></i> New Lead</button>
+</div>
+
+<div class="container">
+    <!-- CRM Summary -->
+    <div class="crm-summary">
+        <div class="summary-card">
+            <h3 class="summary-new">24</h3>
+            <p>New Leads</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-contacted">18</h3>
+            <p>Contacted</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-qualified">12</h3>
+            <p>Qualified</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-won">8</h3>
+            <p>Won</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-lost">5</h3>
+            <p>Lost</p>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('leads')">Leads</div>
+        <div class="tab" onclick="switchTab('reminders')">Follow-ups</div>
+        <div class="tab" onclick="switchTab('activities')">Activities</div>
+        <div class="tab" onclick="switchTab('reports')">Reports</div>
+    </div>
+    
+    <!-- New Lead Form -->
+    <div class="card" id="leadForm" style="display:none;">
+        <div class="card-title" id="formTitle"><i data-lucide="plus"></i> Add New Lead</div>
+        <input type="hidden" id="edit_lead_id">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Lead Name *</label>
+                <input id="lead_name" placeholder="Enter lead name/company">
+                <span id="name_error" class="error-msg">Lead name is required</span>
+            </div>
+            <div class="form-group">
+                <label>Contact Person</label>
+                <input id="contact_person" placeholder="Primary contact person">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Phone *</label>
+                <input type="tel" id="lead_phone" placeholder="9876543210">
+                <span id="phone_error" class="error-msg">Valid phone number required</span>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="lead_email" placeholder="lead@example.com">
+            </div>
+        </div>
+        
+        <!-- Lead Source -->
+        <div class="card">
+            <div class="card-title"><i data-lucide="mouse-pointer-click"></i> Lead Source</div>
+            <div class="source-grid">
+                <div class="source-option" onclick="selectSource(this, 'website')">
+                    <i data-lucide="globe"></i>
+                    <div>Website</div>
+                </div>
+                <div class="source-option" onclick="selectSource(this, 'referral')">
+                    <i data-lucide="user-plus"></i>
+                    <div>Referral</div>
+                </div>
+                <div class="source-option" onclick="selectSource(this, 'social_media')">
+                    <i data-lucide="heart-handshake"></i>
+                    <div>Social Media</div>
+                </div>
+                <div class="source-option" onclick="selectSource(this, 'walk_in')">
+                    <i data-lucide="store"></i>
+                    <div>Walk-in</div>
+                </div>
+                <div class="source-option" onclick="selectSource(this, 'advertisement')">
+                    <i data-lucide="megaphone"></i>
+                    <div>Advertisement</div>
+                </div>
+                <div class="source-option" onclick="selectSource(this, 'other')">
+                    <i data-lucide="more-horizontal"></i>
+                    <div>Other</div>
+                </div>
+            </div>
+            <input type="hidden" id="lead_source">
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Lead Status</label>
+                <select id="lead_status">
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="proposal">Proposal Sent</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Expected Deal Value (₹)</label>
+                <input type="number" id="deal_value" placeholder="Enter expected value" min="0" step="0.01">
+            </div>
+        </div>
+        
+        <!-- Deal Information -->
+        <div class="deal-info">
+            <div class="deal-row">
+                <span>Product/Service Interest:</span>
+                <select id="interest_product" style="border:none;background:transparent;padding:0;width:auto;font-size:13px;">
+                    <option value="retail_pos">Retail POS System</option>
+                    <option value="inventory">Inventory Management</option>
+                    <option value="billing">Billing Software</option>
+                    <option value="erp">Complete ERP</option>
+                    <option value="custom">Custom Solution</option>
+                </select>
+            </div>
+            <div class="deal-row">
+                <span>Priority Level:</span>
+                <select id="priority_level" style="border:none;background:transparent;padding:0;width:auto;font-size:13px;">
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Address</label>
+            <textarea id="lead_address" placeholder="Full address" rows="2"></textarea>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Next Follow-up Date</label>
+                <input type="date" id="followup_date">
+            </div>
+            <div class="form-group">
+                <label>Assigned To</label>
+                <select id="assigned_to">
+                    <option value="">Select team member</option>
+                    <option value="1">Sales Executive 1</option>
+                    <option value="2">Sales Executive 2</option>
+                    <option value="3">Sales Manager</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea id="lead_notes" placeholder="Additional notes about this lead" rows="3"></textarea>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn-primary" onclick="saveLead()" style="flex:1;" id="saveBtn"><i data-lucide="save"></i> Save Lead</button>
+            <button onclick="hideLeadForm()" style="background:#f3f4f6;color:var(--sub);border:none;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:14px;min-height:44px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Leads Tab -->
+    <div class="tab-content active" id="leads-tab">
+        <!-- Search and Filter -->
+        <div class="card">
+            <div class="filter-bar">
+                <div class="search-box">
+                    <span class="search-icon"><i data-lucide="search"></i></span>
+                    <input type="text" id="searchInput" placeholder="Search leads..." onkeyup="filterLeads()">
+                </div>
+                <select class="filter-select" id="statusFilter" onchange="filterLeads()">
+                    <option value="">All Status</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Won</option>
+                    <option value="lost">Lost</option>
+                </select>
+                <select class="filter-select" id="sourceFilter" onchange="filterLeads()">
+                    <option value="">All Sources</option>
+                    <option value="website">Website</option>
+                    <option value="referral">Referral</option>
+                    <option value="social_media">Social Media</option>
+                    <option value="walk_in">Walk-in</option>
+                    <option value="advertisement">Advertisement</option>
+                </select>
+                <button class="btn-sm" style="background:#e0e7ff;color:#4338ca;" onclick="exportData()"><i data-lucide="download"></i> Export</button>
+            </div>
+        </div>
+
+        <!-- Lead List -->
+        <div class="card">
+            <div class="card-title"><i data-lucide="users"></i> Leads (<span id="leadCount">0</span>)</div>
+            <div class="lead-list" id="leadList">
+                <div class="empty">No leads found</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Follow-ups Tab -->
+    <div class="tab-content" id="reminders-tab">
+        <div class="card">
+            <div class="card-title"><i data-lucide="calendar"></i> Upcoming Follow-ups</div>
+            <div class="reminder-list" id="reminderList">
+                <div class="empty">No upcoming follow-ups</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activities Tab -->
+    <div class="tab-content" id="activities-tab">
+        <div class="card">
+            <div class="card-title"><i data-lucide="activity"></i> Recent Activities</div>
+            <div class="timeline" id="activityTimeline">
+                <div class="empty">No recent activities</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Tab -->
+    <div class="tab-content" id="reports-tab">
+        <div class="card">
+            <div class="card-title"><i data-lucide="bar-chart-3"></i> Lead Conversion Report</div>
+            <div style="padding:20px;text-align:center;">
+                <div style="font-size:16px;margin-bottom:16px;">Lead Conversion Funnel</div>
+                <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;margin:0 auto;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:#eff6ff;padding:12px;border-radius:8px;">
+                        <span>New Leads</span>
+                        <span style="font-weight:700;color:#2563eb;">24</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:#fef9c3;padding:12px;border-radius:8px;">
+                        <span>Contacted</span>
+                        <span style="font-weight:700;color:#ca8a04;">18 (75%)</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:#dcfce7;padding:12px;border-radius:8px;">
+                        <span>Qualified</span>
+                        <span style="font-weight:700;color:#16a34a;">12 (67%)</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;background:#d1fae5;padding:12px;border-radius:8px;">
+                        <span>Won</span>
+                        <span style="font-weight:700;color:#065f46;">8 (67%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let leads = [];
+let filteredLeads = [];
+let currentTab = 'leads';
+
+function showToast(msg, ok=true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = ok ? '#1a1a1a' : '#dc2626';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // Update content panels
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    currentTab = tabName;
+    
+    // Load data for the selected tab
+    if (tabName === 'leads') {
+        filterLeads();
+    } else if (tabName === 'reminders') {
+        loadReminders();
+    } else if (tabName === 'activities') {
+        loadActivities();
+    }
+    
+    lucide.createIcons();
+}
+
+function showNewLead() {
+    document.getElementById('leadForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> Add New Lead';
+    document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Save Lead';
+    document.getElementById('leadForm').scrollIntoView({behavior: 'smooth'});
+    clearForm();
+    lucide.createIcons();
+}
+
+function hideLeadForm() {
+    document.getElementById('leadForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    // Clear all form fields
+    document.getElementById('edit_lead_id').value = '';
+    document.getElementById('lead_name').value = '';
+    document.getElementById('contact_person').value = '';
+    document.getElementById('lead_phone').value = '';
+    document.getElementById('lead_email').value = '';
+    document.getElementById('lead_source').value = '';
+    document.getElementById('lead_status').value = 'new';
+    document.getElementById('deal_value').value = '';
+    document.getElementById('interest_product').value = 'retail_pos';
+    document.getElementById('priority_level').value = 'medium';
+    document.getElementById('lead_address').value = '';
+    document.getElementById('followup_date').value = '';
+    document.getElementById('assigned_to').value = '';
+    document.getElementById('lead_notes').value = '';
+    
+    // Reset source selection
+    document.querySelectorAll('.source-option').forEach(el => el.classList.remove('selected'));
+    
+    // Hide error messages
+    document.getElementById('name_error').style.display = 'none';
+    document.getElementById('phone_error').style.display = 'none';
+}
+
+function selectSource(element, sourceValue) {
+    // Remove selection from all options
+    document.querySelectorAll('.source-option').forEach(el => el.classList.remove('selected'));
+    
+    // Add selection to clicked option
+    element.classList.add('selected');
+    document.getElementById('lead_source').value = sourceValue;
+}
+
+function loadLeads() {
+    try {
+        // Simulate loading leads - in real implementation, this would fetch from API
+        const mockLeads = [
+            { id: 1, name: 'Tech Solutions Pvt Ltd', contact_person: 'Amit Sharma', phone: '9876543210', email: 'amit@techsolutions.com', source: 'website', status: 'qualified', deal_value: 150000, product: 'erp', priority: 'high', followup_date: '2024-01-25', assigned_to: 'Sales Executive 1' },
+            { id: 2, name: 'Retail World', contact_person: 'Priya Patel', phone: '9876543211', email: 'priya@retailworld.com', source: 'referral', status: 'contacted', deal_value: 75000, product: 'retail_pos', priority: 'medium', followup_date: '2024-01-22', assigned_to: 'Sales Executive 2' },
+            { id: 3, name: 'Grocery Mart', contact_person: 'Rajesh Kumar', phone: '9876543212', email: 'rajesh@grocerymart.com', source: 'walk_in', status: 'new', deal_value: 50000, product: 'inventory', priority: 'low', followup_date: null, assigned_to: 'Sales Manager' },
+            { id: 4, name: 'Digital Stores', contact_person: 'Sneha Gupta', phone: '9876543213', email: 'sneha@digitalstores.com', source: 'social_media', status: 'proposal', deal_value: 200000, product: 'complete_erp', priority: 'urgent', followup_date: '2024-01-20', assigned_to: 'Sales Executive 1' },
+            { id: 5, name: 'Food Corner', contact_person: 'Vikram Singh', phone: '9876543214', email: 'vikram@foodcorner.com', source: 'advertisement', status: 'won', deal_value: 100000, product: 'billing', priority: 'high', followup_date: null, assigned_to: 'Sales Manager' }
+        ];
+        
+        leads = mockLeads;
+        filteredLeads = [...leads];
+        renderLeads();
+    } catch (e) {
+        showToast('Failed to load leads', false);
+    }
+}
+
+function filterLeads() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const sourceFilter = document.getElementById('sourceFilter').value;
+    
+    filteredLeads = leads.filter(lead => {
+        const matchSearch = !search || 
+            lead.name.toLowerCase().includes(search) ||
+            lead.contact_person.toLowerCase().includes(search) ||
+            lead.phone.includes(search);
+        const matchStatus = !statusFilter || lead.status === statusFilter;
+        const matchSource = !sourceFilter || lead.source === sourceFilter;
+        
+        return matchSearch && matchStatus && matchSource;
+    });
+    
+    renderLeads();
+}
+
+function renderLeads() {
+    const el = document.getElementById('leadList');
+    document.getElementById('leadCount').textContent = filteredLeads.length;
+    
+    if (!filteredLeads.length) {
+        el.innerHTML = '<div class="empty">No leads found</div>';
+        return;
+    }
+    
+    el.innerHTML = filteredLeads.map(lead => {
+        const statusClass = lead.status;
+        const statusText = lead.status.charAt(0).toUpperCase() + lead.status.slice(1).replace('_', ' ');
+        const sourceText = lead.source.replace('_', ' ').toUpperCase();
+        const priorityText = lead.priority.charAt(0).toUpperCase() + lead.priority.slice(1);
+        
+        return `
+        <div class="lead-item">
+            <div class="lead-info">
+                <h3>${lead.name}</h3>
+                <p>${lead.contact_person} | 📞 ${lead.phone} | ✉️ ${lead.email || 'No email'}</p>
+                <p>Source: ${sourceText} | Product: ${lead.product.replace('_', ' ').toUpperCase()}</p>
+                <p style="font-size:11px;color:var(--sub);margin-top:4px;">
+                    Deal Value: ₹${(lead.deal_value || 0).toLocaleString('en-IN')} | 
+                    Priority: ${priorityText} | 
+                    Assigned: ${lead.assigned_to}
+                </p>
+                <span class="lead-badge ${statusClass}">${statusText}</span>
+                ${lead.followup_date ? `<span style="margin-left:8px;font-size:11px;background:#fef3c7;color:#d97706;padding:2px 6px;border-radius:4px;font-weight:600;">📅 ${lead.followup_date}</span>` : ''}
+            </div>
+            <div class="lead-actions">
+                <button class="btn-sm btn-edit" onclick="editLead(${lead.id})"><i data-lucide="edit"></i> Edit</button>
+                <button class="btn-sm btn-success" onclick="convertToCustomer(${lead.id})"><i data-lucide="user-check"></i> Convert</button>
+                <button class="btn-sm btn-danger" onclick="deleteLead(${lead.id})"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function loadReminders() {
+    const el = document.getElementById('reminderList');
+    
+    // Mock upcoming follow-ups
+    const reminders = [
+        { lead: 'Tech Solutions Pvt Ltd', date: '2024-01-25', type: 'Call', priority: 'urgent' },
+        { lead: 'Digital Stores', date: '2024-01-20', type: 'Meeting', priority: 'high' },
+        { lead: 'Retail World', date: '2024-01-22', type: 'Follow-up', priority: 'medium' }
+    ];
+    
+    if (!reminders.length) {
+        el.innerHTML = '<div class="empty">No upcoming follow-ups</div>';
+        return;
+    }
+    
+    el.innerHTML = reminders.map(reminder => `
+        <div class="reminder-item ${reminder.priority === 'urgent' ? 'urgent' : 'normal'}">
+            <div>
+                <strong>${reminder.lead}</strong>
+                <div style="font-size:12px;color:var(--sub);">${reminder.type}</div>
+            </div>
+            <div class="reminder-date">${reminder.date}</div>
+        </div>
+    `).join('');
+}
+
+function loadActivities() {
+    const el = document.getElementById('activityTimeline');
+    
+    // Mock recent activities
+    const activities = [
+        { date: '2024-01-19 14:30', title: 'Call with Tech Solutions', desc: 'Discussed ERP requirements and pricing' },
+        { date: '2024-01-18 11:15', title: 'Email sent to Digital Stores', desc: 'Sent proposal for complete ERP solution' },
+        { date: '2024-01-17 16:45', title: 'Meeting with Retail World', desc: 'Demonstrated Retail POS system features' }
+    ];
+    
+    if (!activities.length) {
+        el.innerHTML = '<div class="empty">No recent activities</div>';
+        return;
+    }
+    
+    el.innerHTML = activities.map(activity => `
+        <div class="timeline-item">
+            <div class="timeline-content">
+                <div class="timeline-date">${activity.date}</div>
+                <div class="timeline-title">${activity.title}</div>
+                <div class="timeline-desc">${activity.desc}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function saveLead() {
+    // Validation
+    const name = document.getElementById('lead_name').value.trim();
+    const phone = document.getElementById('lead_phone').value.trim();
+    
+    if (!name) {
+        document.getElementById('name_error').style.display = 'block';
+        return;
+    }
+    
+    if (!phone || phone.length < 10) {
+        document.getElementById('phone_error').style.display = 'block';
+        return;
+    }
+    
+    try {
+        // In a real implementation, this would POST to API
+        showToast('Lead saved successfully');
+        hideLeadForm();
+        loadLeads();
+    } catch (e) {
+        showToast('Failed to save lead', false);
+    }
+}
+
+function editLead(id) {
+    const lead = leads.find(l => l.id === id);
+    if (lead) {
+        showNewLead();
+        document.getElementById('formTitle').innerHTML = '<i data-lucide="edit"></i> Edit Lead';
+        document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Update Lead';
+        document.getElementById('edit_lead_id').value = lead.id;
+        document.getElementById('lead_name').value = lead.name;
+        document.getElementById('contact_person').value = lead.contact_person;
+        document.getElementById('lead_phone').value = lead.phone;
+        document.getElementById('lead_email').value = lead.email || '';
+        document.getElementById('lead_source').value = lead.source;
+        document.getElementById('lead_status').value = lead.status;
+        document.getElementById('deal_value').value = lead.deal_value || '';
+        document.getElementById('interest_product').value = lead.product;
+        document.getElementById('priority_level').value = lead.priority;
+        document.getElementById('lead_address').value = lead.address || '';
+        document.getElementById('followup_date').value = lead.followup_date || '';
+        document.getElementById('assigned_to').value = lead.assigned_to ? '1' : ''; // Simplified for demo
+        // In a real implementation, populate other fields
+    }
+}
+
+function convertToCustomer(id) {
+    const lead = leads.find(l => l.id === id);
+    if (lead) {
+        showToast(`Converting ${lead.name} to customer`);
+        // In a real implementation, this would create a customer record
+    }
+}
+
+function deleteLead(id) {
+    if (!confirm('Delete this lead? This action cannot be undone.')) return;
+    
+    try {
+        // In a real implementation, this would DELETE from API
+        showToast('Lead deleted');
+        loadLeads();
+    } catch (e) {
+        showToast('Failed to delete lead', false);
+    }
+}
+
+function exportData() {
+    showToast('Exporting CRM data...', true);
+    // In a real implementation, this would export to Excel
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadLeads();
+    document.getElementById('followup_date').value = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

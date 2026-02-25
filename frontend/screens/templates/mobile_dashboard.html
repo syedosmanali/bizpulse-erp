@@ -2269,13 +2269,73 @@
         const API_BASE_URL = window.location.origin;
         console.log('🌐 API Base URL:', API_BASE_URL);
         
-        // Helper function for API calls
+        // Session persistence helper functions
+        const SessionManager = {
+            // Check if user is authenticated by calling user-info endpoint
+            async isAuthenticated() {
+                try {
+                    const response = await fetch('/api/auth/user-info', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    return response.status === 200;
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                    return false;
+                }
+            },
+            
+            // Refresh session by making a lightweight API call
+            async refreshSession() {
+                try {
+                    await fetch('/api/deployment-status', {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+                    console.log('✅ Session refreshed');
+                } catch (error) {
+                    console.warn('Session refresh failed:', error);
+                }
+            },
+            
+            // Periodically refresh session to keep it alive
+            startSessionRefresh(intervalMinutes = 15) {
+                setInterval(async () => {
+                    if (await this.isAuthenticated()) {
+                        await this.refreshSession();
+                    }
+                }, intervalMinutes * 60 * 1000);
+            }
+        };
+        
+        // Start session refresh mechanism
+        SessionManager.startSessionRefresh(15); // Refresh every 15 minutes
+        
+        // Enhanced API call function with session persistence
         async function apiCall(endpoint, options = {}) {
             try {
                 const url = `${API_BASE_URL}${endpoint}`;
                 console.log('📡 API Call:', url, options);
                 options.credentials = options.credentials || 'same-origin';
-                const response = await fetch(url, options);
+                
+                // Make the initial request
+                let response = await fetch(url, options);
+                
+                // If we get an authentication error, try to refresh and retry once
+                if (response.status === 401 || response.status === 403) {
+                    console.log('⚠️ Authentication issue detected, attempting refresh...');
+                    await SessionManager.refreshSession();
+                    
+                    // Retry the request after refresh
+                    response = await fetch(url, options);
+                }
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
@@ -2286,36 +2346,118 @@
             }
         }
         
-        // Show loading screen, then login - FIXED VERSION
+        // Initialize session persistence on page load
         window.addEventListener('load', function() {
-            console.log('🚀 Mobile Dashboard loaded, initializing...');
-            
-            // Hide loading screen immediately
-            const loadingScreen = document.getElementById('loadingScreen');
-            if (loadingScreen) {
-                loadingScreen.classList.add('hidden');
-                loadingScreen.style.display = 'none';
+            console.log('🔧 Session persistence initialized');
+        });
+        
+        // Handle page visibility changes to refresh session when user returns
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                console.log('👁️ Page became visible, refreshing session...');
+                SessionManager.refreshSession();
             }
+        });
+        
+        // Check authentication status first, then initialize app
+        window.addEventListener('load', async function() {
+            console.log('🚀 Mobile Dashboard loaded, checking authentication...');
             
-            // Hide login screen (not needed for dashboard)
-            const loginScreen = document.getElementById('loginScreen');
-            if (loginScreen) {
-                loginScreen.style.display = 'none';
+            // First, check if user is authenticated
+            try {
+                const response = await fetch('/api/auth/user-info', {
+                    method: 'GET',
+                    credentials: 'same-origin',  // Important: include session cookies
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                console.log('🔐 Authentication check response:', response.status);
+                
+                if (response.status === 200) {
+                    // User is authenticated, proceed with dashboard
+                    console.log('✅ User is authenticated, loading dashboard...');
+                    
+                    // Hide loading and login screens
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) {
+                        loadingScreen.classList.add('hidden');
+                        loadingScreen.style.display = 'none';
+                    }
+                    
+                    const loginScreen = document.getElementById('loginScreen');
+                    if (loginScreen) {
+                        loginScreen.style.display = 'none';
+                    }
+                    
+                    // Show main app
+                    const topBar = document.getElementById('topBar');
+                    if (topBar) topBar.style.display = 'flex';
+                    const bottomNav = document.getElementById('bottomNav');
+                    if (bottomNav) bottomNav.style.display = 'flex';
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) mainContent.style.display = 'block';
+                    
+                    // Initialize mobile mode and load dashboard
+                    console.log('🔧 Initializing mobile dashboard...');
+                    ensureMobileMode();
+                    loadMenuItems();
+                    loadDashboard();
+                } else {
+                    // User is not authenticated, show login screen
+                    console.log('🔒 User not authenticated, showing login screen...');
+                    
+                    // Hide loading screen
+                    const loadingScreen = document.getElementById('loadingScreen');
+                    if (loadingScreen) {
+                        loadingScreen.classList.add('hidden');
+                        loadingScreen.style.display = 'none';
+                    }
+                    
+                    // Show login screen
+                    const loginScreen = document.getElementById('loginScreen');
+                    if (loginScreen) {
+                        loginScreen.style.display = 'flex';
+                        loginScreen.classList.add('show');
+                    }
+                    
+                    // Hide main app elements
+                    const topBar = document.getElementById('topBar');
+                    if (topBar) topBar.style.display = 'none';
+                    const bottomNav = document.getElementById('bottomNav');
+                    if (bottomNav) bottomNav.style.display = 'none';
+                    const mainContent = document.getElementById('mainContent');
+                    if (mainContent) mainContent.style.display = 'none';
+                    
+                    console.log('🔐 Login screen displayed for authentication');
+                }
+            } catch (error) {
+                console.error('🚨 Authentication check failed:', error);
+                
+                // On error, default to showing login screen for security
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                    loadingScreen.style.display = 'none';
+                }
+                
+                const loginScreen = document.getElementById('loginScreen');
+                if (loginScreen) {
+                    loginScreen.style.display = 'flex';
+                    loginScreen.classList.add('show');
+                }
+                
+                // Hide main app elements
+                const topBar = document.getElementById('topBar');
+                if (topBar) topBar.style.display = 'none';
+                const bottomNav = document.getElementById('bottomNav');
+                if (bottomNav) bottomNav.style.display = 'none';
+                const mainContent = document.getElementById('mainContent');
+                if (mainContent) mainContent.style.display = 'none';
+                
+                console.log('🔐 Showing login screen due to authentication error');
             }
-            
-            // Show main app immediately
-            const topBar = document.getElementById('topBar');
-            if (topBar) topBar.style.display = 'flex';
-            const bottomNav = document.getElementById('bottomNav');
-            if (bottomNav) bottomNav.style.display = 'flex';
-            const mainContent = document.getElementById('mainContent');
-            if (mainContent) mainContent.style.display = 'block';
-            
-            // Initialize mobile mode and load dashboard
-            console.log('🔧 Initializing mobile dashboard...');
-            ensureMobileMode();
-            loadMenuItems();
-            loadDashboard();
         });
         
         // Backup - force show login if stuck

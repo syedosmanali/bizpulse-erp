@@ -1,0 +1,374 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}GST Details - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    /* Settings Section */
+    .settings-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .settings-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .setting-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .setting-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .setting-desc {
+        font-size: 12px;
+        color: var(--sub);
+    }
+
+    .setting-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .setting-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+
+    .toast.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .toast.error {
+        background: #dc2626;
+    }
+
+    .toast.success {
+        background: #059669;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-actions {
+            flex-direction: column-reverse;
+        }
+
+        .settings-actions .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-header h1 {
+            font-size: 20px;
+        }
+
+        .settings-section {
+            padding: 16px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="file-text"></i> GST Details</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="resetForm()"><i data-lucide="rotate-ccw"></i> Reset</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i data-lucide="save"></i> Save</button>
+        </div>
+    </div>
+
+    <!-- GST Configuration -->
+    <div class="settings-section">
+        <div class="settings-title"><i data-lucide="settings"></i> GST Configuration</div>
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label class="setting-label">GSTIN *</label>
+                <input type="text" class="setting-input" id="gstin" placeholder="Enter GSTIN" required>
+                <div class="setting-desc">Goods and Services Tax Identification Number</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Business Name *</label>
+                <input type="text" class="setting-input" id="businessName" placeholder="Enter business name" required>
+                <div class="setting-desc">Registered business name</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Registration Type *</label>
+                <select class="setting-input" id="registrationType" required>
+                    <option value="">Select registration type</option>
+                    <option value="regular">Regular</option>
+                    <option value="composition">Composition</option>
+                    <option value="unregistered">Unregistered</option>
+                </select>
+                <div class="setting-desc">Type of GST registration</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">State *</label>
+                <input type="text" class="setting-input" id="state" placeholder="Enter state" required>
+                <div class="setting-desc">State of registration</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Address</label>
+                <input type="text" class="setting-input" id="address" placeholder="Enter address">
+                <div class="setting-desc">Registered address</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Email</label>
+                <input type="email" class="setting-input" id="email" placeholder="Enter email">
+                <div class="setting-desc">Contact email</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Phone</label>
+                <input type="tel" class="setting-input" id="phone" placeholder="Enter phone number">
+                <div class="setting-desc">Contact phone number</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">PAN</label>
+                <input type="text" class="setting-input" id="pan" placeholder="Enter PAN">
+                <div class="setting-desc">Permanent Account Number</div>
+            </div>
+        </div>
+        <div class="settings-actions">
+            <button class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i data-lucide="save"></i> Save Details</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = '/api/erp';
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadSettings() {
+    try {
+        const response = await fetch(`${API_BASE}/gst-details`);
+        if (!response.ok) throw new Error('Failed to load GST details');
+        
+        const data = await response.json();
+        document.getElementById('gstin').value = data.gstin || '';
+        document.getElementById('businessName').value = data.business_name || '';
+        document.getElementById('registrationType').value = data.registration_type || '';
+        document.getElementById('state').value = data.state || '';
+        document.getElementById('address').value = data.address || '';
+        document.getElementById('email').value = data.email || '';
+        document.getElementById('phone').value = data.phone || '';
+        document.getElementById('pan').value = data.pan || '';
+    } catch (e) {
+        console.error('Error loading GST details:', e);
+    }
+}
+
+function resetForm() {
+    loadSettings();
+}
+
+async function saveSettings() {
+    const gstin = document.getElementById('gstin').value;
+    const businessName = document.getElementById('businessName').value;
+    const registrationType = document.getElementById('registrationType').value;
+    const state = document.getElementById('state').value;
+
+    if (!gstin || !businessName || !registrationType || !state) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/gst-details`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gstin,
+                business_name: businessName,
+                registration_type: registrationType,
+                state,
+                address: document.getElementById('address').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                pan: document.getElementById('pan').value
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to save GST details');
+        showToast('GST details saved successfully', 'success');
+    } catch (e) {
+        console.error('Error saving GST details:', e);
+        showToast('Failed to save GST details', 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

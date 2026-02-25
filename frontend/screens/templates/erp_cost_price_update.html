@@ -1,0 +1,121 @@
+{% extends "erp_base_layout.html" %}
+{% block title %}Cost Price Update - ERP{% endblock %}
+{% block extra_css %}
+<style>
+:root{--wine:#732C3F;--wine-light:#8d3a4f;--bg:#f8f9fa;--text:#1A1A1A;--sub:#6B7280;--border:#e5e7eb;--radius:12px}
+.page-wrapper{background:var(--bg);min-height:100vh;padding:24px 20px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px}
+.page-header h1{font-size:28px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;margin:0}
+.page-header h1 i{color:var(--wine)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:16px}
+.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.stat-icon.primary{background:rgba(115,44,63,0.1);color:var(--wine)}
+.stat-icon.success{background:rgba(16,185,129,0.1);color:#10b981}
+.stat-icon.warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.stat-info .value{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.stat-info .label{font-size:13px;color:var(--sub);font-weight:500}
+.tab-nav{background:#fff;border-radius:var(--radius);padding:8px;display:flex;gap:8px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.tab-btn{flex:1;padding:12px 20px;border:none;background:transparent;color:var(--sub);font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab-btn:hover{background:#f3f4f6}
+.tab-btn.active{background:var(--wine);color:white}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.content-card{background:#fff;border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.content-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.content-header h2{font-size:20px;font-weight:600;color:var(--text);margin:0}
+.header-actions{display:flex;gap:12px;align-items:center}
+.btn{border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;padding:10px 20px;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none}
+.btn-primary{background:var(--wine);color:#fff}
+.btn-primary:hover{background:var(--wine-light)}
+.btn-secondary{background:#f3f4f6;color:var(--text)}
+.btn-secondary:hover{background:#e5e7eb}
+.search-bar{width:100%;max-width:400px;padding:10px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.search-bar:focus{outline:none;border-color:var(--wine)}
+.data-table{width:100%;border-collapse:collapse;margin-top:16px}
+.data-table thead{background:#f8f9fa}
+.data-table th{padding:12px 16px;text-align:left;font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border)}
+.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.data-table tbody tr:hover{background:#f8f9fa}
+.badge{display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-success{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.badge-danger{background:rgba(220,38,38,0.1);color:#dc2626}
+.action-btns{display:flex;gap:8px}
+.icon-btn{width:32px;height:32px;border:none;background:#f3f4f6;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.icon-btn:hover{background:var(--wine);color:white}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-state i{font-size:48px;margin-bottom:16px;opacity:0.5}
+.empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:14px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--wine)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.page-wrapper{padding:16px 12px}.page-header{flex-direction:column;align-items:flex-start}.tab-nav{flex-direction:column}.stats-grid{grid-template-columns:1fr}.content-header{flex-direction:column;align-items:flex-start}.search-bar{max-width:100%}.data-table{font-size:13px}.data-table th,.data-table td{padding:10px 12px}.form-row{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrapper">
+<div class="page-header"><h1><i data-lucide="trending-up"></i> Cost Price Update</h1></div>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-icon primary"><i data-lucide="package"></i></div><div class="stat-info"><div class="value" id="totalProducts">0</div><div class="label">Total Products</div></div></div>
+<div class="stat-card"><div class="stat-icon warning"><i data-lucide="edit"></i></div><div class="stat-info"><div class="value" id="updatedToday">0</div><div class="label">Updated Today</div></div></div>
+<div class="stat-card"><div class="stat-icon success"><i data-lucide="trending-up"></i></div><div class="stat-info"><div class="value" id="avgIncrease">0%</div><div class="label">Avg Increase</div></div></div>
+<div class="stat-card"><div class="stat-icon primary"><i data-lucide="dollar-sign"></i></div><div class="stat-info"><div class="value" id="totalValue">₹0</div><div class="label">Total Stock Value</div></div></div>
+</div>
+<div class="tab-nav">
+<button class="tab-btn active" data-tab="update"><i data-lucide="edit"></i>Update Prices</button>
+<button class="tab-btn" data-tab="bulk"><i data-lucide="layers"></i>Bulk Update</button>
+<button class="tab-btn" data-tab="history"><i data-lucide="clock"></i>Update History</button>
+</div>
+<div class="tab-content active" id="update-tab">
+<div class="content-card">
+<div class="content-header"><h2>Update Cost Prices</h2>
+<div class="header-actions">
+<input type="text" class="search-bar" id="searchUpdate" placeholder="Search products...">
+<button class="btn btn-secondary" onclick="loadProducts()"><i data-lucide="refresh-cw"></i>Refresh</button>
+</div></div>
+<table class="data-table"><thead><tr><th>Product Code</th><th>Product Name</th><th>Current Cost</th><th>New Cost</th><th>Change %</th><th>Last Updated</th><th>Actions</th></tr></thead>
+<tbody id="updateBody"><tr><td colspan="7"><div class="empty-state"><i data-lucide="inbox"></i><h3>No Products</h3><p>Products will appear here for cost price updates</p></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="bulk-tab">
+<div class="content-card">
+<div class="content-header"><h2>Bulk Cost Price Update</h2></div>
+<form id="bulkUpdateForm">
+<div class="form-group"><label>Select Products</label><select id="bulkProducts" multiple style="height:120px"><option>All Products</option><option>Category: Electronics</option><option>Category: Grocery</option></select></div>
+<div class="form-group"><label>Update Type</label><select id="updateType"><option value="percentage">Percentage Increase/Decrease</option><option value="fixed">Fixed Amount</option><option value="replace">Replace Cost Price</option></select></div>
+<div class="form-row">
+<div class="form-group"><label>Value</label><input type="number" id="updateValue" step="0.01" placeholder="e.g., 10"></div>
+<div class="form-group"><label>Effective Date</label><input type="date" id="effectiveDate"></div>
+</div>
+<div class="form-group"><label>Reason for Update</label><textarea id="updateReason" rows="3" placeholder="Reason for cost price change"></textarea></div>
+<div style="display:flex;gap:12px;justify-content:flex-end">
+<button type="button" class="btn btn-secondary" onclick="previewBulkUpdate()"><i data-lucide="eye"></i>Preview Changes</button>
+<button type="submit" class="btn btn-primary"><i data-lucide="check"></i>Apply Update</button>
+</div>
+</form>
+</div></div>
+<div class="tab-content" id="history-tab">
+<div class="content-card">
+<div class="content-header"><h2>Cost Price Update History</h2>
+<div class="header-actions">
+<input type="text" class="search-bar" id="searchHistory" placeholder="Search...">
+<select class="search-bar" style="max-width:200px" id="filterPeriod"><option>Last 7 Days</option><option>Last 30 Days</option><option>Last 3 Months</option><option>This Year</option></select>
+</div></div>
+<table class="data-table"><thead><tr><th>Date</th><th>Product</th><th>Old Cost</th><th>New Cost</th><th>Change</th><th>Reason</th><th>Updated By</th></tr></thead>
+<tbody id="historyBody"><tr><td colspan="7"><div class="empty-state"><i data-lucide="clock"></i><h3>No History</h3><p>Cost price update history will appear here</p></div></td></tr></tbody></table>
+</div></div>
+</div>
+<script>
+let products=[];
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{const tab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(`${tab}-tab`).classList.add('active');lucide.createIcons()})});
+async function loadProducts(){try{const response=await fetch('/api/erp/products');const data=await response.json();if(data.success){products=data.data||[];updateStats()}}catch(e){console.error('Error:',e)}}
+function updateStats(){document.getElementById('totalProducts').textContent=products.length;document.getElementById('updatedToday').textContent='0';document.getElementById('avgIncrease').textContent='0%';document.getElementById('totalValue').textContent='₹0'}
+function previewBulkUpdate(){alert('Preview bulk cost price changes')}
+document.getElementById('bulkUpdateForm').addEventListener('submit',(e)=>{e.preventDefault();alert('Apply bulk cost price update')});
+['searchUpdate','searchHistory'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',(e)=>{const search=e.target.value.toLowerCase();const tbody=e.target.closest('.content-card').querySelector('tbody');const rows=tbody.querySelectorAll('tr');rows.forEach(row=>{const text=row.textContent.toLowerCase();row.style.display=text.includes(search)?'':'none'})})}});
+document.addEventListener('DOMContentLoaded',function(){loadProducts();lucide.createIcons()});
+</script>
+{% endblock %}

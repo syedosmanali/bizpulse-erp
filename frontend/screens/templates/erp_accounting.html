@@ -1,0 +1,183 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Accounting Reports - ERP System{% endblock %}
+
+{% block extra_css %}
+<style>
+
+        :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+        .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; }
+        .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+        .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--border); }
+        .tab { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:500; cursor:pointer; color:var(--sub); border-bottom:2px solid transparent; }
+        .tab.active { color:var(--wine); border-bottom-color:var(--wine); font-weight:600; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .container { max-width:700px; margin:0 auto; padding:16px; }
+        .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; }
+        .stats-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
+        .stat-card { background:var(--card); border-radius:12px; padding:16px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .stat-card .label { font-size:12px; color:var(--sub); margin-bottom:4px; }
+        .stat-card .value { font-size:22px; font-weight:700; }
+        .stat-card .sub { font-size:11px; color:var(--sub); margin-top:4px; }
+        .summary-table { width:100%; border-collapse:collapse; }
+        .summary-table th { background:#f9f0f1; color:var(--wine); font-size:12px; padding:8px 12px; text-align:left; }
+        .summary-table td { padding:10px 12px; font-size:13px; border-top:1px solid var(--border); }
+        .summary-table tr:last-child td { font-weight:600; font-size:14px; background:#f9f0f1; }
+        .profit-box { border-radius:12px; padding:16px; text-align:center; }
+        .profit-box.positive { background:#dcfce7; border:1px solid #86efac; }
+        .profit-box.negative { background:#fee2e2; border:1px solid #fca5a5; }
+        .profit-box .amount { font-size:28px; font-weight:800; }
+        .profit-box .label { font-size:13px; margin-top:4px; opacity:0.8; }
+        .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+        .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+        .period-select { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+        .period-btn { padding:6px 14px; border-radius:20px; font-size:12px; border:1.5px solid var(--border); cursor:pointer; background:#fff; font-family:'Inter',sans-serif; }
+        .period-btn.active { background:var(--wine); color:#fff; border-color:var(--wine); }
+        @media(max-width:500px){ .stats-grid{grid-template-columns:1fr 1fr;} }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1><i data-lucide="bar-chart-3"></i> Accounting (Basic)</h1>
+</div>
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('summary')"><i data-lucide="trending-up"></i> Sales Summary</div>
+    <div class="tab" onclick="switchTab('purchase')">📉 Purchase Summary</div>
+    <div class="tab" onclick="switchTab('pl')">💰 Profit/Loss</div>
+</div>
+
+<!-- SALES SUMMARY TAB -->
+<div id="tab-summary" class="tab-content active">
+<div class="container">
+    <div class="period-select">
+        <button class="period-btn active" onclick="setPeriod('today',this)">Today</button>
+        <button class="period-btn" onclick="setPeriod('week',this)">This Week</button>
+        <button class="period-btn" onclick="setPeriod('month',this)">This Month</button>
+        <button class="period-btn" onclick="setPeriod('year',this)">This Year</button>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card"><div class="label">Total Sales</div><div class="value" id="acc-sales">₹0</div><div class="sub" id="acc-bills">0 bills</div></div>
+        <div class="stat-card"><div class="label">Cash Sales</div><div class="value" id="acc-cash" style="color:#16a34a;">₹0</div></div>
+        <div class="stat-card"><div class="label">Online/UPI</div><div class="value" id="acc-online" style="color:#2563eb;">₹0</div></div>
+        <div class="stat-card"><div class="label">Credit Sales</div><div class="value" id="acc-credit" style="color:#ea580c;">₹0</div></div>
+    </div>
+    <div class="card">
+        <div class="card-title"><i data-lucide="clipboard-list"></i> Sales Breakdown</div>
+        <div id="salesBreakdown"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<!-- PURCHASE SUMMARY TAB -->
+<div id="tab-purchase" class="tab-content">
+<div class="container">
+    <div class="stats-grid">
+        <div class="stat-card"><div class="label">Total Purchase</div><div class="value" id="pur-total">₹0</div></div>
+        <div class="stat-card"><div class="label">Pending Bills</div><div class="value" id="pur-pending" style="color:#ea580c;">₹0</div></div>
+    </div>
+    <div class="card">
+        <div class="card-title"><i data-lucide="clipboard-list"></i> Purchase Breakdown</div>
+        <div id="purchaseBreakdown"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<!-- P&L TAB -->
+<div id="tab-pl" class="tab-content">
+<div class="container">
+    <div id="plContent"><div class="empty">Loading...</div></div>
+</div>
+</div>
+
+<script>
+let currentPeriod='today';
+function switchTab(tab){
+    const tabs=['summary','purchase','pl'];
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+    document.getElementById('tab-' + tab).classList.add('active');
+    loadData(tab);
+}
+function setPeriod(period, btn){
+    currentPeriod=period;
+    document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    loadData('summary');
+}
+async function loadData(tab){
+    try{
+        // Load sales data from existing API
+        const r=await fetch(`/api/sales/stats?period=${currentPeriod}`);
+        const d=await r.json();
+        if(tab==='summary'&&d.success){
+            const stats=d.stats||d.data||{};
+            document.getElementById('acc-sales').textContent='₹' + (parseFloat(stats.total_revenue||stats.total||0)).toLocaleString('en-IN');
+            document.getElementById('acc-bills').textContent=(stats.total_bills||stats.count||0) + ' bills';
+            document.getElementById('acc-cash').textContent='₹' + (parseFloat(stats.cash_revenue||0)).toLocaleString('en-IN');
+            document.getElementById('acc-online').textContent='₹' + (parseFloat(stats.online_revenue||0)).toLocaleString('en-IN');
+            document.getElementById('acc-credit').textContent='₹' + (parseFloat(stats.credit_revenue||0)).toLocaleString('en-IN');
+            document.getElementById('salesBreakdown').innerHTML=`<table class="summary-table">
+                <tr><th>Category</th><th>Amount</th></tr>
+                <tr><td>Cash Sales</td><td>₹${parseFloat(stats.cash_revenue||0).toLocaleString('en-IN')}</td></tr>
+                <tr><td>Online/UPI Sales</td><td>₹${parseFloat(stats.online_revenue||0).toLocaleString('en-IN')}</td></tr>
+                <tr><td>Credit Sales (Outstanding)</td><td>₹${parseFloat(stats.credit_revenue||0).toLocaleString('en-IN')}</td></tr>
+                <tr><td><strong>Total Revenue</strong></td><td><strong>₹${parseFloat(stats.total_revenue||stats.total||0).toLocaleString('en-IN')}</strong></td></tr>
+            </table>`;
+        }
+    }catch(e){
+        loadFallbackData(tab);
+    }
+}
+async function loadFallbackData(tab){
+    // Use income/expense API as fallback
+    try{
+        const r=await fetch('/api/erp/transactions');const d=await r.json();
+        if(!d.success)return;
+        const txns=d.data||[];
+        const income=txns.filter(t=>t.type==='income').reduce((s,t)=>s + parseFloat(t.amount||0),0);
+        const expense=txns.filter(t=>t.type==='expense').reduce((s,t)=>s + parseFloat(t.amount||0),0);
+        if(tab==='summary'){
+            document.getElementById('acc-sales').textContent='₹' + income.toLocaleString('en-IN');
+            document.getElementById('salesBreakdown').innerHTML=`<p style="font-size:13px;color:var(--sub);text-align:center;padding:16px;">Connect your sales module to see detailed breakdown</p>`;
+        }
+        if(tab==='purchase'){
+            document.getElementById('pur-total').textContent='₹' + expense.toLocaleString('en-IN');
+            document.getElementById('purchaseBreakdown').innerHTML=`<p style="font-size:13px;color:var(--sub);text-align:center;padding:16px;">Connect your purchase module to see detailed breakdown</p>`;
+        }
+        if(tab==='pl'){
+            const net=income-expense;
+            document.getElementById('plContent').innerHTML=`
+                <div class="card"><div class="card-title"><i data-lucide="bar-chart-3"></i> Profit & Loss Statement</div>
+                <table class="summary-table">
+                    <tr><th>Item</th><th>Amount</th></tr>
+                    <tr><td>Total Income</td><td style="color:#16a34a;">₹${income.toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Total Expenses</td><td style="color:#dc2626;">₹${expense.toLocaleString('en-IN')}</td></tr>
+                    <tr><td>Net Profit / Loss</td><td><strong style="color:${net>=0?'#16a34a':'#dc2626'};">₹${net.toLocaleString('en-IN')}</strong></td></tr>
+                </table></div>
+                <div class="profit-box ${net>=0?'positive':'negative'}">
+                    <div class="amount" style="color:${net>=0?'#16a34a':'#dc2626'};">₹${Math.abs(net).toLocaleString('en-IN')}</div>
+                    <div class="label">${net>=0?'Net Profit <i data-lucide="trending-up"></i>':'Net Loss 📉'}</div>
+                </div>`;
+        }
+    }catch(e){}
+}
+loadData('summary');
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+lucide.createIcons();
+</script>
+{% endblock %}

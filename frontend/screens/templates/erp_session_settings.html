@@ -1,0 +1,269 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Session Settings - ERP System{% endblock %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i data-lucide="shield-check" class="me-2" style="width: 28px; height: 28px;"></i>
+                Session Settings
+            </h2>
+            <p class="text-muted mb-0">Manage session timeout and security preferences</p>
+        </div>
+        <button class="btn btn-wine" onclick="saveSessionSettings()">
+            <i data-lucide="save" class="me-2"></i>Save Changes
+        </button>
+    </div>
+
+    <div class="row">
+        <!-- Session Configuration -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-wine-light">
+                    <h5 class="mb-0">
+                        <i data-lucide="clock" class="me-2"></i>Session Timeout
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Session Timeout Duration</label>
+                        <select class="form-select" id="sessionTimeout">
+                            <option value="15">15 minutes</option>
+                            <option value="30" selected>30 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="120">2 hours</option>
+                            <option value="240">4 hours</option>
+                            <option value="480">8 hours</option>
+                        </select>
+                        <small class="text-muted">User will be logged out after this period of inactivity</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="autoLogout" checked>
+                            <label class="form-check-label" for="autoLogout">
+                                <strong>Enable Auto-Logout</strong>
+                                <br><small class="text-muted">Automatically log out users after timeout period</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Remember Me Duration</label>
+                        <select class="form-select" id="rememberMeDuration">
+                            <option value="7">7 days</option>
+                            <option value="14">14 days</option>
+                            <option value="30" selected>30 days</option>
+                            <option value="60">60 days</option>
+                            <option value="90">90 days</option>
+                        </select>
+                        <small class="text-muted">How long to keep users logged in when "Remember Me" is checked</small>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="multiDeviceLogin">
+                            <label class="form-check-label" for="multiDeviceLogin">
+                                <strong>Allow Multi-Device Login</strong>
+                                <br><small class="text-muted">Users can be logged in from multiple devices simultaneously</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-wine-light">
+                    <h5 class="mb-0">
+                        <i data-lucide="lock" class="me-2"></i>Security Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="sessionWarning" checked>
+                            <label class="form-check-label" for="sessionWarning">
+                                <strong>Show Session Expiry Warning</strong>
+                                <br><small class="text-muted">Warn users 2 minutes before session expires</small>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="ipTracking" checked>
+                            <label class="form-check-label" for="ipTracking">
+                                <strong>Track IP Address Changes</strong>
+                                <br><small class="text-muted">Log out user if IP address changes during session</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Sessions -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-wine-light">
+                    <h5 class="mb-0">
+                        <i data-lucide="monitor" class="me-2"></i>Active Sessions
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="activeSessions">
+                        <!-- Session 1 -->
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i data-lucide="laptop" class="me-2 text-wine" style="width: 18px; height: 18px;"></i>
+                                        <strong>Windows PC</strong>
+                                    </div>
+                                    <small class="text-muted d-block">Chrome 120.0</small>
+                                    <small class="text-muted d-block">192.168.1.105</small>
+                                    <small class="text-success d-block">
+                                        <i data-lucide="circle" style="width: 8px; height: 8px; fill: currentColor;"></i>
+                                        Current Session
+                                    </small>
+                                </div>
+                            </div>
+                            <small class="text-muted">Last active: Just now</small>
+                        </div>
+
+                        <!-- Session 2 -->
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i data-lucide="smartphone" class="me-2 text-wine" style="width: 18px; height: 18px;"></i>
+                                        <strong>iPhone 14</strong>
+                                    </div>
+                                    <small class="text-muted d-block">Safari 17.0</small>
+                                    <small class="text-muted d-block">192.168.1.142</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="logoutSession('session-2')">
+                                    <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Last active: 15 minutes ago</small>
+                        </div>
+
+                        <!-- Session 3 -->
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i data-lucide="tablet" class="me-2 text-wine" style="width: 18px; height: 18px;"></i>
+                                        <strong>iPad Pro</strong>
+                                    </div>
+                                    <small class="text-muted d-block">Safari 17.0</small>
+                                    <small class="text-muted d-block">192.168.1.158</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger" onclick="logoutSession('session-3')">
+                                    <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Last active: 2 hours ago</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-center">
+                    <button class="btn btn-sm btn-outline-danger" onclick="logoutAllSessions()">
+                        <i data-lucide="log-out" class="me-1"></i>Logout All Other Sessions
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Save session settings
+    function saveSessionSettings() {
+        const settings = {
+            session_timeout: document.getElementById('sessionTimeout').value,
+            auto_logout: document.getElementById('autoLogout').checked,
+            remember_me_duration: document.getElementById('rememberMeDuration').value,
+            multi_device_login: document.getElementById('multiDeviceLogin').checked,
+            session_warning: document.getElementById('sessionWarning').checked,
+            ip_tracking: document.getElementById('ipTracking').checked
+        };
+
+        fetch('/api/erp/settings/session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            showToast('Session settings saved successfully', 'success');
+        })
+        .catch(error => {
+            showToast('Failed to save session settings', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    // Logout specific session
+    function logoutSession(sessionId) {
+        if (confirm('Are you sure you want to logout this session?')) {
+            fetch(`/api/erp/settings/session/${sessionId}/logout`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                showToast('Session logged out successfully', 'success');
+                // Remove session from list
+                event.target.closest('.list-group-item').remove();
+            })
+            .catch(error => {
+                showToast('Failed to logout session', 'error');
+                console.error('Error:', error);
+            });
+        }
+    }
+
+    // Logout all other sessions
+    function logoutAllSessions() {
+        if (confirm('Are you sure you want to logout all other sessions?')) {
+            fetch('/api/erp/settings/session/logout-all', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                showToast('All other sessions logged out successfully', 'success');
+                // Reload active sessions
+                location.reload();
+            })
+            .catch(error => {
+                showToast('Failed to logout sessions', 'error');
+                console.error('Error:', error);
+            });
+        }
+    }
+
+    // Toast notification function
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed top-0 end-0 m-3`;
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}" class="me-2"></i>
+            ${message}
+        `;
+        document.body.appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 3000);
+    }
+</script>
+{% endblock %}

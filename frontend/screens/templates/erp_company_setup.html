@@ -1,0 +1,269 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Company Setup - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .form-textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1><i data-lucide="building-2"></i> Company Setup</h1>
+        <button class="btn-primary" onclick="saveCompanySetup()"><i data-lucide="save"></i> Save</button>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="file-text"></i> Company Profile</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Company / Firm Name *</label>
+                <input type="text" class="form-input" id="company_name" placeholder="Enter company name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">GST Number</label>
+                <input type="text" class="form-input" id="gst_number" placeholder="22AAAAA0000A1Z5">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Financial Year</label>
+                <select class="form-input" id="financial_year">
+                    <option>2024-25</option>
+                    <option>2025-26</option>
+                    <option>2026-27</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Invoice Prefix</label>
+                <input type="text" class="form-input" id="invoice_prefix" placeholder="INV" value="INV">
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+                <label class="form-label">Address</label>
+                <textarea class="form-input form-textarea" id="address" placeholder="Full business address"></textarea>
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="tel" class="form-input" id="phone" placeholder="+91 9999999999">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="email" placeholder="info@company.com">
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="landmark"></i> Bank Details</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Bank Name</label>
+                <input type="text" class="form-input" id="bank_name" placeholder="Bank name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Account Number</label>
+                <input type="text" class="form-input" id="account_number" placeholder="Account number">
+            </div>
+            <div class="form-group">
+                <label class="form-label">IFSC Code</label>
+                <input type="text" class="form-input" id="ifsc_code" placeholder="IFSC code">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Branch</label>
+                <input type="text" class="form-input" id="branch" placeholder="Branch name">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function saveCompanySetup() {
+    const data = {
+        company_name: document.getElementById('company_name').value,
+        gst_number: document.getElementById('gst_number').value,
+        financial_year: document.getElementById('financial_year').value,
+        invoice_prefix: document.getElementById('invoice_prefix').value,
+        address: document.getElementById('address').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        bank_name: document.getElementById('bank_name').value,
+        account_number: document.getElementById('account_number').value,
+        ifsc_code: document.getElementById('ifsc_code').value,
+        branch: document.getElementById('branch').value
+    };
+
+    try {
+        const response = await fetch('/api/erp/company-setup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+            showToast('Company setup saved successfully!');
+        } else {
+            showToast('Error: ' + result.error);
+        }
+    } catch (error) {
+        showToast('Error saving company setup');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

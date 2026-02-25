@@ -1,0 +1,187 @@
+{% extends "erp_base_layout.html" %}
+{% block title %}Customer Master - ERP{% endblock %}
+{% block extra_css %}
+<style>
+:root{--wine:#732C3F;--wine-light:#8d3a4f;--bg:#f9fafb;--text:#1A1A1A;--sub:#6B7280;--border:#e5e7eb}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+.page{max-width:1400px;margin:0 auto;padding:20px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.top-bar h1{font-size:28px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px}
+.top-bar h1 i{color:var(--wine);width:32px;height:32px}
+.btn-group{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s}
+.btn-primary{background:var(--wine);color:#fff}
+.btn-primary:hover{background:var(--wine-light);transform:translateY(-1px);box-shadow:0 4px 12px rgba(115,44,63,.3)}
+.btn-secondary{background:#fff;color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:#f9fafb;border-color:var(--wine)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:24px}
+.stat-box{background:#fff;border-radius:12px;padding:24px;border:1px solid var(--border);transition:all .3s}
+.stat-box:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.08)}
+.stat-box .icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:24px}
+.stat-box .icon.purple{background:#f3e8ff;color:#7c3aed}
+.stat-box .icon.blue{background:#dbeafe;color:#2563eb}
+.stat-box .icon.green{background:#d1fae5;color:#059669}
+.stat-box .icon.orange{background:#fed7aa;color:#ea580c}
+.stat-box .label{font-size:13px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-box .value{font-size:32px;font-weight:700;color:var(--text)}
+.search-section{background:#fff;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid var(--border)}
+.search-row{display:flex;gap:12px;flex-wrap:wrap}
+.search-input{flex:1;min-width:250px;position:relative}
+.search-input input{width:100%;padding:12px 12px 12px 44px;border:1px solid var(--border);border-radius:8px;font-size:14px}
+.search-input input:focus{outline:none;border-color:var(--wine);box-shadow:0 0 0 3px rgba(115,44,63,.1)}
+.search-input i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--sub);width:20px;height:20px}
+.filter-select{padding:12px 16px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:#fff;cursor:pointer;min-width:150px}
+.filter-select:focus{outline:none;border-color:var(--wine)}
+.customers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.customer-card{background:#fff;border-radius:12px;padding:20px;border:1px solid var(--border);transition:all .3s;cursor:pointer}
+.customer-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08);border-color:var(--wine)}
+.customer-header{display:flex;justify-content:space-between;align-items:start;margin-bottom:16px}
+.customer-info h3{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.customer-code{font-size:12px;color:var(--sub);font-weight:600;background:#f9fafb;padding:4px 8px;border-radius:4px;display:inline-block}
+.customer-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--wine),var(--wine-light));color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}
+.customer-details{margin-bottom:16px}
+.detail-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:14px;color:var(--text)}
+.detail-row i{color:var(--sub);width:16px;height:16px}
+.customer-meta{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.badge{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.badge-retail{background:#dbeafe;color:#1e40af}
+.badge-wholesale{background:#fef3c7;color:#92400e}
+.badge-corporate{background:#f3e8ff;color:#6b21a8}
+.badge-active{background:#d1fae5;color:#065f46}
+.badge-inactive{background:#fee2e2;color:#991b1b}
+.customer-footer{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--border)}
+.outstanding{font-size:14px;color:var(--sub)}
+.outstanding strong{color:var(--wine);font-size:16px;font-weight:700}
+.card-actions{display:flex;gap:6px}
+.icon-btn{width:36px;height:36px;border:none;border-radius:8px;background:#f9fafb;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.icon-btn:hover{background:var(--wine);color:#fff;transform:scale(1.05)}
+.icon-btn i{width:18px;height:18px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:28px;animation:slideUp .3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.modal-title{font-size:22px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:10px}
+.modal-title i{color:var(--wine)}
+.close-btn{background:none;border:none;font-size:28px;cursor:pointer;color:var(--sub);width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;transition:all .2s}
+.close-btn:hover{background:#f9fafb;color:var(--text)}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;transition:all .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--wine);box-shadow:0 0 0 3px rgba(115,44,63,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.modal-footer{display:flex;gap:12px;margin-top:28px;justify-content:flex-end}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:16px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:2000;opacity:0;transform:translateX(100px);transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(0);pointer-events:auto}
+.toast.success{background:#059669}
+.toast.error{background:#dc2626}
+.toast i{width:20px;height:20px}
+.empty-state{text-align:center;padding:80px 20px;color:var(--sub)}
+.empty-state i{font-size:80px;color:#e5e7eb;margin-bottom:20px}
+.empty-state h3{font-size:20px;color:var(--text);margin-bottom:8px}
+.empty-state p{font-size:14px}
+@media(max-width:768px){.top-bar{flex-direction:column;align-items:stretch}.btn-group{width:100%}.btn{flex:1;justify-content:center}.stats-grid{grid-template-columns:repeat(2,1fr)}.customers-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.search-row{flex-direction:column}.search-input,.filter-select{width:100%;min-width:100%}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page">
+<div class="top-bar">
+<h1><i data-lucide="users"></i>Customer Master</h1>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="openModal()"><i data-lucide="plus"></i>Add Customer</button>
+<button class="btn btn-secondary" onclick="exportData()"><i data-lucide="download"></i>Export</button>
+<button class="btn btn-secondary" onclick="loadCustomers()"><i data-lucide="refresh-cw"></i></button>
+</div>
+</div>
+<div class="stats-grid">
+<div class="stat-box">
+<div class="icon purple"><i data-lucide="users"></i></div>
+<div class="label">Total Customers</div>
+<div class="value" id="totalCustomers">0</div>
+</div>
+<div class="stat-box">
+<div class="icon blue"><i data-lucide="user-check"></i></div>
+<div class="label">Active</div>
+<div class="value" id="activeCustomers">0</div>
+</div>
+<div class="stat-box">
+<div class="icon green"><i data-lucide="trending-up"></i></div>
+<div class="label">This Month</div>
+<div class="value" id="monthCustomers">0</div>
+</div>
+<div class="stat-box">
+<div class="icon orange"><i data-lucide="indian-rupee"></i></div>
+<div class="label">Outstanding</div>
+<div class="value" id="totalOutstanding">₹0</div>
+</div>
+</div>
+<div class="search-section">
+<div class="search-row">
+<div class="search-input">
+<i data-lucide="search"></i>
+<input type="text" id="searchInput" placeholder="Search customers by name, phone, email..." onkeyup="filterCustomers()">
+</div>
+<select class="filter-select" id="typeFilter" onchange="filterCustomers()">
+<option value="">All Types</option>
+<option value="retail">Retail</option>
+<option value="wholesale">Wholesale</option>
+<option value="corporate">Corporate</option>
+</select>
+<select class="filter-select" id="statusFilter" onchange="filterCustomers()">
+<option value="">All Status</option>
+<option value="active">Active</option>
+<option value="inactive">Inactive</option>
+</select>
+</div>
+</div>
+<div class="customers-grid" id="customersGrid"></div>
+</div>
+<div class="modal" id="customerModal">
+<div class="modal-box">
+<div class="modal-header">
+<div class="modal-title"><i data-lucide="user-plus"></i><span id="modalTitle">Add Customer</span></div>
+<button class="close-btn" onclick="closeModal()">×</button>
+</div>
+<input type="hidden" id="customerId">
+<div class="form-row">
+<div class="form-group"><label>Customer Name *</label><input type="text" id="customerName" placeholder="Enter full name"></div>
+<div class="form-group"><label>Customer Code</label><input type="text" id="customerCode" placeholder="Auto-generated" readonly style="background:#f9fafb"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Phone Number *</label><input type="tel" id="customerPhone" placeholder="9876543210"></div>
+<div class="form-group"><label>Email Address</label><input type="email" id="customerEmail" placeholder="email@example.com"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Customer Type</label><select id="customerType"><option value="retail">Retail</option><option value="wholesale">Wholesale</option><option value="corporate">Corporate</option></select></div>
+<div class="form-group"><label>Status</label><select id="customerStatus"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+</div>
+<div class="form-group"><label>GST Number</label><input type="text" id="customerGST" placeholder="GST Number (optional)"></div>
+<div class="form-group"><label>Address</label><textarea id="customerAddress" rows="3" placeholder="Enter complete address"></textarea></div>
+<div class="form-row">
+<div class="form-group"><label>Credit Limit (₹)</label><input type="number" id="creditLimit" value="0" min="0"></div>
+<div class="form-group"><label>Credit Days</label><input type="number" id="creditDays" value="0" min="0"></div>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+<button class="btn btn-primary" onclick="saveCustomer()"><i data-lucide="save"></i>Save Customer</button>
+</div>
+</div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+let customers=[{id:1,code:'CUST001',name:'Rajesh Kumar',phone:'9876543210',email:'rajesh@example.com',type:'retail',status:'active',gst:'',address:'Shop 12, MG Road, Mumbai',creditLimit:50000,creditDays:30,outstanding:12500},{id:2,name:'Priya Sharma',code:'CUST002',phone:'9876543211',email:'priya@example.com',type:'wholesale',status:'active',gst:'27AABCU9603R1ZM',address:'Building A, Sector 18, Delhi',creditLimit:100000,creditDays:45,outstanding:45000},{id:3,name:'ABC Corporation',code:'CUST003',phone:'9876543212',email:'contact@abc.com',type:'corporate',status:'active',gst:'29AABCU9603R1ZN',address:'Tech Park, Whitefield, Bangalore',creditLimit:200000,creditDays:60,outstanding:85000},{id:4,name:'Suresh Patel',code:'CUST004',phone:'9876543213',email:'suresh@example.com',type:'retail',status:'active',gst:'',address:'Market Road, Ahmedabad',creditLimit:30000,creditDays:15,outstanding:8500},{id:5,name:'Meena Devi',code:'CUST005',phone:'9876543214',email:'meena@example.com',type:'retail',status:'inactive',gst:'',address:'Pink City Plaza, Jaipur',creditLimit:25000,creditDays:30,outstanding:0},{id:6,name:'Tech Solutions Pvt Ltd',code:'CUST006',phone:'9876543215',email:'info@techsol.com',type:'corporate',status:'active',gst:'27AABCU9603R1ZO',address:'IT Park, Hinjewadi, Pune',creditLimit:150000,creditDays:45,outstanding:62000},{id:7,name:'Amit Verma',code:'CUST007',phone:'9876543216',email:'amit@example.com',type:'wholesale',status:'active',gst:'',address:'Hazratganj, Lucknow',creditLimit:75000,creditDays:30,outstanding:28000},{id:8,name:'Sneha Reddy',code:'CUST008',phone:'9876543217',email:'sneha@example.com',type:'retail',status:'active',gst:'',address:'Banjara Hills, Hyderabad',creditLimit:40000,creditDays:20,outstanding:15000},{id:9,name:'Global Traders',code:'CUST009',phone:'9876543218',email:'info@globaltraders.com',type:'wholesale',status:'active',gst:'24AABCU9603R1ZP',address:'Commercial Street, Kolkata',creditLimit:120000,creditDays:40,outstanding:52000},{id:10,name:'Ravi Shankar',code:'CUST010',phone:'9876543219',email:'ravi@example.com',type:'retail',status:'active',gst:'',address:'Anna Nagar, Chennai',creditLimit:35000,creditDays:20,outstanding:11000}];
+let filteredCustomers=[...customers],editingId=null;
+function showToast(msg,type='success'){const t=document.getElementById('toast');t.innerHTML=`<i data-lucide="${type==='success'?'check-circle':'alert-circle'}"></i>${msg}`;t.className=`toast ${type} show`;lucide.createIcons();setTimeout(()=>t.classList.remove('show'),3000)}
+function openModal(id=null){editingId=id;const modal=document.getElementById('customerModal');if(id){const c=customers.find(x=>x.id===id);if(c){document.getElementById('modalTitle').textContent='Edit Customer';document.getElementById('customerId').value=c.id;document.getElementById('customerName').value=c.name;document.getElementById('customerCode').value=c.code;document.getElementById('customerPhone').value=c.phone;document.getElementById('customerEmail').value=c.email;document.getElementById('customerType').value=c.type;document.getElementById('customerStatus').value=c.status;document.getElementById('customerGST').value=c.gst||'';document.getElementById('customerAddress').value=c.address||'';document.getElementById('creditLimit').value=c.creditLimit||0;document.getElementById('creditDays').value=c.creditDays||0}}else{document.getElementById('modalTitle').textContent='Add Customer';document.getElementById('customerId').value='';document.getElementById('customerName').value='';document.getElementById('customerCode').value='CUST'+(customers.length+1).toString().padStart(3,'0');document.getElementById('customerPhone').value='';document.getElementById('customerEmail').value='';document.getElementById('customerType').value='retail';document.getElementById('customerStatus').value='active';document.getElementById('customerGST').value='';document.getElementById('customerAddress').value='';document.getElementById('creditLimit').value='0';document.getElementById('creditDays').value='0'}modal.classList.add('show');lucide.createIcons()}
+function closeModal(){document.getElementById('customerModal').classList.remove('show')}
+function saveCustomer(){const name=document.getElementById('customerName').value.trim(),phone=document.getElementById('customerPhone').value.trim();if(!name||!phone){showToast('Name and phone are required','error');return}const data={id:editingId||Date.now(),code:document.getElementById('customerCode').value,name,phone,email:document.getElementById('customerEmail').value.trim(),type:document.getElementById('customerType').value,status:document.getElementById('customerStatus').value,gst:document.getElementById('customerGST').value.trim(),address:document.getElementById('customerAddress').value.trim(),creditLimit:parseInt(document.getElementById('creditLimit').value)||0,creditDays:parseInt(document.getElementById('creditDays').value)||0,outstanding:0};if(editingId){const idx=customers.findIndex(x=>x.id===editingId);if(idx!==-1){data.outstanding=customers[idx].outstanding;customers[idx]=data}}else{customers.push(data)}showToast(editingId?'Customer updated successfully':'Customer added successfully');closeModal();loadCustomers()}
+function deleteCustomer(id){if(!confirm('Are you sure you want to delete this customer?'))return;customers=customers.filter(x=>x.id!==id);showToast('Customer deleted successfully');loadCustomers()}
+function filterCustomers(){const search=document.getElementById('searchInput').value.toLowerCase(),type=document.getElementById('typeFilter').value,status=document.getElementById('statusFilter').value;filteredCustomers=customers.filter(c=>{const matchSearch=!search||c.name.toLowerCase().includes(search)||c.phone.includes(search)||c.email.toLowerCase().includes(search)||c.code.toLowerCase().includes(search);const matchType=!type||c.type===type;const matchStatus=!status||c.status===status;return matchSearch&&matchType&&matchStatus});renderCustomers()}
+function getInitials(name){return name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)}
+function renderCustomers(){const grid=document.getElementById('customersGrid');if(!filteredCustomers.length){grid.innerHTML='<div class="empty-state"><i data-lucide="users"></i><h3>No Customers Found</h3><p>Try adjusting your search or filters</p></div>';lucide.createIcons();return}grid.innerHTML=filteredCustomers.map(c=>`<div class="customer-card" onclick="openModal(${c.id})"><div class="customer-header"><div class="customer-info"><h3>${c.name}</h3><span class="customer-code">${c.code}</span></div><div class="customer-avatar">${getInitials(c.name)}</div></div><div class="customer-details"><div class="detail-row"><i data-lucide="phone"></i><span>${c.phone}</span></div><div class="detail-row"><i data-lucide="mail"></i><span>${c.email||'No email'}</span></div><div class="detail-row"><i data-lucide="map-pin"></i><span>${c.address||'No address'}</span></div></div><div class="customer-meta"><span class="badge badge-${c.type}">${c.type}</span><span class="badge badge-${c.status}">${c.status}</span></div><div class="customer-footer"><div class="outstanding">Outstanding: <strong>₹${c.outstanding.toLocaleString('en-IN')}</strong></div><div class="card-actions" onclick="event.stopPropagation()"><button class="icon-btn" onclick="openModal(${c.id})" title="Edit"><i data-lucide="edit"></i></button><button class="icon-btn" onclick="deleteCustomer(${c.id})" title="Delete"><i data-lucide="trash-2"></i></button></div></div></div>`).join('');lucide.createIcons()}
+function loadCustomers(){filteredCustomers=[...customers];const total=customers.length,active=customers.filter(c=>c.status==='active').length,thisMonth=Math.floor(total*0.15),outstanding=customers.reduce((sum,c)=>sum+c.outstanding,0);document.getElementById('totalCustomers').textContent=total;document.getElementById('activeCustomers').textContent=active;document.getElementById('monthCustomers').textContent=thisMonth;document.getElementById('totalOutstanding').textContent='₹'+outstanding.toLocaleString('en-IN');renderCustomers()}
+function exportData(){showToast('Exporting customer data...');setTimeout(()=>{const csv='Code,Name,Phone,Email,Type,Status,Outstanding\n'+customers.map(c=>`${c.code},${c.name},${c.phone},${c.email||''},${c.type},${c.status},${c.outstanding}`).join('\n');const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='customers.csv';a.click();showToast('Export completed successfully')},500)}
+document.addEventListener('DOMContentLoaded',()=>{loadCustomers();lucide.createIcons()});
+</script>
+{% endblock %}

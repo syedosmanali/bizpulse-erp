@@ -1,0 +1,205 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Profit & Loss{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finance-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .summary-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .summary-card h3 {
+        color: #6B7280;
+        font-size: 14px;
+        margin: 0 0 10px 0;
+        text-transform: uppercase;
+    }
+
+    .summary-card .amount {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .revenue { color: #10B981; }
+    .expense { color: #EF4444; }
+    .profit { color: #732C3F; }
+
+    .pl-statement {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .pl-statement h2 {
+        color: #732C3F;
+        font-size: 22px;
+        margin: 0 0 25px 0;
+    }
+
+    .pl-section {
+        margin-bottom: 25px;
+    }
+
+    .pl-section h3 {
+        color: #732C3F;
+        font-size: 18px;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #732C3F;
+    }
+
+    .pl-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .pl-row:last-child {
+        border-bottom: none;
+    }
+
+    .pl-row.total {
+        font-weight: 700;
+        font-size: 18px;
+        color: #732C3F;
+        border-top: 2px solid #732C3F;
+        padding-top: 15px;
+        margin-top: 10px;
+    }
+
+    .pl-label {
+        color: #374151;
+    }
+
+    .pl-amount {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <div class="page-header">
+        <h1>Profit & Loss Statement</h1>
+        <p>Financial performance overview</p>
+    </div>
+
+    <div class="summary-cards">
+        <div class="summary-card">
+            <h3>Total Revenue</h3>
+            <p class="amount revenue">₹8,45,000</p>
+        </div>
+        <div class="summary-card">
+            <h3>Total Expenses</h3>
+            <p class="amount expense">₹5,62,000</p>
+        </div>
+        <div class="summary-card">
+            <h3>Net Profit</h3>
+            <p class="amount profit">₹2,83,000</p>
+        </div>
+        <div class="summary-card">
+            <h3>Profit Margin</h3>
+            <p class="amount profit">33.5%</p>
+        </div>
+    </div>
+
+    <div class="pl-statement">
+        <h2>Detailed Statement - February 2026</h2>
+
+        <div class="pl-section">
+            <h3>Revenue</h3>
+            <div class="pl-row">
+                <span class="pl-label">Product Sales</span>
+                <span class="pl-amount">₹6,50,000</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Service Revenue</span>
+                <span class="pl-amount">₹1,75,000</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Other Income</span>
+                <span class="pl-amount">₹20,000</span>
+            </div>
+            <div class="pl-row total">
+                <span class="pl-label">Total Revenue</span>
+                <span class="pl-amount">₹8,45,000</span>
+            </div>
+        </div>
+
+        <div class="pl-section">
+            <h3>Expenses</h3>
+            <div class="pl-row">
+                <span class="pl-label">Cost of Goods Sold</span>
+                <span class="pl-amount">₹3,25,000</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Salaries & Wages</span>
+                <span class="pl-amount">₹1,25,000</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Rent & Utilities</span>
+                <span class="pl-amount">₹45,000</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Marketing</span>
+                <span class="pl-amount">₹32,500</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Office Supplies</span>
+                <span class="pl-amount">₹18,750</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Transportation</span>
+                <span class="pl-amount">₹15,200</span>
+            </div>
+            <div class="pl-row">
+                <span class="pl-label">Miscellaneous</span>
+                <span class="pl-amount">₹550</span>
+            </div>
+            <div class="pl-row total">
+                <span class="pl-label">Total Expenses</span>
+                <span class="pl-amount">₹5,62,000</span>
+            </div>
+        </div>
+
+        <div class="pl-row total" style="font-size: 22px; color: #10B981;">
+            <span class="pl-label">Net Profit</span>
+            <span class="pl-amount">₹2,83,000</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

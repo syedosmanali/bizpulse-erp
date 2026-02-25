@@ -1,0 +1,171 @@
+{% extends "erp_base_layout.html" %}
+{% block title %}Discount Rules - ERP{% endblock %}
+{% block extra_css %}
+<style>
+:root{--wine:#732C3F;--wine-light:#8d3a4f;--bg:#f8f9fa;--text:#1A1A1A;--sub:#6B7280;--border:#e5e7eb;--radius:12px}
+.page-wrapper{background:var(--bg);min-height:100vh;padding:24px 20px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px}
+.page-header h1{font-size:28px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;margin:0}
+.page-header h1 i{color:var(--wine)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:16px}
+.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.stat-icon.primary{background:rgba(115,44,63,0.1);color:var(--wine)}
+.stat-icon.success{background:rgba(16,185,129,0.1);color:#10b981}
+.stat-icon.warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.stat-info .value{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.stat-info .label{font-size:13px;color:var(--sub);font-weight:500}
+.tab-nav{background:#fff;border-radius:var(--radius);padding:8px;display:flex;gap:8px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.tab-btn{flex:1;padding:12px 20px;border:none;background:transparent;color:var(--sub);font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab-btn:hover{background:#f3f4f6}
+.tab-btn.active{background:var(--wine);color:white}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.content-card{background:#fff;border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.content-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.content-header h2{font-size:20px;font-weight:600;color:var(--text);margin:0}
+.header-actions{display:flex;gap:12px;align-items:center}
+.btn{border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;padding:10px 20px;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none}
+.btn-primary{background:var(--wine);color:#fff}
+.btn-primary:hover{background:var(--wine-light)}
+.btn-secondary{background:#f3f4f6;color:var(--text)}
+.btn-secondary:hover{background:#e5e7eb}
+.btn-sm{padding:6px 12px;font-size:13px}
+.search-bar{width:100%;max-width:400px;padding:10px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.search-bar:focus{outline:none;border-color:var(--wine)}
+.data-table{width:100%;border-collapse:collapse;margin-top:16px}
+.data-table thead{background:#f8f9fa}
+.data-table th{padding:12px 16px;text-align:left;font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border)}
+.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.data-table tbody tr:hover{background:#f8f9fa}
+.badge{display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-success{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.badge-danger{background:rgba(220,38,38,0.1);color:#dc2626}
+.action-btns{display:flex;gap:8px}
+.icon-btn{width:32px;height:32px;border:none;background:#f3f4f6;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.icon-btn:hover{background:var(--wine);color:white}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-state i{font-size:48px;margin-bottom:16px;opacity:0.5}
+.empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:14px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:white;border-radius:var(--radius);width:90%;max-width:700px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:18px;font-weight:600;margin:0}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--wine)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.page-wrapper{padding:16px 12px}.page-header{flex-direction:column;align-items:flex-start}.tab-nav{flex-direction:column}.stats-grid{grid-template-columns:1fr}.content-header{flex-direction:column;align-items:flex-start}.search-bar{max-width:100%}.data-table{font-size:13px}.data-table th,.data-table td{padding:10px 12px}.form-row{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrapper">
+<div class="page-header"><h1><i data-lucide="tag"></i> Discount Rules</h1></div>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-icon primary"><i data-lucide="tag"></i></div><div class="stat-info"><div class="value" id="totalRules">0</div><div class="label">Total Rules</div></div></div>
+<div class="stat-card"><div class="stat-icon success"><i data-lucide="check-circle"></i></div><div class="stat-info"><div class="value" id="activeRules">0</div><div class="label">Active Rules</div></div></div>
+<div class="stat-card"><div class="stat-icon warning"><i data-lucide="percent"></i></div><div class="stat-info"><div class="value" id="avgDiscount">0%</div><div class="label">Avg Discount</div></div></div>
+<div class="stat-card"><div class="stat-icon primary"><i data-lucide="dollar-sign"></i></div><div class="stat-info"><div class="value" id="totalSavings">₹0</div><div class="label">Total Savings</div></div></div>
+</div>
+<div class="tab-nav">
+<button class="tab-btn active" data-tab="all"><i data-lucide="list"></i>All Rules</button>
+<button class="tab-btn" data-tab="product"><i data-lucide="package"></i>Product Based</button>
+<button class="tab-btn" data-tab="customer"><i data-lucide="users"></i>Customer Based</button>
+<button class="tab-btn" data-tab="seasonal"><i data-lucide="calendar"></i>Seasonal</button>
+</div>
+<div class="tab-content active" id="all-tab">
+<div class="content-card">
+<div class="content-header"><h2>All Discount Rules</h2>
+<div class="header-actions">
+<input type="text" class="search-bar" id="searchAll" placeholder="Search rules...">
+<button class="btn btn-secondary" onclick="loadRules()"><i data-lucide="refresh-cw"></i>Refresh</button>
+<button class="btn btn-primary" onclick="openRuleModal()"><i data-lucide="plus"></i>Create Rule</button>
+</div></div>
+<table class="data-table"><thead><tr><th>Rule Name</th><th>Type</th><th>Discount</th><th>Condition</th><th>Valid From</th><th>Valid To</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="allRulesBody"><tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox"></i><h3>No Discount Rules</h3><p>Create your first discount rule</p><button class="btn btn-primary" onclick="openRuleModal()"><i data-lucide="plus"></i>Create Rule</button></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="product-tab">
+<div class="content-card">
+<div class="content-header"><h2>Product Based Discounts</h2>
+<div class="header-actions"><input type="text" class="search-bar" id="searchProduct" placeholder="Search...">
+<button class="btn btn-primary" onclick="openRuleModal('product')"><i data-lucide="plus"></i>Add Rule</button></div></div>
+<table class="data-table"><thead><tr><th>Rule Name</th><th>Products</th><th>Discount</th><th>Min Quantity</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="productRulesBody"><tr><td colspan="6"><div class="empty-state"><i data-lucide="package"></i><h3>No Product Rules</h3><p>Create product-based discount rules</p></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="customer-tab">
+<div class="content-card">
+<div class="content-header"><h2>Customer Based Discounts</h2>
+<div class="header-actions"><input type="text" class="search-bar" id="searchCustomer" placeholder="Search...">
+<button class="btn btn-primary" onclick="openRuleModal('customer')"><i data-lucide="plus"></i>Add Rule</button></div></div>
+<table class="data-table"><thead><tr><th>Rule Name</th><th>Customer Group</th><th>Discount</th><th>Min Purchase</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="customerRulesBody"><tr><td colspan="6"><div class="empty-state"><i data-lucide="users"></i><h3>No Customer Rules</h3><p>Create customer-based discount rules</p></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="seasonal-tab">
+<div class="content-card">
+<div class="content-header"><h2>Seasonal Discounts</h2>
+<div class="header-actions"><input type="text" class="search-bar" id="searchSeasonal" placeholder="Search...">
+<button class="btn btn-primary" onclick="openRuleModal('seasonal')"><i data-lucide="plus"></i>Add Rule</button></div></div>
+<table class="data-table"><thead><tr><th>Rule Name</th><th>Discount</th><th>Start Date</th><th>End Date</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="seasonalRulesBody"><tr><td colspan="6"><div class="empty-state"><i data-lucide="calendar"></i><h3>No Seasonal Rules</h3><p>Create seasonal discount campaigns</p></div></td></tr></tbody></table>
+</div></div>
+</div>
+<div class="modal" id="ruleModal">
+<div class="modal-content">
+<div class="modal-header"><h3 id="ruleModalTitle">Create Discount Rule</h3><button class="icon-btn" onclick="closeRuleModal()"><i data-lucide="x"></i></button></div>
+<div class="modal-body">
+<form id="ruleForm">
+<input type="hidden" id="ruleId">
+<div class="form-group"><label>Rule Name *</label><input type="text" id="ruleName" required placeholder="e.g., Summer Sale 2024"></div>
+<div class="form-row">
+<div class="form-group"><label>Rule Type *</label><select id="ruleType" required onchange="updateRuleFields()"><option value="">Select Type</option><option value="product">Product Based</option><option value="customer">Customer Based</option><option value="seasonal">Seasonal</option><option value="quantity">Quantity Based</option><option value="amount">Amount Based</option></select></div>
+<div class="form-group"><label>Discount Type *</label><select id="discountType" required><option value="percentage">Percentage (%)</option><option value="fixed">Fixed Amount (₹)</option></select></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Discount Value *</label><input type="number" id="discountValue" required step="0.01" placeholder="e.g., 10"></div>
+<div class="form-group"><label>Max Discount</label><input type="number" id="maxDiscount" step="0.01" placeholder="Optional max limit"></div>
+</div>
+<div class="form-group" id="productField" style="display:none"><label>Select Products</label><select id="products" multiple style="height:100px"><option>Product 1</option><option>Product 2</option></select></div>
+<div class="form-group" id="customerField" style="display:none"><label>Customer Group</label><select id="customerGroup"><option value="">All Customers</option><option value="vip">VIP Customers</option><option value="regular">Regular Customers</option><option value="new">New Customers</option></select></div>
+<div class="form-row" id="quantityField" style="display:none">
+<div class="form-group"><label>Min Quantity</label><input type="number" id="minQty" placeholder="0"></div>
+<div class="form-group"><label>Max Quantity</label><input type="number" id="maxQty" placeholder="Unlimited"></div>
+</div>
+<div class="form-row" id="amountField" style="display:none">
+<div class="form-group"><label>Min Purchase Amount</label><input type="number" id="minAmount" step="0.01" placeholder="0.00"></div>
+<div class="form-group"><label>Max Purchase Amount</label><input type="number" id="maxAmount" step="0.01" placeholder="Unlimited"></div>
+</div>
+<div class="form-row">
+<div class="form-group"><label>Valid From *</label><input type="date" id="validFrom" required></div>
+<div class="form-group"><label>Valid To *</label><input type="date" id="validTo" required></div>
+</div>
+<div class="form-group"><label>Description</label><textarea id="ruleDesc" rows="3" placeholder="Rule description and terms"></textarea></div>
+<div class="form-group"><label>Status</label><select id="ruleStatus"><option value="active">Active</option><option value="inactive">Inactive</option><option value="scheduled">Scheduled</option></select></div>
+</form>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeRuleModal()">Cancel</button>
+<button class="btn btn-primary" onclick="saveRule()">Save Rule</button>
+</div>
+</div></div>
+<script>
+let rules=[];
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{const tab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(`${tab}-tab`).classList.add('active');lucide.createIcons()})});
+async function loadRules(){try{const response=await fetch('/api/erp/discount-rules');const data=await response.json();if(data.success){rules=data.data||[];renderRules();updateStats()}}catch(e){console.error('Error:',e)}}
+function updateStats(){document.getElementById('totalRules').textContent=rules.length;document.getElementById('activeRules').textContent=rules.filter(r=>r.status==='active').length;const avgDisc=rules.length?rules.reduce((sum,r)=>sum+(r.discount||0),0)/rules.length:0;document.getElementById('avgDiscount').textContent=avgDisc.toFixed(1)+'%';document.getElementById('totalSavings').textContent='₹0'}
+function renderRules(){const tbody=document.getElementById('allRulesBody');if(rules.length===0){tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><i data-lucide="inbox"></i><h3>No Discount Rules</h3><p>Create your first discount rule</p><button class="btn btn-primary" onclick="openRuleModal()"><i data-lucide="plus"></i>Create Rule</button></div></td></tr>'}else{tbody.innerHTML=rules.map(r=>`<tr><td><strong>${r.name}</strong></td><td>${r.type}</td><td>${r.discount_type==='percentage'?r.discount+'%':'₹'+r.discount}</td><td>${r.condition||'-'}</td><td>${r.valid_from||'-'}</td><td>${r.valid_to||'-'}</td><td><span class="badge badge-${r.status==='active'?'success':'warning'}">${r.status}</span></td><td><div class="action-btns"><button class="icon-btn" onclick="editRule('${r.id}')" title="Edit"><i data-lucide="edit-2"></i></button><button class="icon-btn" onclick="deleteRule('${r.id}')" title="Delete"><i data-lucide="trash-2"></i></button></div></td></tr>`).join('')}lucide.createIcons()}
+function openRuleModal(type=null){document.getElementById('ruleModal').classList.add('active');document.getElementById('ruleModalTitle').textContent='Create Discount Rule';document.getElementById('ruleForm').reset();document.getElementById('ruleId').value='';if(type){document.getElementById('ruleType').value=type;updateRuleFields()}lucide.createIcons()}
+function closeRuleModal(){document.getElementById('ruleModal').classList.remove('active')}
+function updateRuleFields(){const type=document.getElementById('ruleType').value;document.getElementById('productField').style.display=type==='product'?'block':'none';document.getElementById('customerField').style.display=type==='customer'?'block':'none';document.getElementById('quantityField').style.display=type==='quantity'?'grid':'none';document.getElementById('amountField').style.display=type==='amount'?'grid':'none'}
+async function saveRule(){const id=document.getElementById('ruleId').value;const data={name:document.getElementById('ruleName').value,type:document.getElementById('ruleType').value,discount_type:document.getElementById('discountType').value,discount:parseFloat(document.getElementById('discountValue').value),max_discount:parseFloat(document.getElementById('maxDiscount').value)||null,valid_from:document.getElementById('validFrom').value,valid_to:document.getElementById('validTo').value,description:document.getElementById('ruleDesc').value,status:document.getElementById('ruleStatus').value};if(!data.name||!data.type||!data.discount||!data.valid_from||!data.valid_to){alert('Please fill required fields');return}try{const url=id?`/api/erp/discount-rules/${id}`:'/api/erp/discount-rules';const method=id?'PUT':'POST';const response=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(result.success){closeRuleModal();loadRules();alert(id?'Rule updated':'Rule created')}}catch(e){console.error('Error:',e);alert('Failed to save rule')}}
+async function editRule(id){openRuleModal();const rule=rules.find(r=>r.id==id);if(rule){document.getElementById('ruleId').value=rule.id;document.getElementById('ruleName').value=rule.name;document.getElementById('ruleType').value=rule.type;document.getElementById('discountType').value=rule.discount_type;document.getElementById('discountValue').value=rule.discount;document.getElementById('maxDiscount').value=rule.max_discount||'';document.getElementById('validFrom').value=rule.valid_from;document.getElementById('validTo').value=rule.valid_to;document.getElementById('ruleDesc').value=rule.description||'';document.getElementById('ruleStatus').value=rule.status;updateRuleFields()}}
+async function deleteRule(id){if(!confirm('Delete this discount rule?'))return;try{const response=await fetch(`/api/erp/discount-rules/${id}`,{method:'DELETE'});const data=await response.json();if(data.success){loadRules();alert('Rule deleted')}}catch(e){console.error('Error:',e);alert('Failed to delete')}}
+['searchAll','searchProduct','searchCustomer','searchSeasonal'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',(e)=>{const search=e.target.value.toLowerCase();const tbody=e.target.closest('.content-card').querySelector('tbody');const rows=tbody.querySelectorAll('tr');rows.forEach(row=>{const text=row.textContent.toLowerCase();row.style.display=text.includes(search)?'':'none'})})}});
+document.addEventListener('DOMContentLoaded',function(){loadRules();lucide.createIcons()});
+</script>
+{% endblock %}

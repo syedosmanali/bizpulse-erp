@@ -1,0 +1,459 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Staff & Operators - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .staff-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .staff-item {
+        background: #fafafa;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .staff-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: var(--wine);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .staff-info {
+        flex: 1;
+    }
+
+    .staff-info h3 {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+
+    .staff-info p {
+        font-size: 13px;
+        color: var(--sub);
+    }
+
+    .staff-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+
+    .role-admin {
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    .role-operator {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+
+    .role-staff {
+        background: #fef9c3;
+        color: #ca8a04;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--sub);
+        font-size: 14px;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+        .staff-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1><i data-lucide="users"></i> Staff & Operators</h1>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="showAddForm()"><i data-lucide="plus"></i> Add Staff</button>
+        </div>
+    </div>
+
+    <!-- Add/Edit Form -->
+    <div class="form-section" id="addForm" style="display:none;">
+        <div class="section-title" id="formTitle"><i data-lucide="plus"></i> Add Staff Member</div>
+        <input type="hidden" id="edit_staff_id">
+        <div class="form-grid">
+            <div class="form-group">
+                <label class="form-label">Full Name *</label>
+                <input type="text" class="form-input" id="staff_name" placeholder="Enter full name">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone *</label>
+                <input type="tel" class="form-input" id="staff_phone" placeholder="Phone number">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="staff_email" placeholder="Email address">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Role *</label>
+                <select class="form-input" id="staff_role">
+                    <option value="staff">Staff</option>
+                    <option value="operator">Operator</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Salary (₹/month)</label>
+                <input type="number" class="form-input" id="staff_salary" placeholder="0" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Joining Date</label>
+                <input type="date" class="form-input" id="staff_joining">
+            </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:20px;">
+            <button class="btn btn-primary" onclick="saveStaff()" style="flex:1;"><i data-lucide="save"></i> Save Staff</button>
+            <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Staff List -->
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="list"></i> Staff Directory</div>
+        <div class="staff-list" id="staffList">
+            <div class="empty">No staff members added yet</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let staffList = [];
+
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showAddForm() {
+    document.getElementById('addForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> Add Staff Member';
+    lucide.createIcons();
+}
+
+function hideAddForm() {
+    document.getElementById('addForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    ['staff_name', 'staff_phone', 'staff_email', 'staff_salary', 'staff_joining', 'edit_staff_id'].forEach(id => 
+        document.getElementById(id).value = ''
+    );
+    document.getElementById('staff_role').value = 'staff';
+}
+
+async function loadStaff() {
+    try {
+        const r = await fetch('/api/erp/staff');
+        const d = await r.json();
+        if (d.success) {
+            staffList = d.data || [];
+            renderStaff();
+        }
+    } catch (e) {
+        showToast('Failed to load staff');
+    }
+}
+
+function renderStaff() {
+    const el = document.getElementById('staffList');
+    if (!staffList.length) {
+        el.innerHTML = '<div class="empty">No staff members added yet. Click "Add Staff" to add one.</div>';
+        return;
+    }
+    
+    el.innerHTML = staffList.map(s => {
+        const initials = s.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const roleClass = `role-${s.role || 'staff'}`;
+        return `
+            <div class="staff-item">
+                <div class="staff-avatar">${initials}</div>
+                <div class="staff-info">
+                    <h3>${s.name}</h3>
+                    <p>${s.phone} ${s.email ? '| ' + s.email : ''}</p>
+                    <span class="role-badge ${roleClass}">${(s.role || 'staff').toUpperCase()}</span>
+                </div>
+                <div class="staff-actions">
+                    <button class="btn-sm" style="background:#e0e7ff;color:#4338ca;" onclick="editStaff('${s.id}')"><i data-lucide="edit-2"></i></button>
+                    <button class="btn-sm" style="background:#fee2e2;color:#dc2626;" onclick="deleteStaff('${s.id}')"><i data-lucide="trash-2"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+    lucide.createIcons();
+}
+
+async function saveStaff() {
+    const name = document.getElementById('staff_name').value.trim();
+    const phone = document.getElementById('staff_phone').value.trim();
+    const editId = document.getElementById('edit_staff_id').value;
+
+    if (!name || !phone) {
+        showToast('Name and phone are required');
+        return;
+    }
+
+    const payload = {
+        name: name,
+        phone: phone,
+        email: document.getElementById('staff_email').value.trim(),
+        role: document.getElementById('staff_role').value,
+        salary: parseFloat(document.getElementById('staff_salary').value) || 0,
+        joining_date: document.getElementById('staff_joining').value
+    };
+
+    try {
+        const url = editId ? `/api/erp/staff/${editId}` : '/api/erp/staff';
+        const method = editId ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        if (d.success) {
+            showToast(editId ? 'Staff updated!' : 'Staff added!');
+            hideAddForm();
+            loadStaff();
+        } else {
+            showToast(d.error || 'Failed to save staff');
+        }
+    } catch (e) {
+        showToast('Network error');
+    }
+}
+
+async function deleteStaff(id) {
+    if (!confirm('Delete this staff member?')) return;
+    try {
+        const r = await fetch(`/api/erp/staff/${id}`, { method: 'DELETE' });
+        const d = await r.json();
+        if (d.success) {
+            showToast('Staff deleted');
+            loadStaff();
+        }
+    } catch (e) {
+        showToast('Failed to delete');
+    }
+}
+
+function editStaff(id) {
+    const staff = staffList.find(s => s.id === id);
+    if (!staff) return;
+
+    document.getElementById('edit_staff_id').value = staff.id;
+    document.getElementById('staff_name').value = staff.name;
+    document.getElementById('staff_phone').value = staff.phone;
+    document.getElementById('staff_email').value = staff.email || '';
+    document.getElementById('staff_role').value = staff.role || 'staff';
+    document.getElementById('staff_salary').value = staff.salary || '';
+    document.getElementById('staff_joining').value = staff.joining_date || '';
+
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="edit-2"></i> Edit Staff Member';
+    document.getElementById('addForm').style.display = 'block';
+    lucide.createIcons();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadStaff();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

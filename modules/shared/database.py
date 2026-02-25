@@ -614,6 +614,19 @@ def init_db():
         )
     ''')
     
+    # Stock transactions table - for tracking stock adjustments
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS stock_transactions (
+            id {get_text_pk()},
+            product_id VARCHAR(255) NOT NULL,
+            transaction_type VARCHAR(50) NOT NULL,
+            quantity INTEGER NOT NULL,
+            reason TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES products (id)
+        )
+    ''')
+    
     # Hotel guests table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS hotel_guests (

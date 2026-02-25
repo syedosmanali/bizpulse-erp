@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ERP System{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --wine-primary: #732C3F;
+            --wine-dark: #5a2332;
+            --wine-light: #8d3a4f;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            font-family: 'Outfit', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            background: #f5f5f5;
+        }
+
+        /* Persistent Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--wine-primary);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: var(--wine-primary); /* Wine background for header */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .profile-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+
+        .profile-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.5px;
+            text-transform: none;
+            margin: 0;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brand-name {
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.8px;
+        }
+
+        .brand-erp {
+            font-weight: 600;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.85);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .sidebar-nav {
+            padding: 10px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 5px;
+        }
+
+        .nav-section-title {
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.95);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .nav-section-title > span:first-child {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-section-title:hover {
+            background: var(--wine-light);
+        }
+
+        .nav-section-title .arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .nav-section-title.active .arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease;
+        }
+
+        .nav-items.open {
+            max-height: 500px;
+        }
+
+        .nav-item {
+            padding: 12px 20px 12px 40px;
+            color: rgba(255, 255, 255, 0.90);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            min-height: 44px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-item i,
+        .nav-section-title i {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        /* Background Image Layer */
+        .background-layer {
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            background-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2560&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+
+        .background-layer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            background: transparent;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--wine-primary);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.2s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .background-layer {
+                left: 0;
+            }
+        }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+    <!-- Persistent Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="profile-btn" onclick="showProfile()" title="Company Profile">
+                <i data-lucide="user-circle"></i>
+            </button>
+            <a href="/erp/dashboard" style="text-decoration: none; display: flex; align-items: center; flex: 1;">
+                <h1><span class="brand-name">Bizpulse24</span></h1>
+            </a>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <!-- Core Setup & Control -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="sliders"></i>Core Setup & Control</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/role-access" class="nav-item"><i data-lucide="lock"></i>Role-Based Access</a>
+                    <a href="/erp/gst-details" class="nav-item"><i data-lucide="file-text"></i>GST Details</a>
+                    <a href="/erp/invoice-numbering" class="nav-item"><i data-lucide="hash"></i>Invoice Numbering</a>
+                    <a href="/erp/financial-year" class="nav-item"><i data-lucide="calendar"></i>Financial Year Lock</a>
+                    <a href="/erp/invoice-templates" class="nav-item"><i data-lucide="file"></i>Invoice Templates</a>
+                </div>
+            </div>
+
+            <!-- Setup & Configuration -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="settings-2"></i>Setup & Configuration</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/company-setup" class="nav-item"><i data-lucide="building-2"></i>Company Setup</a>
+                    <a href="/erp/bank-management" class="nav-item"><i data-lucide="landmark"></i>Bank Management</a>
+                    <a href="/erp/staff-operator" class="nav-item"><i data-lucide="users"></i>Staff & Operators</a>
+                    <a href="/erp/backup-settings" class="nav-item"><i data-lucide="settings"></i>Backup & Settings</a>
+                </div>
+            </div>
+
+            <!-- Inventory Management -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="package-2"></i>Inventory Management</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/products" class="nav-item"><i data-lucide="package"></i>Products Master</a>
+                    <a href="/erp/stock" class="nav-item"><i data-lucide="boxes"></i>Stock Management</a>
+                    <a href="/erp/categories-brands" class="nav-item"><i data-lucide="tag"></i>Categories & Brands</a>
+                    <a href="/erp/hsn-gst" class="nav-item"><i data-lucide="percent"></i>HSN & GST Mapping</a>
+                    <a href="/erp/low-stock-alerts" class="nav-item"><i data-lucide="bell"></i>Low Stock Alerts</a>
+                    <a href="/erp/mrp-selling-price" class="nav-item"><i data-lucide="rupee"></i>MRP vs Selling Price</a>
+                    <a href="/erp/unit-conversion" class="nav-item"><i data-lucide="scale"></i>Unit Conversion</a>
+                    <a href="/erp/batch-expiry" class="nav-item"><i data-lucide="calendar-clock"></i>Batch & Expiry</a>
+                    <a href="/erp/barcode" class="nav-item"><i data-lucide="scan-barcode"></i>Barcode Management</a>
+                </div>
+            </div>
+
+            <!-- Sales & Billing -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="shopping-bag"></i>Sales & Billing</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/invoices" class="nav-item"><i data-lucide="file-text"></i>Invoices</a>
+                    <a href="/erp/challan" class="nav-item"><i data-lucide="truck"></i>Challan/Delivery</a>
+                    <a href="/erp/gst-invoices" class="nav-item"><i data-lucide="file-text"></i>GST Invoices</a>
+                    <a href="/erp/pos-billing" class="nav-item"><i data-lucide="shopping-cart"></i>POS Billing</a>
+                    <a href="/erp/credit-sales" class="nav-item"><i data-lucide="calendar"></i>Credit Sales</a>
+                    <a href="/erp/returns-refunds" class="nav-item"><i data-lucide="rotate-ccw"></i>Returns & Refunds</a>
+                    <a href="/erp/discount-rules" class="nav-item"><i data-lucide="percent"></i>Discount Rules</a>
+                </div>
+            </div>
+
+            <!-- Purchase Management -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="shopping-cart"></i>Purchase Management</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/purchase-orders" class="nav-item"><i data-lucide="clipboard-list"></i>Purchase Orders</a>
+                    <a href="/erp/grn" class="nav-item"><i data-lucide="package-check"></i>GRN (Goods Receipt)</a>
+                    <a href="/erp/purchase-returns" class="nav-item"><i data-lucide="rotate-ccw"></i>Purchase Returns</a>
+                    <a href="/erp/vendor-credit" class="nav-item"><i data-lucide="credit-card"></i>Vendor Credit & Due</a>
+                    <a href="/erp/cost-price-update" class="nav-item"><i data-lucide="trending-up"></i>Cost Price Update</a>
+                </div>
+            </div>
+
+            <!-- Parties -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="users"></i>Parties</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/customer-master" class="nav-item"><i data-lucide="user-check"></i>Customer Master</a>
+                    <a href="/erp/vendor-master" class="nav-item"><i data-lucide="store"></i>Vendor Master</a>
+                    <a href="/erp/crm-leads" class="nav-item"><i data-lucide="users-round"></i>CRM & Leads</a>
+                </div>
+            </div>
+
+            <!-- Finance & Accounts -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="wallet"></i>Finance & Accounts</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/payments" class="nav-item"><i data-lucide="credit-card"></i>Payments</a>
+                    <a href="/erp/income-expense" class="nav-item"><i data-lucide="trending-up"></i>Income & Expense</a>
+                    <a href="/erp/accounting" class="nav-item"><i data-lucide="bar-chart-3"></i>Accounting Reports</a>
+                    <a href="/erp/finance/cash-bank-ledger" class="nav-item"><i data-lucide="wallet"></i>Cash & Bank Ledger</a>
+                    <a href="/erp/finance/expense-categories" class="nav-item"><i data-lucide="tag"></i>Expense Categories</a>
+                    <a href="/erp/finance/profit-loss" class="nav-item"><i data-lucide="trending-up"></i>Profit & Loss</a>
+                    <a href="/erp/finance/balance-sheet" class="nav-item"><i data-lucide="scale"></i>Balance Sheet</a>
+                    <a href="/erp/finance/gst-summary" class="nav-item"><i data-lucide="file-text"></i>GST Summary</a>
+                    <a href="/erp/finance/tax-breakup" class="nav-item"><i data-lucide="receipt"></i>Tax Breakup Reports</a>
+                </div>
+            </div>
+
+            <!-- Reports -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="bar-chart"></i>Reports</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/reports/daily-sales" class="nav-item"><i data-lucide="calendar"></i>Daily Sales Report</a>
+                    <a href="/erp/reports/item-sales" class="nav-item"><i data-lucide="package"></i>Item-wise Sales</a>
+                    <a href="/erp/reports/gst" class="nav-item"><i data-lucide="file-text"></i>GST Reports (GSTR-Ready)</a>
+                    <a href="/erp/reports/stock-ageing" class="nav-item"><i data-lucide="clock"></i>Stock Ageing</a>
+                    <a href="/erp/reports/outstanding" class="nav-item"><i data-lucide="alert-circle"></i>Outstanding Dues</a>
+                </div>
+            </div>
+
+            <!-- Administration & System -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span><i data-lucide="shield"></i>Administration & System</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/admin/staff-logs" class="nav-item"><i data-lucide="activity"></i>Staff Activity Logs</a>
+                    <a href="/erp/admin/backup" class="nav-item"><i data-lucide="database"></i>Data Backup</a>
+                    <a href="/erp/admin/restore" class="nav-item"><i data-lucide="refresh-cw"></i>Restore Backup</a>
+                    <a href="/erp/admin/audit" class="nav-item"><i data-lucide="file-search"></i>Audit Logs</a>
+                </div>
+            </div>
+
+            <!-- Logout -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="logout()">
+                    <span><i data-lucide="log-out"></i>Logout</span>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Background Image Layer -->
+    <div class="background-layer"></div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        function toggleSection(element) {
+            const navItems = element.nextElementSibling;
+            const isOpen = navItems.classList.contains('open');
+            
+            document.querySelectorAll('.nav-items').forEach(item => {
+                item.classList.remove('open');
+            });
+            document.querySelectorAll('.nav-section-title').forEach(title => {
+                title.classList.remove('active');
+            });
+            
+            if (!isOpen) {
+                navItems.classList.add('open');
+                element.classList.add('active');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !menuToggle.contains(event.target) &&
+                sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Highlight active menu item
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+                // Open parent section
+                const parentSection = item.closest('.nav-section');
+                if (parentSection) {
+                    parentSection.querySelector('.nav-items').classList.add('open');
+                    parentSection.querySelector('.nav-section-title').classList.add('active');
+                }
+            }
+        });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Logout function
+        async function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await fetch('/api/auth/logout', { method: 'POST' });
+                    localStorage.clear();
+                    window.location.href = '/login';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    localStorage.clear();
+                    window.location.href = '/login';
+                }
+            }
+        }
+
+        // Show Profile function
+        function showProfile() {
+            // Check if we're already on company profile page
+            if (window.location.pathname === '/erp/company-profile') {
+                // Already on profile page, just ensure proper sidebar state
+                setupProfileView();
+            } else {
+                // Navigate to company profile
+                window.location.href = '/erp/company-profile';
+            }
+        }
+
+        // Setup profile view state
+        function setupProfileView() {
+            // Hide all sidebar sections except Core Setup & Control
+            document.querySelectorAll('.nav-section').forEach(section => {
+                const title = section.querySelector('.nav-section-title span');
+                if (title && title.textContent.includes('Core Setup & Control')) {
+                    section.style.display = 'block';
+                    // Auto-expand the Core Setup section
+                    const navItems = section.querySelector('.nav-items');
+                    if (navItems) {
+                        navItems.classList.add('open');
+                        section.querySelector('.nav-section-title').classList.add('active');
+                    }
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+            
+            // Highlight Company Profile link
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '/erp/company-profile') {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // Check if we should show profile view on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.pathname === '/erp/company-profile') {
+                setupProfileView();
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

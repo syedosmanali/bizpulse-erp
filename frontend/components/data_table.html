@@ -1,0 +1,398 @@
+<!-- Reusable Data Table Component with Wine Color Scheme -->
+
+<div class="table-container">
+    <div class="card">
+        <div class="card-title" id="tableTitle">Data Table</div>
+        
+        <!-- Search and Filter Controls -->
+        <div class="filter-bar" id="filterBar" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
+            <div class="search-box" style="flex:1; min-width:200px; position:relative;">
+                <span class="search-icon" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:16px;">🔍</span>
+                <input type="text" id="tableSearch" placeholder="Search..." style="padding-left:36px; width:100%;" onkeyup="dataTableManager.filter()">
+            </div>
+            <select id="tableFilter" onchange="dataTableManager.filter()" style="min-width:140px; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Inter',sans-serif; background:#fafafa; outline:none;">
+                <option value="">All Records</option>
+            </select>
+            <button id="refreshBtn" onclick="dataTableManager.refresh()" style="background:var(--wine); color:#fff; border:none; padding:11px 16px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; min-height:44px;">🔄 Refresh</button>
+        </div>
+        
+        <!-- Table Container -->
+        <div class="table-wrapper" style="overflow-x:auto;">
+            <table class="data-table" id="dataTable">
+                <thead>
+                    <tr id="tableHeader">
+                        <!-- Headers will be populated dynamically -->
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- Rows will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination" id="paginationContainer" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px; flex-wrap:wrap; gap:10px;">
+            <div id="recordsInfo" style="font-size:14px; color:var(--sub);">Showing 0 of 0 records</div>
+            <div style="display:flex; gap:5px;">
+                <button id="prevPage" onclick="dataTableManager.previousPage()" style="background:#f3f4f6; color:var(--sub); border:none; padding:8px 12px; border-radius:6px; cursor:pointer; min-height:44px;">← Prev</button>
+                <span id="pageInfo" style="padding:8px 12px; min-width:50px; text-align:center;">1 of 1</span>
+                <button id="nextPage" onclick="dataTableManager.nextPage()" style="background:#f3f4f6; color:var(--sub); border:none; padding:8px 12px; border-radius:6px; cursor:pointer; min-height:44px;">Next →</button>
+            </div>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="empty" style="text-align:center; padding:30px; color:var(--sub); font-size:14px; display:none;">
+            No records found
+        </div>
+    </div>
+</div>
+
+<script>
+// Data Table Manager Class
+class DataTableManager {
+    constructor(tableId, options = {}) {
+        this.tableId = tableId;
+        this.options = {
+            pageSize: options.pageSize || 50,
+            searchable: options.searchable !== false,
+            filterable: options.filterable !== false,
+            sortable: options.sortable !== false,
+            editable: options.editable || false,
+            deletable: options.deletable || false,
+            ...options
+        };
+        
+        this.data = [];
+        this.filteredData = [];
+        this.currentPage = 1;
+        this.sortColumn = null;
+        this.sortDirection = 'asc'; // 'asc' or 'desc'
+        this.columns = [];
+        
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        // Search functionality
+        if (this.options.searchable) {
+            const searchInput = document.getElementById('tableSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => this.filter());
+            }
+        }
+    }
+    
+    setColumns(columns) {
+        this.columns = columns;
+        this.renderHeaders();
+        return this;
+    }
+    
+    setData(data) {
+        this.data = Array.isArray(data) ? data : [];
+        this.filteredData = [...this.data];
+        this.currentPage = 1;
+        this.render();
+        return this;
+    }
+    
+    renderHeaders() {
+        const headerRow = document.getElementById('tableHeader');
+        if (!headerRow) return;
+        
+        headerRow.innerHTML = '';
+        
+        // Add headers based on columns
+        this.columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col.title || col.key;
+            th.dataset.column = col.key;
+            
+            if (this.options.sortable && col.sortable !== false) {
+                th.style.cursor = 'pointer';
+                th.addEventListener('click', () => this.sort(col.key));
+            }
+            
+            headerRow.appendChild(th);
+        });
+        
+        // Add action columns if enabled
+        if (this.options.editable || this.options.deletable) {
+            const th = document.createElement('th');
+            th.textContent = 'Actions';
+            headerRow.appendChild(th);
+        }
+    }
+    
+    renderRows(data) {
+        const tbody = document.getElementById('tableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (!data || data.length === 0) {
+            document.getElementById('emptyState').style.display = 'block';
+            tbody.style.display = 'none';
+            this.updatePagination();
+            return;
+        }
+        
+        document.getElementById('emptyState').style.display = 'none';
+        tbody.style.display = 'table-row-group';
+        
+        // Calculate pagination bounds
+        const startIndex = (this.currentPage - 1) * this.options.pageSize;
+        const endIndex = Math.min(startIndex + this.options.pageSize, data.length);
+        const pageData = data.slice(startIndex, endIndex);
+        
+        pageData.forEach(row => {
+            const tr = document.createElement('tr');
+            
+            // Add data cells
+            this.columns.forEach(col => {
+                const td = document.createElement('td');
+                td.setAttribute('data-label', col.title || col.key);
+                
+                let cellValue = row[col.key];
+                
+                // Format values based on type
+                if (col.type === 'currency') {
+                    cellValue = typeof cellValue === 'number' ? formatCurrency(cellValue) : cellValue;
+                } else if (col.type === 'date') {
+                    cellValue = cellValue ? formatDate(cellValue) : cellValue;
+                } else if (col.type === 'percentage') {
+                    cellValue = typeof cellValue === 'number' ? cellValue + '%' : cellValue;
+                }
+                
+                td.textContent = cellValue !== undefined && cellValue !== null ? cellValue : '';
+                tr.appendChild(td);
+            });
+            
+            // Add action buttons if enabled
+            if (this.options.editable || this.options.deletable) {
+                const td = document.createElement('td');
+                td.style.whiteSpace = 'nowrap';
+                
+                if (this.options.editable) {
+                    const editBtn = document.createElement('button');
+                    editBtn.textContent = '✏️';
+                    editBtn.className = 'btn-sm btn-edit';
+                    editBtn.onclick = () => this.options.onEdit?.(row);
+                    td.appendChild(editBtn);
+                    td.appendChild(document.createTextNode(' '));
+                }
+                
+                if (this.options.deletable) {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = '🗑️';
+                    deleteBtn.className = 'btn-sm btn-danger';
+                    deleteBtn.onclick = () => this.options.onDelete?.(row);
+                    td.appendChild(deleteBtn);
+                }
+                
+                tr.appendChild(td);
+            }
+            
+            tbody.appendChild(tr);
+        });
+        
+        this.updatePagination();
+    }
+    
+    render() {
+        this.renderRows(this.filteredData);
+    }
+    
+    filter() {
+        if (!this.data) return;
+        
+        let filtered = [...this.data];
+        
+        // Apply search filter
+        if (this.options.searchable) {
+            const searchTerm = document.getElementById('tableSearch').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(row => {
+                    return Object.values(row).some(value =>
+                        String(value).toLowerCase().includes(searchTerm)
+                    );
+                });
+            }
+        }
+        
+        // Apply column filter
+        if (this.options.filterable) {
+            const filterValue = document.getElementById('tableFilter').value;
+            const filterColumn = document.getElementById('tableFilter').dataset.column;
+            
+            if (filterValue && filterColumn) {
+                filtered = filtered.filter(row => {
+                    return row[filterColumn] === filterValue;
+                });
+            }
+        }
+        
+        this.filteredData = filtered;
+        this.currentPage = 1; // Reset to first page after filter
+        this.render();
+    }
+    
+    sort(column) {
+        if (!this.filteredData) return;
+        
+        // If clicking the same column, toggle direction
+        if (this.sortColumn === column) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = column;
+            this.sortDirection = 'asc';
+        }
+        
+        this.filteredData.sort((a, b) => {
+            let valA = a[column];
+            let valB = b[column];
+            
+            // Handle different data types
+            if (typeof valA === 'string' && typeof valB === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+            
+            if (valA < valB) return this.sortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return this.sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+        
+        this.render();
+    }
+    
+    updatePagination() {
+        const totalRecords = this.filteredData.length;
+        const totalPages = Math.ceil(totalRecords / this.options.pageSize);
+        const startIndex = (this.currentPage - 1) * this.options.pageSize;
+        const endIndex = Math.min(startIndex + this.options.pageSize, totalRecords);
+        
+        // Update records info
+        document.getElementById('recordsInfo').textContent = 
+            `Showing ${startIndex + 1}-${endIndex} of ${totalRecords} records`;
+        
+        // Update page info
+        document.getElementById('pageInfo').textContent = 
+            `${this.currentPage} of ${totalPages || 1}`;
+        
+        // Update button states
+        document.getElementById('prevPage').disabled = this.currentPage <= 1;
+        document.getElementById('nextPage').disabled = this.currentPage >= totalPages;
+        
+        // Hide pagination if no data
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (totalRecords === 0) {
+            paginationContainer.style.display = 'none';
+        } else {
+            paginationContainer.style.display = 'flex';
+        }
+    }
+    
+    previousPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.render();
+        }
+    }
+    
+    nextPage() {
+        const totalPages = Math.ceil(this.filteredData.length / this.options.pageSize);
+        if (this.currentPage < totalPages) {
+            this.currentPage++;
+            this.render();
+        }
+    }
+    
+    refresh() {
+        this.currentPage = 1;
+        this.render();
+        if (this.options.onRefresh) {
+            this.options.onRefresh();
+        }
+    }
+    
+    // Public methods to manipulate data
+    addRecord(record) {
+        this.data.push(record);
+        this.setData(this.data);
+    }
+    
+    updateRecord(index, newData) {
+        if (index >= 0 && index < this.data.length) {
+            this.data[index] = { ...this.data[index], ...newData };
+            this.setData(this.data);
+        }
+    }
+    
+    deleteRecord(index) {
+        if (index >= 0 && index < this.data.length) {
+            this.data.splice(index, 1);
+            this.setData(this.data);
+        }
+    }
+    
+    getSelectedRows() {
+        // Implementation for row selection
+        return [];
+    }
+    
+    setTitle(title) {
+        document.getElementById('tableTitle').textContent = title;
+        return this;
+    }
+    
+    setFilterOptions(column, options) {
+        const filterSelect = document.getElementById('tableFilter');
+        if (!filterSelect) return;
+        
+        filterSelect.dataset.column = column;
+        filterSelect.innerHTML = '<option value="">All Records</option>';
+        
+        options.forEach(option => {
+            const opt = document.createElement('option');
+            opt.value = option.value;
+            opt.textContent = option.text;
+            filterSelect.appendChild(opt);
+        });
+        
+        return this;
+    }
+}
+
+// Create global instance
+const dataTableManager = new DataTableManager('dataTable');
+
+// Example usage:
+/*
+dataTableManager
+    .setTitle('Products List')
+    .setColumns([
+        { key: 'product_code', title: 'Code', sortable: true },
+        { key: 'product_name', title: 'Name', sortable: true },
+        { key: 'category', title: 'Category', sortable: true },
+        { key: 'selling_price', title: 'Price', type: 'currency', sortable: true },
+        { key: 'current_stock', title: 'Stock', type: 'number', sortable: true }
+    ])
+    .setData([
+        { id: '1', product_code: 'PROD001', product_name: 'Rice 1kg', category: 'Grocery', selling_price: 80, current_stock: 100 },
+        { id: '2', product_code: 'PROD002', product_name: 'Wheat Flour 1kg', category: 'Grocery', selling_price: 45, current_stock: 50 },
+        { id: '3', product_code: 'PROD003', product_name: 'Sugar 1kg', category: 'Grocery', selling_price: 55, current_stock: 30 }
+    ])
+    .setFilterOptions('category', [
+        { value: 'Grocery', text: 'Grocery' },
+        { value: 'Electronics', text: 'Electronics' },
+        { value: 'Clothing', text: 'Clothing' }
+    ])
+    .onEdit = (row) => console.log('Editing:', row)
+    .onDelete = (row) => console.log('Deleting:', row);
+*/
+</script>

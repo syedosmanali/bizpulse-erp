@@ -1,0 +1,192 @@
+{% extends "erp_base_layout.html" %}
+{% block title %}HSN & GST Management - ERP{% endblock %}
+{% block extra_css %}
+<style>
+:root{--wine:#732C3F;--wine-light:#8d3a4f;--bg:#f8f9fa;--text:#1A1A1A;--sub:#6B7280;--border:#e5e7eb;--radius:12px}
+.page-wrapper{background:var(--bg);min-height:100vh;padding:24px 20px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:16px}
+.page-header h1{font-size:28px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:12px;margin:0}
+.page-header h1 i{color:var(--wine)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:16px}
+.stat-icon{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.stat-icon.primary{background:rgba(115,44,63,0.1);color:var(--wine)}
+.stat-icon.success{background:rgba(16,185,129,0.1);color:#10b981}
+.stat-icon.warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.stat-info .value{font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.stat-info .label{font-size:13px;color:var(--sub);font-weight:500}
+.tab-nav{background:#fff;border-radius:var(--radius);padding:8px;display:flex;gap:8px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.tab-btn{flex:1;padding:12px 20px;border:none;background:transparent;color:var(--sub);font-size:15px;font-weight:600;border-radius:8px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.tab-btn:hover{background:#f3f4f6}
+.tab-btn.active{background:var(--wine);color:white}
+.tab-content{display:none}
+.tab-content.active{display:block}
+.content-card{background:#fff;border-radius:var(--radius);padding:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.content-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.content-header h2{font-size:20px;font-weight:600;color:var(--text);margin:0}
+.header-actions{display:flex;gap:12px;align-items:center}
+.btn{border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;padding:10px 20px;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none}
+.btn-primary{background:var(--wine);color:#fff}
+.btn-primary:hover{background:var(--wine-light)}
+.btn-secondary{background:#f3f4f6;color:var(--text)}
+.btn-secondary:hover{background:#e5e7eb}
+.btn-sm{padding:6px 12px;font-size:13px}
+.search-bar{width:100%;max-width:400px;padding:10px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.search-bar:focus{outline:none;border-color:var(--wine)}
+.data-table{width:100%;border-collapse:collapse;margin-top:16px}
+.data-table thead{background:#f8f9fa}
+.data-table th{padding:12px 16px;text-align:left;font-size:13px;font-weight:600;color:var(--sub);text-transform:uppercase;letter-spacing:0.5px;border-bottom:2px solid var(--border)}
+.data-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text)}
+.data-table tbody tr:hover{background:#f8f9fa}
+.badge{display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-success{background:rgba(16,185,129,0.1);color:#10b981}
+.badge-warning{background:rgba(245,158,11,0.1);color:#f59e0b}
+.action-btns{display:flex;gap:8px}
+.icon-btn{width:32px;height:32px;border:none;background:#f3f4f6;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.icon-btn:hover{background:var(--wine);color:white}
+.empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+.empty-state i{font-size:48px;margin-bottom:16px;opacity:0.5}
+.empty-state h3{font-size:18px;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:14px}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:white;border-radius:var(--radius);width:90%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.modal-header h3{font-size:18px;font-weight:600;margin:0}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:all 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--wine)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:768px){.page-wrapper{padding:16px 12px}.page-header{flex-direction:column;align-items:flex-start}.tab-nav{flex-direction:column}.stats-grid{grid-template-columns:1fr}.content-header{flex-direction:column;align-items:flex-start}.search-bar{max-width:100%}.data-table{font-size:13px}.data-table th,.data-table td{padding:10px 12px}.form-row{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-wrapper">
+<div class="page-header"><h1><i data-lucide="file-text"></i> HSN & GST Management</h1></div>
+<div class="stats-grid">
+<div class="stat-card"><div class="stat-icon primary"><i data-lucide="hash"></i></div><div class="stat-info"><div class="value" id="totalHSN">0</div><div class="label">Total HSN Codes</div></div></div>
+<div class="stat-card"><div class="stat-icon success"><i data-lucide="check-circle"></i></div><div class="stat-info"><div class="value" id="mappedProducts">0</div><div class="label">Mapped Products</div></div></div>
+<div class="stat-card"><div class="stat-icon warning"><i data-lucide="percent"></i></div><div class="stat-info"><div class="value" id="gstRates">0</div><div class="label">GST Rates</div></div></div>
+<div class="stat-card"><div class="stat-icon warning"><i data-lucide="alert-circle"></i></div><div class="stat-info"><div class="value" id="unmapped">0</div><div class="label">Unmapped</div></div></div>
+</div>
+<div class="tab-nav">
+<button class="tab-btn active" data-tab="hsn"><i data-lucide="hash"></i>HSN Codes</button>
+<button class="tab-btn" data-tab="gst"><i data-lucide="percent"></i>GST Rates</button>
+<button class="tab-btn" data-tab="mapping"><i data-lucide="link"></i>Product Mapping</button>
+<button class="tab-btn" data-tab="import"><i data-lucide="upload"></i>Import</button>
+</div>
+<div class="tab-content active" id="hsn-tab">
+<div class="content-card">
+<div class="content-header"><h2>HSN Codes</h2>
+<div class="header-actions">
+<input type="text" class="search-bar" id="searchHSN" placeholder="Search HSN codes...">
+<button class="btn btn-secondary" onclick="loadHSN()"><i data-lucide="refresh-cw"></i>Refresh</button>
+<button class="btn btn-primary" onclick="openHSNModal()"><i data-lucide="plus"></i>Add HSN Code</button>
+</div></div>
+<table class="data-table"><thead><tr><th>HSN Code</th><th>Description</th><th>GST Rate</th><th>Products Count</th><th>Actions</th></tr></thead>
+<tbody id="hsnBody"><tr><td colspan="5"><div class="empty-state"><i data-lucide="inbox"></i><h3>No HSN Codes</h3><p>Add your first HSN code</p><button class="btn btn-primary" onclick="openHSNModal()"><i data-lucide="plus"></i>Add HSN Code</button></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="gst-tab">
+<div class="content-card">
+<div class="content-header"><h2>GST Rates</h2>
+<div class="header-actions">
+<button class="btn btn-primary" onclick="openGSTModal()"><i data-lucide="plus"></i>Add GST Rate</button>
+</div></div>
+<table class="data-table"><thead><tr><th>Rate (%)</th><th>CGST (%)</th><th>SGST (%)</th><th>IGST (%)</th><th>Description</th><th>Products</th><th>Actions</th></tr></thead>
+<tbody id="gstBody"><tr><td colspan="7"><div class="empty-state"><i data-lucide="percent"></i><h3>No GST Rates</h3><p>Add GST rate configurations</p></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="mapping-tab">
+<div class="content-card">
+<div class="content-header"><h2>Product HSN Mapping</h2>
+<div class="header-actions">
+<input type="text" class="search-bar" id="searchMapping" placeholder="Search products...">
+<select class="search-bar" style="max-width:200px" id="filterMapped"><option value="">All Products</option><option value="mapped">Mapped</option><option value="unmapped">Unmapped</option></select>
+<button class="btn btn-primary" onclick="bulkMap()"><i data-lucide="link"></i>Bulk Map</button>
+</div></div>
+<table class="data-table"><thead><tr><th>Product Code</th><th>Product Name</th><th>HSN Code</th><th>GST Rate</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody id="mappingBody"><tr><td colspan="6"><div class="empty-state"><i data-lucide="link"></i><h3>No Products</h3><p>Product mapping will appear here</p></div></td></tr></tbody></table>
+</div></div>
+<div class="tab-content" id="import-tab">
+<div class="content-card">
+<div class="content-header"><h2>Import HSN Codes</h2></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px">
+<div style="background:#f8f9fa;padding:24px;border-radius:8px">
+<h3 style="margin:0 0 12px 0;font-size:16px;color:var(--text)"><i data-lucide="upload"></i> Import from Excel</h3>
+<p style="font-size:14px;color:var(--sub);margin-bottom:16px">Upload Excel file with HSN codes and GST rates</p>
+<button class="btn btn-secondary" onclick="downloadHSNTemplate()"><i data-lucide="download"></i>Download Template</button>
+<input type="file" id="importHSNFile" accept=".xlsx,.xls,.csv" style="display:none" onchange="importHSN()">
+<button class="btn btn-primary" onclick="document.getElementById('importHSNFile').click()"><i data-lucide="upload"></i>Upload File</button>
+</div>
+<div style="background:#f8f9fa;padding:24px;border-radius:8px">
+<h3 style="margin:0 0 12px 0;font-size:16px;color:var(--text)"><i data-lucide="database"></i> Import from Government Portal</h3>
+<p style="font-size:14px;color:var(--sub);margin-bottom:16px">Fetch latest HSN codes from GST portal</p>
+<button class="btn btn-primary" onclick="fetchFromPortal()"><i data-lucide="download-cloud"></i>Fetch HSN Codes</button>
+</div>
+</div>
+</div></div>
+</div>
+<div class="modal" id="hsnModal">
+<div class="modal-content">
+<div class="modal-header"><h3 id="hsnModalTitle">Add HSN Code</h3><button class="icon-btn" onclick="closeHSNModal()"><i data-lucide="x"></i></button></div>
+<div class="modal-body">
+<form id="hsnForm">
+<input type="hidden" id="hsnId">
+<div class="form-group"><label>HSN Code *</label><input type="text" id="hsnCode" required placeholder="e.g., 8471"></div>
+<div class="form-group"><label>Description *</label><textarea id="hsnDesc" rows="3" required placeholder="Description of goods/services"></textarea></div>
+<div class="form-row">
+<div class="form-group"><label>GST Rate (%) *</label><input type="number" id="hsnGST" required step="0.01" placeholder="e.g., 18"></div>
+<div class="form-group"><label>Cess (%)</label><input type="number" id="hsnCess" step="0.01" placeholder="0"></div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeHSNModal()">Cancel</button>
+<button class="btn btn-primary" onclick="saveHSN()">Save HSN Code</button>
+</div>
+</div></div>
+<div class="modal" id="gstModal">
+<div class="modal-content">
+<div class="modal-header"><h3>Add GST Rate</h3><button class="icon-btn" onclick="closeGSTModal()"><i data-lucide="x"></i></button></div>
+<div class="modal-body">
+<form id="gstForm">
+<div class="form-group"><label>Total GST Rate (%) *</label><input type="number" id="gstRate" required step="0.01" placeholder="e.g., 18"></div>
+<div class="form-row">
+<div class="form-group"><label>CGST (%) *</label><input type="number" id="cgst" required step="0.01" placeholder="9"></div>
+<div class="form-group"><label>SGST (%) *</label><input type="number" id="sgst" required step="0.01" placeholder="9"></div>
+</div>
+<div class="form-group"><label>IGST (%)</label><input type="number" id="igst" step="0.01" placeholder="18"></div>
+<div class="form-group"><label>Description</label><textarea id="gstDesc" rows="2" placeholder="Rate description"></textarea></div>
+</form>
+</div>
+<div class="modal-footer">
+<button class="btn btn-secondary" onclick="closeGSTModal()">Cancel</button>
+<button class="btn btn-primary" onclick="saveGST()">Save GST Rate</button>
+</div>
+</div></div>
+<script>
+let hsnData=[];
+document.querySelectorAll('.tab-btn').forEach(btn=>{btn.addEventListener('click',()=>{const tab=btn.dataset.tab;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));document.getElementById(`${tab}-tab`).classList.add('active');lucide.createIcons()})});
+async function loadHSN(){try{const response=await fetch('/api/erp/hsn');const data=await response.json();if(data.success){hsnData=data.data||[];renderHSN();renderGST();renderMapping();updateStats()}}catch(e){console.error('Error:',e)}}
+function updateStats(){document.getElementById('totalHSN').textContent=hsnData.length;document.getElementById('mappedProducts').textContent=hsnData.reduce((sum,h)=>sum+(h.product_count||0),0);document.getElementById('gstRates').textContent=new Set(hsnData.map(h=>h.gst_rate)).size;document.getElementById('unmapped').textContent=0}
+function renderHSN(){const tbody=document.getElementById('hsnBody');if(hsnData.length===0){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><i data-lucide="inbox"></i><h3>No HSN Codes</h3><p>Add your first HSN code</p><button class="btn btn-primary" onclick="openHSNModal()"><i data-lucide="plus"></i>Add HSN Code</button></div></td></tr>'}else{tbody.innerHTML=hsnData.map(h=>`<tr><td><strong>${h.code}</strong></td><td>${h.description||'-'}</td><td>${h.gst_rate||0}%</td><td>${h.product_count||0}</td><td><div class="action-btns"><button class="icon-btn" onclick="editHSN('${h.id}')" title="Edit"><i data-lucide="edit-2"></i></button><button class="icon-btn" onclick="deleteHSN('${h.id}')" title="Delete"><i data-lucide="trash-2"></i></button></div></td></tr>`).join('')}lucide.createIcons()}
+function renderGST(){const tbody=document.getElementById('gstBody');tbody.innerHTML='<tr><td colspan="7"><div class="empty-state"><i data-lucide="percent"></i><h3>No GST Rates</h3><p>Add GST rate configurations</p></div></td></tr>';lucide.createIcons()}
+function renderMapping(){const tbody=document.getElementById('mappingBody');tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><i data-lucide="link"></i><h3>No Products</h3><p>Product mapping will appear here</p></div></td></tr>';lucide.createIcons()}
+function openHSNModal(id=null){document.getElementById('hsnModal').classList.add('active');document.getElementById('hsnModalTitle').textContent=id?'Edit HSN Code':'Add HSN Code';document.getElementById('hsnForm').reset();document.getElementById('hsnId').value=id||'';if(id){const hsn=hsnData.find(h=>h.id==id);if(hsn){document.getElementById('hsnCode').value=hsn.code;document.getElementById('hsnDesc').value=hsn.description||'';document.getElementById('hsnGST').value=hsn.gst_rate||0;document.getElementById('hsnCess').value=hsn.cess||0}}lucide.createIcons()}
+function closeHSNModal(){document.getElementById('hsnModal').classList.remove('active')}
+async function saveHSN(){const id=document.getElementById('hsnId').value;const data={code:document.getElementById('hsnCode').value,description:document.getElementById('hsnDesc').value,gst_rate:parseFloat(document.getElementById('hsnGST').value),cess:parseFloat(document.getElementById('hsnCess').value)||0};if(!data.code||!data.description||!data.gst_rate){alert('Please fill required fields');return}try{const url=id?`/api/erp/hsn/${id}`:'/api/erp/hsn';const method=id?'PUT':'POST';const response=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const result=await response.json();if(result.success){closeHSNModal();loadHSN();alert(id?'HSN updated':'HSN added')}}catch(e){console.error('Error:',e);alert('Failed to save')}}
+async function editHSN(id){openHSNModal(id)}
+async function deleteHSN(id){if(!confirm('Delete this HSN code?'))return;try{const response=await fetch(`/api/erp/hsn/${id}`,{method:'DELETE'});const data=await response.json();if(data.success){loadHSN();alert('HSN deleted')}}catch(e){console.error('Error:',e);alert('Failed to delete')}}
+function openGSTModal(){document.getElementById('gstModal').classList.add('active');lucide.createIcons()}
+function closeGSTModal(){document.getElementById('gstModal').classList.remove('active')}
+function saveGST(){alert('Save GST rate')}
+function bulkMap(){alert('Bulk map products to HSN')}
+function downloadHSNTemplate(){alert('Download HSN template')}
+function importHSN(){alert('Import HSN from file')}
+function fetchFromPortal(){alert('Fetch HSN from government portal')}
+['searchHSN','searchMapping'].forEach(id=>{const el=document.getElementById(id);if(el){el.addEventListener('input',(e)=>{const search=e.target.value.toLowerCase();const tbody=e.target.closest('.content-card').querySelector('tbody');const rows=tbody.querySelectorAll('tr');rows.forEach(row=>{const text=row.textContent.toLowerCase();row.style.display=text.includes(search)?'':'none'})})}});
+document.addEventListener('DOMContentLoaded',function(){loadHSN();lucide.createIcons()});
+</script>
+{% endblock %}

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}BizPulse ERP{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --wine: #732C3F; 
+            --wine2: #B85450; 
+            --bg: #F9F6F7; 
+            --card: #fff; 
+            --text: #1A1A1A; 
+            --sub: #6B7280; 
+            --border: rgba(0,0,0,0.08); 
+            --radius: 12px; 
+        }
+        * { 
+            margin:0; 
+            padding:0; 
+            box-sizing:border-box; 
+        }
+        body { 
+            font-family:'Inter',sans-serif; 
+            background:var(--bg); 
+            color:var(--text); 
+            min-height:100vh; 
+            padding-top: 50px; /* Space for fixed top bar */
+        }
+        .top-bar { 
+            background:var(--wine); 
+            color:#fff; 
+            padding:14px 20px; 
+            display:flex; 
+            align-items:center; 
+            gap:12px; 
+            position:fixed; 
+            top:0; 
+            left:0; 
+            right:0;
+            z-index:100; 
+            height: 50px;
+        }
+        .back-btn { 
+            background:rgba(255,255,255,0.2); 
+            border:none; 
+            color:#fff; 
+            width:36px; 
+            height:36px; 
+            border-radius:8px; 
+            cursor:pointer; 
+            font-size:18px; 
+            display:flex; 
+            align-items:center; 
+            justify-content:center; 
+        }
+        .top-bar h1 { 
+            font-size:17px; 
+            font-weight:600; 
+            flex:1; 
+        }
+        .container { 
+            max-width:900px; 
+            margin:0 auto; 
+            padding:16px; 
+        }
+        .card { 
+            background:var(--card); 
+            border-radius:var(--radius); 
+            padding:16px; 
+            margin-bottom:14px; 
+            box-shadow:0 1px 4px rgba(0,0,0,0.06); 
+        }
+        .card-title { 
+            font-size:14px; 
+            font-weight:600; 
+            color:var(--wine); 
+            margin-bottom:14px; 
+        }
+        .form-group { 
+            margin-bottom:12px; 
+        }
+        label { 
+            display:block; 
+            font-size:12px; 
+            font-weight:500; 
+            color:var(--sub); 
+            margin-bottom:4px; 
+        }
+        input, select, textarea { 
+            width:100%; 
+            padding:10px 12px; 
+            border:1.5px solid var(--border); 
+            border-radius:8px; 
+            font-size:14px; 
+            font-family:'Inter',sans-serif; 
+            background:#fafafa; 
+            outline:none; 
+            min-height: 44px; /* Touch target size */
+        }
+        input:focus, select:focus, textarea:focus { 
+            border-color:var(--wine); 
+            background:#fff; 
+        }
+        .form-row { 
+            display:grid; 
+            grid-template-columns:1fr 1fr; 
+            gap:12px; 
+        }
+        .form-row-3 { 
+            display:grid; 
+            grid-template-columns:1fr 1fr 1fr; 
+            gap:12px; 
+        }
+        .btn-primary { 
+            background:var(--wine); 
+            color:#fff; 
+            border:none; 
+            padding:11px 20px; 
+            border-radius:8px; 
+            font-size:14px; 
+            font-weight:600; 
+            cursor:pointer; 
+            min-height:44px; 
+            width: 100%;
+        }
+        .btn-sm { 
+            padding:6px 12px; 
+            font-size:12px; 
+            border-radius:6px; 
+            border:none; 
+            cursor:pointer; 
+            font-weight:500; 
+            min-height:44px; 
+        }
+        .btn-danger { 
+            background:#fee2e2; 
+            color:#dc2626; 
+        }
+        .btn-edit { 
+            background:#e0e7ff; 
+            color:#4338ca; 
+        }
+        .btn-secondary {
+            background:#f3f4f6;
+            color:var(--sub);
+            border:none;
+            padding:11px 20px;
+            border-radius:8px;
+            font-size:14px;
+            font-weight:600;
+            cursor:pointer;
+            min-height:44px;
+            width: 100%;
+        }
+        
+        /* Sidebar Navigation */
+        .sidebar {
+            position:fixed;
+            left:0;
+            top:0;
+            bottom:0;
+            width:280px;
+            background:var(--wine);
+            color:white;
+            z-index:1000;
+            transform:translateX(-100%);
+            transition:transform 0.3s ease;
+            overflow-y:auto;
+        }
+        .sidebar.active {
+            transform:translateX(0);
+        }
+        .sidebar-header {
+            padding:20px;
+            background:rgba(0,0,0,0.2);
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        .sidebar-menu {
+            padding:10px 0;
+        }
+        .menu-item {
+            display:block;
+            color:white;
+            text-decoration:none;
+            padding:12px 20px;
+            border-left:3px solid transparent;
+            transition:all 0.2s;
+        }
+        .menu-item:hover, .menu-item.active {
+            background:rgba(255,255,255,0.1);
+            border-left-color: white;
+        }
+        .sidebar-toggle {
+            background:var(--wine);
+            color:white;
+            border:none;
+            width:40px;
+            height:40px;
+            border-radius:8px;
+            cursor:pointer;
+            font-size:20px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            margin-right:10px;
+        }
+        
+        /* Data Table */
+        .data-table {
+            width:100%;
+            border-collapse:collapse;
+            background:white;
+            border-radius:var(--radius);
+            overflow:hidden;
+            box-shadow:0 1px 4px rgba(0,0,0,0.06);
+        }
+        .data-table th {
+            background:#f9f9f9;
+            padding:12px 16px;
+            text-align:left;
+            font-weight:600;
+            color:var(--sub);
+            font-size:12px;
+            border-bottom:2px solid var(--border);
+        }
+        .data-table td {
+            padding:12px 16px;
+            border-bottom:1px solid var(--border);
+            font-size:14px;
+        }
+        .data-table tr:last-child td {
+            border-bottom:none;
+        }
+        .data-table tr:hover {
+            background:#fafafa;
+        }
+        
+        /* Toast Notification */
+        .toast { 
+            position:fixed; 
+            bottom:24px; 
+            left:50%; 
+            transform:translateX(-50%); 
+            background:#1a1a1a; 
+            color:#fff; 
+            padding:10px 20px; 
+            border-radius:20px; 
+            font-size:13px; 
+            z-index:9999; 
+            opacity:0; 
+            transition:opacity 0.3s; 
+            min-width: 200px;
+            text-align: center;
+        }
+        .toast.show { 
+            opacity:1; 
+        }
+        
+        /* Modal */
+        .modal { 
+            display:none; 
+            position:fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(0,0,0,0.5); 
+            z-index:1000; 
+            align-items:center; 
+            justify-content:center; 
+        }
+        .modal.show { 
+            display:flex; 
+        }
+        .modal-content { 
+            background:var(--card); 
+            border-radius:var(--radius); 
+            padding:20px; 
+            max-width:500px; 
+            width:90%; 
+            max-height:80vh; 
+            overflow-y:auto; 
+        }
+        .modal-header { 
+            display:flex; 
+            justify-content:space-between; 
+            align-items:center; 
+            margin-bottom:16px; 
+        }
+        .modal-title { 
+            font-size:16px; 
+            font-weight:600; 
+            color:var(--wine); 
+        }
+        .modal-close { 
+            background:none; 
+            border:none; 
+            font-size:24px; 
+            cursor:pointer; 
+            color:var(--sub); 
+        }
+        
+        /* Responsive */
+        @media(max-width:768px){ 
+            .form-row, .form-row-3 { 
+                grid-template-columns:1fr; 
+            } 
+            .sidebar {
+                width: 80%;
+            }
+            .data-table, .data-table tbody, .data-table tr, .data-table td {
+                display: block;
+            }
+            .data-table tr {
+                margin-bottom: 10px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+            }
+            .data-table td {
+                text-align: right;
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--border);
+            }
+            .data-table td:before {
+                content: attr(data-label);
+                float: left;
+                font-weight: 600;
+                color: var(--sub);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+        <h1>{% block page_title %}{% endblock %}</h1>
+        {% block top_actions %}{% endblock %}
+    </div>
+    
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>.bizpulse</h2>
+        </div>
+        <nav class="sidebar-menu">
+            <a href="/retail/dashboard" class="menu-item">📊 Dashboard</a>
+            <a href="/erp/products" class="menu-item">📦 Products</a>
+            <a href="/erp/customers" class="menu-item">👥 Customers</a>
+            <a href="/erp/vendors" class="menu-item">🏭 Vendors</a>
+            <a href="/retail/invoices" class="menu-item">📝 Invoices</a>
+            <a href="/erp/purchases" class="menu-item">📥 Purchases</a>
+            <a href="/erp/challans" class="menu-item">📋 Challans</a>
+            <a href="/erp/bank-management" class="menu-item">🏦 Banking</a>
+            <a href="/erp/payments" class="menu-item">💳 Payments</a>
+            <a href="/erp/income-expense" class="menu-item">💰 Income/Expense</a>
+            <a href="/erp/reports" class="menu-item">📈 Reports</a>
+            <a href="/erp/staff-operator" class="menu-item">👤 Staff</a>
+            <a href="/erp/backup-settings" class="menu-item">⚙️ Settings</a>
+        </nav>
+    </div>
+    
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Sidebar Toggle
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+        });
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(event.target) && 
+                event.target !== toggleBtn) {
+                sidebar.classList.remove('active');
+            }
+        });
+        
+        // Toast function
+        function showToast(msg, ok=true) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.background = ok ? '#1a1a1a' : '#dc2626';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        // Format currency
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR'
+            }).format(amount);
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-IN', options);
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

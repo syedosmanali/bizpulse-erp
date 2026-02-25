@@ -1,0 +1,117 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Item-wise Sales{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .report-table {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .report-table h2 {
+        color: #732C3F;
+        font-size: 20px;
+        margin: 0 0 20px 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #732C3F;
+        color: white;
+    }
+
+    th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    tbody tr:hover {
+        background: #F9FAFB;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="page-header">
+        <h1>Item-wise Sales Report</h1>
+        <p>Product performance analysis</p>
+    </div>
+
+    <div class="report-table">
+        <h2>Top Selling Products</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Qty Sold</th>
+                    <th>Unit Price</th>
+                    <th>Total Sales</th>
+                    <th>Profit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Product A</td>
+                    <td>Electronics</td>
+                    <td>45</td>
+                    <td>₹500</td>
+                    <td>₹22,500</td>
+                    <td>₹6,750</td>
+                </tr>
+                <tr>
+                    <td>Product B</td>
+                    <td>Groceries</td>
+                    <td>120</td>
+                    <td>₹150</td>
+                    <td>₹18,000</td>
+                    <td>₹3,600</td>
+                </tr>
+                <tr>
+                    <td>Product C</td>
+                    <td>Clothing</td>
+                    <td>30</td>
+                    <td>₹800</td>
+                    <td>₹24,000</td>
+                    <td>₹7,200</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

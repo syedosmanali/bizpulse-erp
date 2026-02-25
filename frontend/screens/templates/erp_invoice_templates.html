@@ -1,0 +1,504 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Invoice Templates{% endblock %}
+
+{% block extra_css %}
+<style>
+    .templates-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .template-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .template-section h2 {
+        color: #732C3F;
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0 0 20px 0;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #732C3F;
+    }
+
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    .template-card {
+        border: 2px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: white;
+    }
+
+    .template-card:hover {
+        border-color: #732C3F;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(115, 44, 63, 0.2);
+    }
+
+    .template-card.selected {
+        border-color: #732C3F;
+        background: #FFF5F7;
+        box-shadow: 0 4px 12px rgba(115, 44, 63, 0.3);
+    }
+
+    .template-preview {
+        width: 100%;
+        height: 200px;
+        background: white;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        font-size: 12px;
+        padding: 10px;
+        box-sizing: border-box;
+    }
+
+    .invoice-preview {
+        width: 100%;
+        height: 100%;
+        background: white;
+        border: 1px solid #ddd;
+        padding: 8px;
+        font-family: Arial, sans-serif;
+        font-size: 10px;
+        overflow: hidden;
+    }
+
+    .template-info h3 {
+        color: #374151;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .template-info p {
+        color: #6B7280;
+        font-size: 14px;
+        margin: 0 0 15px 0;
+    }
+
+    .select-btn {
+        width: 100%;
+        background: #732C3F;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .select-btn:hover {
+        background: #5a2332;
+    }
+
+    .selected-badge {
+        background: #10B981;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+        margin-bottom: 10px;
+    }
+
+    .print-btn {
+        background: #10B981;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+    }
+
+    .print-btn:hover {
+        background: #059669;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="templates-container">
+    <div class="page-header">
+        <h1>Invoice Templates</h1>
+        <p>Select your preferred invoice design and print</p>
+    </div>
+
+    <!-- Standard Templates -->
+    <div class="template-section">
+        <h2>📄 Standard Templates (A4)</h2>
+        <div class="templates-grid">
+            <div class="template-card" onclick="selectTemplate('standard', 1, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-standard.avif') }}" alt="Standard Invoice" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Standard Invoice</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('standard', 2, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-standard.avif') }}" alt="Standard Invoice 2" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Standard Invoice 2</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('standard', 3, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-standard.avif') }}" alt="Standard Invoice 3" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Standard Invoice 3</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('standard', 4, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-standard.avif') }}" alt="Standard Invoice 4" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Standard Invoice 4</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thermal Templates -->
+    <div class="template-section">
+        <h2>🧾 Thermal Templates (80mm)</h2>
+        <div class="templates-grid">
+            <div class="template-card" onclick="selectTemplate('thermal', 1, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-thermal1.avif') }}" alt="Thermal Receipt 1" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Thermal Receipt 1</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('thermal', 2, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-thermal2.avif') }}" alt="Thermal Receipt 2" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Thermal Receipt 2</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('thermal', 3, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-thermal1.avif') }}" alt="Thermal Receipt 3" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Thermal Receipt 3</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('thermal', 4, this)">
+                <div class="template-preview">
+                    <img src="{{ url_for('static', filename='images/invoice-thermal2.avif') }}" alt="Thermal Receipt 4" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="template-info">
+                    <h3>Thermal Receipt 4</h3>
+                    <p>Your custom template</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Templates -->
+    <div class="template-section">
+        <h2>⭐ Premium Templates (A4)</h2>
+        <div class="templates-grid">
+            <div class="template-card" onclick="selectTemplate('premium', 1, this)">
+                <div class="template-preview">
+                    <div class="invoice-preview" style="padding: 20px; line-height: 1.6; background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);">
+                        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px solid #732C3F;">
+                            <div style="font-size: 20px; font-weight: bold; color: #732C3F; letter-spacing: 3px;">BIZPULSE24</div>
+                            <div style="font-size: 11px; color: #999; margin-top: 3px;">LUXURY INVOICE</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; font-size: 9px;">
+                            <div>
+                                <div style="color: #732C3F; font-weight: bold; margin-bottom: 5px;">INVOICE DETAILS</div>
+                                <div>Invoice #: INV-001</div>
+                                <div>Date: 24/02/2026</div>
+                                <div>GSTIN: 29XXXXX1234X1Z5</div>
+                            </div>
+                            <div>
+                                <div style="color: #732C3F; font-weight: bold; margin-bottom: 5px;">BILL TO</div>
+                                <div>Customer Name</div>
+                                <div>Premium Address</div>
+                                <div>GSTIN: 29XXXXX5678X1Z2</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; font-size: 8px; border-collapse: collapse; margin-bottom: 15px;">
+                            <tr style="background: #732C3F; color: white;">
+                                <th style="padding: 8px; text-align: left; border: 1px solid #732C3F;">Description</th>
+                                <th style="padding: 8px; text-align: center; border: 1px solid #732C3F;">Qty</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #732C3F;">Rate</th>
+                                <th style="padding: 8px; text-align: right; border: 1px solid #732C3F;">Amount</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #ddd;">Premium Product A</td>
+                                <td style="padding: 8px; text-align: center; border: 1px solid #ddd;">1</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">₹500</td>
+                                <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">₹500</td>
+                            </tr>
+                        </table>
+                        <div style="text-align: right; font-size: 9px; border-top: 2px solid #732C3F; padding-top: 10px;">
+                            <div style="margin-bottom: 5px;">Subtotal: ₹500</div>
+                            <div style="margin-bottom: 5px;">CGST (9%): ₹45</div>
+                            <div style="margin-bottom: 5px;">SGST (9%): ₹45</div>
+                            <div style="font-weight: bold; color: #732C3F; font-size: 12px; margin-top: 8px;">TOTAL: ₹590</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Luxury Invoice</h3>
+                    <p>Premium A4 design</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('premium', 2, this)">
+                <div class="template-preview">
+                    <div class="invoice-preview" style="padding: 20px; line-height: 1.6;">
+                        <div style="border-left: 5px solid #732C3F; padding-left: 15px; margin-bottom: 20px;">
+                            <div style="font-size: 18px; font-weight: bold; color: #732C3F;">EXECUTIVE INVOICE</div>
+                            <div style="font-size: 10px; color: #999;">Professional Business Document</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 9px;">
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 5px;">
+                                <strong style="color: #732C3F; display: block; margin-bottom: 5px;">INVOICE INFORMATION</strong>
+                                <div>Reference: INV-002</div>
+                                <div>Issued: 24/02/2026</div>
+                                <div>GSTIN: 29XXXXX1234X1Z5</div>
+                            </div>
+                            <div style="background: #f9f9f9; padding: 12px; border-radius: 5px;">
+                                <strong style="color: #732C3F; display: block; margin-bottom: 5px;">BILL TO</strong>
+                                <div>Customer Name</div>
+                                <div>Executive Address</div>
+                                <div>GSTIN: 29XXXXX5678X1Z2</div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; font-size: 8px; border-collapse: collapse; margin-bottom: 15px;">
+                            <tr style="background: #f0f0f0; border-bottom: 2px solid #732C3F;">
+                                <th style="padding: 8px; text-align: left;">Description</th>
+                                <th style="padding: 8px; text-align: center;">Qty</th>
+                                <th style="padding: 8px; text-align: right;">Rate</th>
+                                <th style="padding: 8px; text-align: right;">Amount</th>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 8px;">Executive Product A</td>
+                                <td style="padding: 8px; text-align: center;">1</td>
+                                <td style="padding: 8px; text-align: right;">₹500</td>
+                                <td style="padding: 8px; text-align: right;">₹500</td>
+                            </tr>
+                        </table>
+                        <div style="text-align: right; font-size: 9px;">
+                            <div style="margin-bottom: 5px;">Subtotal: ₹500</div>
+                            <div style="margin-bottom: 5px;">Tax: ₹90</div>
+                            <div style="font-weight: bold; color: #732C3F; font-size: 11px; border-top: 2px solid #732C3F; padding-top: 8px;">TOTAL: ₹590</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Executive Invoice</h3>
+                    <p>Corporate premium</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('premium', 3, this)">
+                <div class="template-preview">
+                    <div class="invoice-preview" style="padding: 20px; line-height: 1.6; background: #fafafa;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 16px; font-weight: bold; color: #732C3F; margin-bottom: 5px;">DESIGNER INVOICE</div>
+                            <div style="height: 2px; background: linear-gradient(90deg, transparent, #732C3F, transparent); margin: 10px 0;"></div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 9px;">
+                            <div style="border: 2px solid #732C3F; padding: 12px; border-radius: 8px;">
+                                <strong style="color: #732C3F;">Invoice #:</strong> INV-003<br>
+                                <strong style="color: #732C3F;">Date:</strong> 24/02/2026<br>
+                                <strong style="color: #732C3F;">GSTIN:</strong> 29XXXXX1234X1Z5
+                            </div>
+                            <div style="border: 2px solid #732C3F; padding: 12px; border-radius: 8px;">
+                                <strong style="color: #732C3F;">Customer:</strong><br>
+                                Customer Name<br>
+                                Designer Address
+                            </div>
+                        </div>
+                        <table style="width: 100%; font-size: 8px; border-collapse: collapse; margin-bottom: 15px;">
+                            <tr style="background: #732C3F; color: white; border-radius: 5px;">
+                                <th style="padding: 8px; text-align: left;">Item</th>
+                                <th style="padding: 8px; text-align: center;">Qty</th>
+                                <th style="padding: 8px; text-align: right;">Price</th>
+                                <th style="padding: 8px; text-align: right;">Total</th>
+                            </tr>
+                            <tr style="background: #f5f5f5;">
+                                <td style="padding: 8px;">Designer Product A</td>
+                                <td style="padding: 8px; text-align: center;">1</td>
+                                <td style="padding: 8px; text-align: right;">₹500</td>
+                                <td style="padding: 8px; text-align: right;">₹500</td>
+                            </tr>
+                        </table>
+                        <div style="text-align: right; font-size: 9px; border-top: 2px solid #732C3F; padding-top: 10px;">
+                            <div>Subtotal: ₹500</div>
+                            <div>Tax: ₹90</div>
+                            <div style="font-weight: bold; color: #732C3F; font-size: 12px;">TOTAL: ₹590</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Designer Invoice</h3>
+                    <p>Creative premium</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+
+            <div class="template-card" onclick="selectTemplate('premium', 4, this)">
+                <div class="template-preview">
+                    <div class="invoice-preview" style="padding: 20px; line-height: 1.6;">
+                        <div style="text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 3px double #732C3F;">
+                            <div style="font-size: 18px; font-weight: bold; color: #732C3F; letter-spacing: 2px;">ELITE INVOICE</div>
+                            <div style="font-size: 10px; color: #999; margin-top: 5px;">Premium Corporate Document</div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; font-size: 9px;">
+                            <div>
+                                <div style="color: #732C3F; font-weight: bold; font-size: 10px; margin-bottom: 8px; text-transform: uppercase;">Invoice Information</div>
+                                <div style="line-height: 1.8;">
+                                    <strong>Number:</strong> INV-004<br>
+                                    <strong>Date:</strong> 24/02/2026<br>
+                                    <strong>GSTIN:</strong> 29XXXXX1234X1Z5
+                                </div>
+                            </div>
+                            <div>
+                                <div style="color: #732C3F; font-weight: bold; font-size: 10px; margin-bottom: 8px; text-transform: uppercase;">Sold To</div>
+                                <div style="line-height: 1.8;">
+                                    <strong>Customer Name</strong><br>
+                                    Elite Address<br>
+                                    GSTIN: 29XXXXX5678X1Z2
+                                </div>
+                            </div>
+                        </div>
+                        <table style="width: 100%; font-size: 8px; border-collapse: collapse; margin-bottom: 15px;">
+                            <tr style="background: #732C3F; color: white;">
+                                <th style="padding: 10px; text-align: left; border: 1px solid #732C3F;">Particulars</th>
+                                <th style="padding: 10px; text-align: center; border: 1px solid #732C3F;">Qty</th>
+                                <th style="padding: 10px; text-align: right; border: 1px solid #732C3F;">Rate</th>
+                                <th style="padding: 10px; text-align: right; border: 1px solid #732C3F;">Amount</th>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border: 1px solid #ddd;">Elite Product A</td>
+                                <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">1</td>
+                                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">₹500</td>
+                                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">₹500</td>
+                            </tr>
+                        </table>
+                        <div style="text-align: right; font-size: 9px; border-top: 3px solid #732C3F; padding-top: 12px;">
+                            <div style="margin-bottom: 5px;">Subtotal: ₹500</div>
+                            <div style="margin-bottom: 5px;">Tax: ₹90</div>
+                            <div style="font-weight: bold; color: #732C3F; font-size: 13px; margin-top: 10px;">GRAND TOTAL: ₹590</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="template-info">
+                    <h3>Elite Invoice</h3>
+                    <p>Premium corporate</p>
+                    <button class="select-btn">Select Template</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="print-btn" onclick="printSelectedTemplate()">🖨️ Print Selected Template</button>
+</div>
+
+<script>
+let selectedTemplate = null;
+
+function selectTemplate(type, id, element) {
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+        const badge = card.querySelector('.selected-badge');
+        if (badge) badge.remove();
+    });
+    
+    element.classList.add('selected');
+    
+    const badge = document.createElement('div');
+    badge.className = 'selected-badge';
+    badge.textContent = '✓ Selected';
+    element.querySelector('.template-info').insertBefore(badge, element.querySelector('h3'));
+    
+    selectedTemplate = { type, id };
+    console.log('Selected:', selectedTemplate);
+}
+
+function printSelectedTemplate() {
+    if (!selectedTemplate) {
+        alert('Please select a template first!');
+        return;
+    }
+    
+    alert(`Printing ${selectedTemplate.type.toUpperCase()} Template ${selectedTemplate.id}`);
+    window.print();
+}
+</script>
+{% endblock %}

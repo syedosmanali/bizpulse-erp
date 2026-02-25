@@ -1,0 +1,58 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}ERP Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-content {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+    .video-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .video-container video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        transform: translate(-50%, -50%);
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="video-container">
+        <video autoplay loop muted playsinline id="dashboardVideo">
+            <source src="{{ url_for('static', filename='videos/dashboard-video.mp4') }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+</div>
+
+<script>
+    // Make video play very very slow
+    document.addEventListener('DOMContentLoaded', function() {
+        const video = document.getElementById('dashboardVideo');
+        if (video) {
+            video.playbackRate = 0.25; // Very slow playback (25% of normal speed)
+        }
+    });
+</script>
+{% endblock %}

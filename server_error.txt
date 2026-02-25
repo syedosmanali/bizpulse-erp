@@ -1,0 +1,64 @@
+Exception in thread Thread-2 (start_background_services):
+Traceback (most recent call last):
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 191, in start_background_services
+    start_stock_monitor()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\modules\notifications\stock_monitor.py", line 182, in start_stock_monitor
+    stock_monitor.start()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\modules\notifications\stock_monitor.py", line 30, in start
+    print(f"\U0001f680 [STOCK MONITOR] Background service started - checking every {self.check_interval//60} minutes")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f680' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1041, in _bootstrap_inner
+    self.run()
+    ~~~~~~~~^^
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 992, in run
+    self._target(*self._args, **self._kwargs)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 194, in start_background_services
+    print(f"\u274c Failed to start stock monitoring service: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>
+Traceback (most recent call last):
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 462, in <module>
+    initialize_database()
+    ~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 258, in initialize_database
+    init_inventory_tables()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\modules\inventory\database.py", line 159, in init_inventory_tables
+    print("\u2705 Inventory management tables initialized successfully")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 464, in <module>
+    print(f"\u26a0\ufe0f  Database initialization warning: {_db_init_err}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-1: character maps to <undefined>
+Exception ignored in atexit callback <function cleanup_on_exit at 0x0000020F6685B560>:
+Traceback (most recent call last):
+  File "C:\Users\osman\OneDrive\Desktop\Mobile-ERP\app.py", line 208, in cleanup_on_exit
+    print(f"\u274c Error stopping background services: {e}")
+  File "C:\Users\osman\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>

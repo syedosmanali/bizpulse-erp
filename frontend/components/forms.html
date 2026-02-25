@@ -1,0 +1,343 @@
+<!-- Reusable Form Components -->
+
+<!-- Standard Form Layout -->
+<div class="form-container" style="display: none;">
+    <div class="card">
+        <div class="card-title">{% block form_title %}Form Title{% endblock %}</div>
+        
+        <form id="{% block form_id %}standard-form{% endblock %}">
+            {% block form_fields %}{% endblock %}
+            
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button type="submit" class="btn-primary" id="{% block submit_btn_id %}submitBtn{% endblock %}">{% block submit_text %}Save{% endblock %}</button>
+                <button type="button" class="btn-secondary" onclick="{% block cancel_action %}hideForm(){% endblock %}">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Form Field Templates -->
+<script id="text-field-template" type="text/template">
+    <div class="form-group">
+        <label for="{{id}}">{{label}}</label>
+        <input type="{{type}}" id="{{id}}" name="{{name}}" placeholder="{{placeholder}}" {{required}}>
+        <span id="{{id}}-error" class="error-msg" style="display:none;">{{error_msg}}</span>
+    </div>
+</script>
+
+<script id="select-field-template" type="text/template">
+    <div class="form-group">
+        <label for="{{id}}">{{label}}</label>
+        <select id="{{id}}" name="{{name}}" {{required}}>
+            <option value="">{{placeholder}}</option>
+            {{options}}
+        </select>
+        <span id="{{id}}-error" class="error-msg" style="display:none;">{{error_msg}}</span>
+    </div>
+</script>
+
+<script id="number-field-template" type="text/template">
+    <div class="form-group">
+        <label for="{{id}}">{{label}}</label>
+        <input type="number" id="{{id}}" name="{{name}}" placeholder="{{placeholder}}" min="{{min}}" max="{{max}}" step="{{step}}" value="{{value}}" {{required}}>
+        <span id="{{id}}-error" class="error-msg" style="display:none;">{{error_msg}}</span>
+    </div>
+</script>
+
+<script id="date-field-template" type="text/template">
+    <div class="form-group">
+        <label for="{{id}}">{{label}}</label>
+        <input type="date" id="{{id}}" name="{{name}}" value="{{value}}" {{required}}>
+        <span id="{{id}}-error" class="error-msg" style="display:none;">{{error_msg}}</span>
+    </div>
+</script>
+
+<script id="checkbox-field-template" type="text/template">
+    <div class="form-group" style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" id="{{id}}" name="{{name}}" {{checked}} style="width:16px;height:16px;">
+        <label for="{{id}}" style="margin:0;cursor:pointer;">{{label}}</label>
+    </div>
+</script>
+
+<script id="textarea-field-template" type="text/template">
+    <div class="form-group">
+        <label for="{{id}}">{{label}}</label>
+        <textarea id="{{id}}" name="{{name}}" placeholder="{{placeholder}}" rows="{{rows}}" {{required}}>{{value}}</textarea>
+        <span id="{{id}}-error" class="error-msg" style="display:none;">{{error_msg}}</span>
+    </div>
+</script>
+
+<!-- Form Utility Functions -->
+<script>
+// Form validation utilities
+const FormValidator = {
+    required: (value) => {
+        return value !== null && value !== undefined && value.toString().trim() !== '';
+    },
+    
+    minLength: (value, min) => {
+        return value && value.length >= min;
+    },
+    
+    maxLength: (value, max) => {
+        return value && value.length <= max;
+    },
+    
+    email: (value) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+    },
+    
+    phone: (value) => {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        return phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''));
+    },
+    
+    number: (value) => {
+        return !isNaN(parseFloat(value)) && isFinite(value);
+    },
+    
+    positiveNumber: (value) => {
+        return FormValidator.number(value) && parseFloat(value) > 0;
+    },
+    
+    integer: (value) => {
+        return Number.isInteger(Number(value));
+    },
+    
+    gstNumber: (value) => {
+        const gstRegex = /^[\d]{2}[A-Z]{5}[\d]{4}[A-Z]{1}[\d]{1}[Z]{1}[A-Z\d]{1}$/;
+        return gstRegex.test(value.toUpperCase());
+    },
+    
+    panNumber: (value) => {
+        const panRegex = /^[A-Z]{5}[\d]{4}[A-Z]{1}$/;
+        return panRegex.test(value.toUpperCase());
+    },
+    
+    hsnCode: (value) => {
+        if (!value) return true; // HSN is optional
+        if (!/^\d+$/.test(value)) return false; // Must be digits only
+        return [4, 6, 8].includes(value.length); // Must be 4, 6, or 8 digits
+    }
+};
+
+// Form builder class
+class FormBuilder {
+    constructor(formId) {
+        this.formId = formId;
+        this.fields = [];
+    }
+    
+    addField(type, config) {
+        this.fields.push({...config, type});
+        return this;
+    }
+    
+    render() {
+        const container = document.createElement('div');
+        container.className = 'form-fields-container';
+        
+        this.fields.forEach(field => {
+            let fieldHtml = '';
+            switch(field.type) {
+                case 'text':
+                case 'email':
+                case 'tel':
+                case 'password':
+                    fieldHtml = this.renderTextField(field);
+                    break;
+                case 'select':
+                    fieldHtml = this.renderSelectField(field);
+                    break;
+                case 'number':
+                    fieldHtml = this.renderNumberField(field);
+                    break;
+                case 'date':
+                    fieldHtml = this.renderDateField(field);
+                    break;
+                case 'checkbox':
+                    fieldHtml = this.renderCheckboxField(field);
+                    break;
+                case 'textarea':
+                    fieldHtml = this.renderTextareaField(field);
+                    break;
+            }
+            
+            const fieldContainer = document.createElement('div');
+            fieldContainer.innerHTML = fieldHtml;
+            container.appendChild(fieldContainer);
+        });
+        
+        return container.innerHTML;
+    }
+    
+    renderTextField(config) {
+        const template = document.getElementById('text-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{label}}', config.label)
+            .replace('{{type}}', config.type || 'text')
+            .replace('{{name}}', config.name)
+            .replace('{{placeholder}}', config.placeholder || '')
+            .replace('{{required}}', config.required ? 'required' : '')
+            .replace('{{error_msg}}', config.errorMsg || 'This field is required');
+    }
+    
+    renderSelectField(config) {
+        const options = config.options.map(opt => 
+            `<option value="${opt.value}">${opt.text}</option>`
+        ).join('');
+        
+        const template = document.getElementById('select-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{label}}', config.label)
+            .replace('{{name}}', config.name)
+            .replace('{{placeholder}}', config.placeholder || '')
+            .replace('{{required}}', config.required ? 'required' : '')
+            .replace('{{options}}', options)
+            .replace('{{error_msg}}', config.errorMsg || 'Please select an option');
+    }
+    
+    renderNumberField(config) {
+        const template = document.getElementById('number-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{label}}', config.label)
+            .replace('{{name}}', config.name)
+            .replace('{{placeholder}}', config.placeholder || '')
+            .replace('{{min}}', config.min || '0')
+            .replace('{{max}}', config.max || '')
+            .replace('{{step}}', config.step || 'any')
+            .replace('{{value}}', config.value || '')
+            .replace('{{required}}', config.required ? 'required' : '')
+            .replace('{{error_msg}}', config.errorMsg || 'Please enter a valid number');
+    }
+    
+    renderDateField(config) {
+        const template = document.getElementById('date-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{label}}', config.label)
+            .replace('{{name}}', config.name)
+            .replace('{{value}}', config.value || '')
+            .replace('{{required}}', config.required ? 'required' : '')
+            .replace('{{error_msg}}', config.errorMsg || 'Please select a date');
+    }
+    
+    renderCheckboxField(config) {
+        const template = document.getElementById('checkbox-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{name}}', config.name)
+            .replace('{{label}}', config.label)
+            .replace('{{checked}}', config.checked ? 'checked' : '');
+    }
+    
+    renderTextareaField(config) {
+        const template = document.getElementById('textarea-field-template').innerHTML;
+        return template
+            .replace('{{id}}', config.id)
+            .replace('{{label}}', config.label)
+            .replace('{{name}}', config.name)
+            .replace('{{placeholder}}', config.placeholder || '')
+            .replace('{{rows}}', config.rows || '3')
+            .replace('{{value}}', config.value || '')
+            .replace('{{required}}', config.required ? 'required' : '')
+            .replace('{{error_msg}}', config.errorMsg || 'This field is required');
+    }
+    
+    validate() {
+        let isValid = true;
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (!element) return;
+            
+            let value = element.type === 'checkbox' ? element.checked : element.value;
+            const errorElement = document.getElementById(`${field.id}-error`);
+            
+            // Reset error state
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+            element.style.borderColor = 'var(--border)';
+            
+            // Check required
+            if (field.required && !FormValidator.required(value)) {
+                isValid = false;
+                if (errorElement) {
+                    errorElement.textContent = field.errorMsg || 'This field is required';
+                    errorElement.style.display = 'block';
+                }
+                element.style.borderColor = '#dc2626';
+                return;
+            }
+            
+            // Run custom validators
+            if (field.validators) {
+                for (const validator of field.validators) {
+                    if (!validator.fn(value)) {
+                        isValid = false;
+                        if (errorElement) {
+                            errorElement.textContent = validator.msg;
+                            errorElement.style.display = 'block';
+                        }
+                        element.style.borderColor = '#dc2626';
+                        break;
+                    }
+                }
+            }
+        });
+        
+        return isValid;
+    }
+    
+    getData() {
+        const data = {};
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                data[field.name] = element.type === 'checkbox' ? element.checked : element.value;
+            }
+        });
+        return data;
+    }
+    
+    setData(data) {
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && data.hasOwnProperty(field.name)) {
+                if (element.type === 'checkbox') {
+                    element.checked = !!data[field.name];
+                } else {
+                    element.value = data[field.name] || '';
+                }
+            }
+        });
+    }
+}
+
+// Usage example:
+// const formBuilder = new FormBuilder('myForm');
+// formBuilder
+//     .addField('text', {
+//         id: 'name',
+//         name: 'name',
+//         label: 'Full Name *',
+//         placeholder: 'Enter full name',
+//         required: true,
+//         errorMsg: 'Name is required'
+//     })
+//     .addField('email', {
+//         id: 'email',
+//         name: 'email',
+//         label: 'Email Address',
+//         placeholder: 'Enter email address',
+//         validators: [{
+//             fn: FormValidator.email,
+//             msg: 'Please enter a valid email address'
+//         }]
+//     });
+
+</script>

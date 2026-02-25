@@ -1,0 +1,884 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Low Stock Alerts - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --critical: #dc2626;
+        --warning: #f59e0b;
+        --bg: #f8f9fa;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+
+    .stat-icon.critical {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--critical);
+    }
+
+    .stat-icon.warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .stat-icon.primary {
+        background: rgba(115, 44, 63, 0.1);
+        color: var(--wine);
+    }
+
+    .stat-info .value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 4px;
+    }
+
+    .stat-info .label {
+        font-size: 13px;
+        color: var(--sub);
+        font-weight: 500;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 8px;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        background: transparent;
+        color: var(--sub);
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .tab-btn:hover {
+        background: #f3f4f6;
+    }
+
+    .tab-btn.active {
+        background: var(--wine);
+        color: white;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .content-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    /* Search Bar */
+    .search-bar {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 16px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .search-bar:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    /* Table */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .data-table thead {
+        background: #f8f9fa;
+    }
+
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--sub);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-critical {
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--critical);
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning);
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .stock-value {
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .stock-value.critical {
+        color: var(--critical);
+    }
+
+    .stock-value.warning {
+        color: var(--warning);
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 8px;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+        background: var(--wine);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--sub);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text);
+    }
+
+    .empty-state p {
+        font-size: 14px;
+    }
+
+    /* Settings Form */
+    .settings-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--sub);
+    }
+
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 26px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 26px;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .slider {
+        background-color: var(--wine);
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(22px);
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tab-nav {
+            flex-direction: column;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .content-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-bar {
+            max-width: 100%;
+        }
+
+        .data-table {
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+        }
+
+        .settings-form {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="alert-triangle"></i> Low Stock Alerts</h1>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon critical">
+                <i data-lucide="alert-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="criticalCount">0</div>
+                <div class="label">Out of Stock</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="lowStockCount">0</div>
+                <div class="label">Low Stock</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i data-lucide="package"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="totalProducts">0</div>
+                <div class="label">Total Products</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="alerts">
+            <i data-lucide="bell"></i>
+            Stock Alerts
+        </button>
+        <button class="tab-btn" data-tab="reorder">
+            <i data-lucide="shopping-cart"></i>
+            Reorder List
+        </button>
+        <button class="tab-btn" data-tab="settings">
+            <i data-lucide="settings"></i>
+            Settings
+        </button>
+    </div>
+
+    <!-- Alerts Tab -->
+    <div class="tab-content active" id="alerts-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Stock Alerts</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="alertSearch" placeholder="Search products...">
+                    <button class="btn btn-secondary" onclick="loadAlerts()">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="exportAlerts()">
+                        <i data-lucide="download"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Code</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Min Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="alertsTableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i data-lucide="inbox"></i>
+                                <h3>No Alerts</h3>
+                                <p>All products are well stocked</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Reorder Tab -->
+    <div class="tab-content" id="reorder-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Reorder List</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="reorderSearch" placeholder="Search products...">
+                    <button class="btn btn-primary" onclick="generatePO()">
+                        <i data-lucide="file-text"></i>
+                        Generate PO
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                        <th>Product</th>
+                        <th>Current Stock</th>
+                        <th>Reorder Qty</th>
+                        <th>Supplier</th>
+                        <th>Last Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reorderTableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i data-lucide="shopping-cart"></i>
+                                <h3>No Items to Reorder</h3>
+                                <p>Your reorder list is empty</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Alert Settings</h2>
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <i data-lucide="save"></i>
+                    Save Settings
+                </button>
+            </div>
+
+            <div class="settings-form">
+                <div class="form-group">
+                    <label>Default Min Stock Level</label>
+                    <input type="number" id="defaultMinStock" value="10" min="0">
+                    <small>Default minimum stock level for new products</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Reorder Multiplier</label>
+                    <input type="number" id="reorderMultiplier" value="2" min="1" step="0.5">
+                    <small>Reorder quantity = Min Stock × Multiplier</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Alert Frequency</label>
+                    <select id="alertFrequency">
+                        <option value="realtime">Real-time</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                    </select>
+                    <small>How often to check for low stock</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Email Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="emailNotifications" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <small>Receive email alerts for low stock</small>
+                </div>
+
+                <div class="form-group">
+                    <label>SMS Notifications</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="smsNotifications">
+                        <span class="slider"></span>
+                    </label>
+                    <small>Receive SMS alerts for critical stock</small>
+                </div>
+
+                <div class="form-group">
+                    <label>Auto-generate PO</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoGeneratePO">
+                        <span class="slider"></span>
+                    </label>
+                    <small>Automatically create purchase orders</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let alerts = [];
+let reorderList = [];
+
+// Tab Switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+        
+        lucide.createIcons();
+    });
+});
+
+// Load Alerts
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/erp/stock/low-stock');
+        const data = await response.json();
+        
+        if (data.success) {
+            alerts = data.data || [];
+            renderAlerts();
+            updateStats();
+            generateReorderList();
+        }
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+    }
+}
+
+function updateStats() {
+    const critical = alerts.filter(a => a.stock === 0).length;
+    const lowStock = alerts.filter(a => a.stock > 0 && a.stock <= a.min_stock).length;
+    
+    document.getElementById('criticalCount').textContent = critical;
+    document.getElementById('lowStockCount').textContent = lowStock;
+    document.getElementById('totalProducts').textContent = alerts.length;
+}
+
+function renderAlerts() {
+    const tbody = document.getElementById('alertsTableBody');
+    
+    if (alerts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i data-lucide="inbox"></i>
+                        <h3>No Alerts</h3>
+                        <p>All products are well stocked</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = alerts.map(alert => {
+            const isCritical = alert.stock === 0;
+            const statusClass = isCritical ? 'critical' : 'warning';
+            const statusText = isCritical ? 'Out of Stock' : 'Low Stock';
+            
+            return `
+                <tr>
+                    <td><strong>${alert.code || '-'}</strong></td>
+                    <td>${alert.name}</td>
+                    <td>${alert.category || '-'}</td>
+                    <td><span class="stock-value ${statusClass}">${alert.stock}</span></td>
+                    <td>${alert.min_stock}</td>
+                    <td><span class="badge badge-${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick="quickReorder('${alert.id}')" title="Reorder">
+                                <i data-lucide="shopping-cart"></i>
+                            </button>
+                            <button class="icon-btn" onclick="adjustStock('${alert.id}')" title="Adjust Stock">
+                                <i data-lucide="edit-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+function generateReorderList() {
+    reorderList = alerts.map(alert => ({
+        ...alert,
+        reorder_qty: Math.max(alert.min_stock * 2, 10),
+        supplier: 'Default Supplier',
+        last_price: 0
+    }));
+    
+    renderReorderList();
+}
+
+function renderReorderList() {
+    const tbody = document.getElementById('reorderTableBody');
+    
+    if (reorderList.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i data-lucide="shopping-cart"></i>
+                        <h3>No Items to Reorder</h3>
+                        <p>Your reorder list is empty</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = reorderList.map(item => `
+            <tr>
+                <td><input type="checkbox" class="reorder-check" data-id="${item.id}"></td>
+                <td><strong>${item.name}</strong><br><small>${item.code || '-'}</small></td>
+                <td>${item.stock}</td>
+                <td><input type="number" value="${item.reorder_qty}" min="1" style="width: 80px; padding: 4px 8px; border: 1px solid #e5e7eb; border-radius: 4px;"></td>
+                <td>${item.supplier}</td>
+                <td>₹${item.last_price.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="removeFromReorder('${item.id}')">
+                        <i data-lucide="x"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.reorder-check').forEach(cb => cb.checked = checked);
+}
+
+function quickReorder(productId) {
+    alert('Reorder functionality - Create purchase order for product: ' + productId);
+}
+
+function adjustStock(productId) {
+    const qty = prompt('Enter stock adjustment quantity (use negative for reduction):');
+    if (qty !== null) {
+        alert('Stock adjusted by ' + qty + ' units');
+        loadAlerts();
+    }
+}
+
+function removeFromReorder(productId) {
+    reorderList = reorderList.filter(item => item.id !== productId);
+    renderReorderList();
+}
+
+function generatePO() {
+    const selected = Array.from(document.querySelectorAll('.reorder-check:checked'));
+    if (selected.length === 0) {
+        alert('Please select at least one item');
+        return;
+    }
+    alert(`Generating Purchase Order for ${selected.length} items`);
+}
+
+function exportAlerts() {
+    alert('Exporting alerts to CSV...');
+}
+
+function saveSettings() {
+    alert('Settings saved successfully!');
+}
+
+// Search Functionality
+document.getElementById('alertSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#alertsTableBody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+});
+
+document.getElementById('reorderSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#reorderTableBody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadAlerts();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

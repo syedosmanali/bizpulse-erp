@@ -1,0 +1,397 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Backup & Settings - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-banner {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        color: #166534;
+    }
+
+    .warning-banner {
+        background: #fef9c3;
+        border: 1px solid #fbbf24;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 13px;
+        color: #92400e;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-success {
+        background: #16a34a;
+        color: #fff;
+    }
+
+    .btn-success:hover {
+        background: #15803d;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .backup-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .form-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .toast.show {
+        opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+        .backup-actions {
+            flex-direction: column;
+        }
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="page-header">
+        <h1><i data-lucide="database"></i> Backup & Settings</h1>
+    </div>
+
+    <!-- Data Backup Section -->
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="download"></i> Data Backup</div>
+        <div class="info-banner">
+            <i data-lucide="shield-check"></i>
+            <span>Your data is stored securely in Supabase cloud database. Backups are automatic.</span>
+        </div>
+        <p style="margin-bottom: 16px; color: var(--sub); font-size: 14px;">
+            Download a full backup of all your ERP data including invoices, products, customers, and transactions.
+        </p>
+        <div class="backup-actions">
+            <button class="btn btn-primary" onclick="downloadJSONBackup()">
+                <i data-lucide="download"></i> Download JSON Backup
+            </button>
+            <button class="btn btn-success" onclick="exportCSV()">
+                <i data-lucide="file-spreadsheet"></i> Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- Restore Data Section -->
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="upload"></i> Restore Data</div>
+        <div class="warning-banner">
+            <i data-lucide="alert-triangle"></i>
+            <span>Restoring will overwrite your current data. Make sure you have a backup before proceeding.</span>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Select Backup File (.json)</label>
+            <input type="file" class="form-input" id="backupFile" accept=".json">
+        </div>
+        <button class="btn btn-primary" onclick="restoreBackup()">
+            <i data-lucide="upload"></i> Restore from Backup
+        </button>
+    </div>
+
+    <!-- System Settings Section -->
+    <div class="form-section">
+        <div class="section-title"><i data-lucide="settings"></i> System Settings</div>
+        <div class="form-group">
+            <label class="form-label">Auto Backup</label>
+            <select class="form-input" id="autoBackup">
+                <option value="disabled">Disabled</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Session Timeout (minutes)</label>
+            <input type="number" class="form-input" id="sessionTimeout" value="30" min="5" max="480">
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">
+            <i data-lucide="save"></i> Save Settings
+        </button>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function downloadJSONBackup() {
+    try {
+        showToast('Preparing backup...');
+        const response = await fetch('/api/erp/backup/json');
+        const data = await response.json();
+        
+        if (data.success) {
+            const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `erp_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Backup downloaded successfully!');
+        } else {
+            showToast('Failed to create backup');
+        }
+    } catch (error) {
+        showToast('Error creating backup');
+    }
+}
+
+async function exportCSV() {
+    try {
+        showToast('Preparing CSV export...');
+        const response = await fetch('/api/erp/backup/csv');
+        const blob = await response.blob();
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `erp_export_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV exported successfully!');
+    } catch (error) {
+        showToast('Error exporting CSV');
+    }
+}
+
+async function restoreBackup() {
+    const fileInput = document.getElementById('backupFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('Please select a backup file');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to restore from this backup? This will overwrite your current data.')) {
+        return;
+    }
+    
+    try {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            try {
+                const backupData = JSON.parse(e.target.result);
+                
+                const response = await fetch('/api/erp/backup/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(backupData)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Backup restored successfully!');
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showToast('Failed to restore backup');
+                }
+            } catch (error) {
+                showToast('Invalid backup file format');
+            }
+        };
+        reader.readAsText(file);
+    } catch (error) {
+        showToast('Error reading backup file');
+    }
+}
+
+async function saveSettings() {
+    const settings = {
+        auto_backup: document.getElementById('autoBackup').value,
+        session_timeout: parseInt(document.getElementById('sessionTimeout').value)
+    };
+    
+    try {
+        const response = await fetch('/api/erp/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            showToast('Settings saved successfully!');
+        } else {
+            showToast('Failed to save settings');
+        }
+    } catch (error) {
+        showToast('Error saving settings');
+    }
+}
+
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/erp/settings');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            document.getElementById('autoBackup').value = data.data.auto_backup || 'disabled';
+            document.getElementById('sessionTimeout').value = data.data.session_timeout || 30;
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

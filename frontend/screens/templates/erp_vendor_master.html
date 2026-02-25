@@ -1,0 +1,560 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Vendor Master - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+    body { background:var(--bg); color:var(--text); font-family:'Outfit', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+    .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+    .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+    .container { max-width:900px; margin:0 auto; padding:16px; }
+    .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+    .form-group { margin-bottom:12px; }
+    label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:4px; }
+    input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Outfit', sans-serif; background:#fafafa; outline:none; }
+    input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+    .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; min-height:44px; }
+    .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:500; min-height:44px; }
+    .btn-danger { background:#fee2e2; color:#dc2626; }
+    .btn-edit { background:#e0e7ff; color:#4338ca; }
+    .btn-success { background:#d1fae5; color:#065f46; }
+    
+    /* Search and Filter Bar */
+    .filter-bar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .search-box { flex:1; min-width:200px; position:relative; }
+    .search-box input { padding-left:36px; }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--sub); font-size:16px; }
+    .filter-select { min-width:140px; }
+    
+    /* Vendor List */
+    .vendor-list { display:flex; flex-direction:column; gap:10px; }
+    .vendor-item { background:#fafafa; border:1.5px solid var(--border); border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between; transition:all 0.2s; }
+    .vendor-item:hover { border-color:var(--wine); background:#fff; }
+    .vendor-info { flex:1; }
+    .vendor-info h3 { font-size:14px; font-weight:600; margin-bottom:3px; }
+    .vendor-info p { font-size:12px; color:var(--sub); margin-bottom:2px; }
+    .vendor-actions { display:flex; gap:6px; }
+    
+    /* Vendor Status */
+    .vendor-badge { display:inline-block; padding:4px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+    .active { background:#d1fae5; color:#065f46; }
+    .inactive { background:#f3f4f6; color:#6b7280; }
+    .preferred { background:#dbeafe; color:#2563eb; }
+    
+    /* Vendor Summary Cards */
+    .vendor-summary { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:16px; }
+    .summary-card { background:var(--card); border-radius:var(--radius); padding:16px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .summary-card h3 { font-size:24px; font-weight:700; margin-bottom:4px; }
+    .summary-card p { font-size:12px; color:var(--sub); margin:0; }
+    .summary-active { color:#065f46; }
+    .summary-inactive { color:#6b7280; }
+    .summary-preferred { color:#2563eb; }
+    .summary-total { color:var(--wine); }
+    
+    /* Vendor Details */
+    .vendor-details { display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin:16px 0; }
+    .detail-card { background:#f9f6f7; border-radius:8px; padding:12px; }
+    .detail-card h4 { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--wine); }
+    .detail-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; }
+    .detail-row:last-child { margin-bottom:0; }
+    
+    /* Credit Information */
+    .credit-info { background:#f0f9ff; border-radius:8px; padding:12px; margin:16px 0; }
+    .credit-row { display:flex; justify-content:space-between; margin-bottom:6px; font-size:13px; }
+    .credit-row:last-child { margin-bottom:0; font-weight:700; font-size:16px; color:var(--wine); padding-top:8px; border-top:1px solid var(--border); }
+    
+    /* Performance Metrics */
+    .performance-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin:16px 0; }
+    .metric-card { background:#fffbeb; border-radius:8px; padding:12px; text-align:center; }
+    .metric-card h4 { font-size:12px; font-weight:600; margin-bottom:6px; color:var(--sub); }
+    .metric-card .value { font-size:18px; font-weight:700; color:var(--wine); }
+    
+    /* Contact Information */
+    .contact-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin:16px 0; }
+    .contact-item { display:flex; align-items:center; gap:8px; padding:8px; background:#f9f6f7; border-radius:6px; }
+    .contact-item i { color:var(--wine); font-size:16px; }
+    
+    .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+    .toast.show { opacity:1; }
+    .error-msg { color:#dc2626; font-size:11px; display:none; margin-top:4px; }
+    
+    @media(max-width:768px){ 
+        .form-row, .form-row-3 { grid-template-columns:1fr; } 
+        .vendor-item { flex-direction:column; align-items:flex-start; gap:10px; }
+        .filter-bar { flex-direction:column; }
+        .search-box, .filter-select { width:100%; min-width:auto; }
+        .vendor-summary { grid-template-columns: 1fr 1fr; }
+        .vendor-details { grid-template-columns: 1fr; }
+        .performance-grid { grid-template-columns: 1fr; }
+        .contact-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1><i data-lucide="store"></i> Vendor Master</h1>
+    <button class="btn-primary btn-sm" onclick="showNewVendor()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);"><i data-lucide="plus"></i> New Vendor</button>
+</div>
+
+<div class="container">
+    <!-- Vendor Summary -->
+    <div class="vendor-summary">
+        <div class="summary-card">
+            <h3 class="summary-total">89</h3>
+            <p>Total Vendors</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-active">76</h3>
+            <p>Active</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-preferred">15</h3>
+            <p>Preferred</p>
+        </div>
+        <div class="summary-card">
+            <h3 class="summary-inactive">13</h3>
+            <p>Inactive</p>
+        </div>
+    </div>
+    
+    <!-- New Vendor Form -->
+    <div class="card" id="vendorForm" style="display:none;">
+        <div class="card-title" id="formTitle"><i data-lucide="plus"></i> Add New Vendor</div>
+        <input type="hidden" id="edit_vendor_id">
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Vendor Name *</label>
+                <input id="vendor_name" placeholder="Enter vendor/company name">
+                <span id="name_error" class="error-msg">Vendor name is required</span>
+            </div>
+            <div class="form-group">
+                <label>Vendor Code</label>
+                <input id="vendor_code" placeholder="Auto-generated" readonly style="background:#f3f4f6;">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Contact Person</label>
+                <input id="contact_person" placeholder="Primary contact person">
+            </div>
+            <div class="form-group">
+                <label>Phone *</label>
+                <input type="tel" id="vendor_phone" placeholder="9876543210">
+                <span id="phone_error" class="error-msg">Valid phone number required</span>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="vendor_email" placeholder="vendor@example.com">
+            </div>
+            <div class="form-group">
+                <label>GST Number *</label>
+                <input id="vendor_gst" placeholder="GST Number">
+                <span id="gst_error" class="error-msg">GST number is required</span>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Address</label>
+            <textarea id="vendor_address" placeholder="Full address" rows="2"></textarea>
+        </div>
+        
+        <!-- Vendor Details -->
+        <div class="vendor-details">
+            <div class="detail-card">
+                <h4><i data-lucide="credit-card"></i> Credit Terms</h4>
+                <div class="detail-row">
+                    <span>Credit Limit:</span>
+                    <input type="number" id="credit_limit" value="100000" min="0" style="width:100px;border:1px solid var(--border);border-radius:4px;padding:4px;">
+                </div>
+                <div class="detail-row">
+                    <span>Payment Terms:</span>
+                    <select id="payment_terms" style="width:120px;border:1px solid var(--border);border-radius:4px;padding:4px;font-size:12px;">
+                        <option value="immediate">Immediate</option>
+                        <option value="7_days">7 Days</option>
+                        <option value="15_days">15 Days</option>
+                        <option value="30_days" selected>30 Days</option>
+                        <option value="60_days">60 Days</option>
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <span>Current Credit:</span>
+                    <span>₹0.00</span>
+                </div>
+            </div>
+            
+            <div class="detail-card">
+                <h4><i data-lucide="package"></i> Supply Information</h4>
+                <div class="detail-row">
+                    <span>Category:</span>
+                    <select id="vendor_category" style="width:120px;border:1px solid var(--border);border-radius:4px;padding:4px;font-size:12px;">
+                        <option value="food">Food & Beverages</option>
+                        <option value="dairy">Dairy Products</option>
+                        <option value="bakery">Bakery Items</option>
+                        <option value="grocery">Grocery</option>
+                        <option value="snacks">Snacks</option>
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <span>Lead Time:</span>
+                    <input type="number" id="lead_time" value="2" min="1" style="width:60px;border:1px solid var(--border);border-radius:4px;padding:4px;"> days
+                </div>
+                <div class="detail-row">
+                    <span>Status:</span>
+                    <select id="vendor_status" style="width:100px;border:1px solid var(--border);border-radius:4px;padding:4px;font-size:12px;">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="preferred">Preferred</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Performance Metrics -->
+        <div class="performance-grid">
+            <div class="metric-card">
+                <h4>Delivery Time</h4>
+                <div class="value">2.5 days</div>
+            </div>
+            <div class="metric-card">
+                <h4>Quality Score</h4>
+                <div class="value">4.2/5</div>
+            </div>
+            <div class="metric-card">
+                <h4>On-time Delivery</h4>
+                <div class="value">94%</div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Bank Name</label>
+                <input id="bank_name" placeholder="Bank name">
+            </div>
+            <div class="form-group">
+                <label>Account Number</label>
+                <input id="account_number" placeholder="Bank account number">
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>IFSC Code</label>
+                <input id="ifsc_code" placeholder="IFSC code">
+            </div>
+            <div class="form-group">
+                <label>Branch</label>
+                <input id="branch" placeholder="Branch name">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea id="vendor_notes" placeholder="Additional notes about this vendor" rows="2"></textarea>
+        </div>
+        
+        <div style="display:flex;gap:10px;margin-top:12px;">
+            <button class="btn-primary" onclick="saveVendor()" style="flex:1;" id="saveBtn"><i data-lucide="save"></i> Save Vendor</button>
+            <button onclick="hideVendorForm()" style="background:#f3f4f6;color:var(--sub);border:none;padding:11px 20px;border-radius:8px;cursor:pointer;font-size:14px;min-height:44px;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card">
+        <div class="filter-bar">
+            <div class="search-box">
+                <span class="search-icon"><i data-lucide="search"></i></span>
+                <input type="text" id="searchInput" placeholder="Search vendors..." onkeyup="filterVendors()">
+            </div>
+            <select class="filter-select" id="categoryFilter" onchange="filterVendors()">
+                <option value="">All Categories</option>
+                <option value="food">Food & Beverages</option>
+                <option value="dairy">Dairy Products</option>
+                <option value="bakery">Bakery Items</option>
+                <option value="grocery">Grocery</option>
+                <option value="snacks">Snacks</option>
+            </select>
+            <select class="filter-select" id="statusFilter" onchange="filterVendors()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="preferred">Preferred</option>
+            </select>
+            <button class="btn-sm" style="background:#e0e7ff;color:#4338ca;" onclick="exportData()"><i data-lucide="download"></i> Export</button>
+        </div>
+    </div>
+
+    <!-- Vendor List -->
+    <div class="card">
+        <div class="card-title"><i data-lucide="store"></i> Vendors (<span id="vendorCount">0</span>)</div>
+        <div class="vendor-list" id="vendorList">
+            <div class="empty">No vendors found</div>
+        </div>
+    </div>
+    
+    <!-- Preferred Vendors -->
+    <div class="card">
+        <div class="card-title"><i data-lucide="star"></i> Preferred Vendors</div>
+        <div id="preferredVendors">
+            <div class="empty">No preferred vendors</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+let vendors = [];
+let filteredVendors = [];
+
+function showToast(msg, ok=true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = ok ? '#1a1a1a' : '#dc2626';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function showNewVendor() {
+    document.getElementById('vendorForm').style.display = 'block';
+    document.getElementById('formTitle').innerHTML = '<i data-lucide="plus"></i> Add New Vendor';
+    document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Save Vendor';
+    document.getElementById('vendorForm').scrollIntoView({behavior: 'smooth'});
+    clearForm();
+    lucide.createIcons();
+}
+
+function hideVendorForm() {
+    document.getElementById('vendorForm').style.display = 'none';
+    clearForm();
+}
+
+function clearForm() {
+    // Clear all form fields
+    document.getElementById('edit_vendor_id').value = '';
+    document.getElementById('vendor_name').value = '';
+    document.getElementById('vendor_code').value = 'VEND-' + new Date().getTime();
+    document.getElementById('contact_person').value = '';
+    document.getElementById('vendor_phone').value = '';
+    document.getElementById('vendor_email').value = '';
+    document.getElementById('vendor_gst').value = '';
+    document.getElementById('vendor_address').value = '';
+    document.getElementById('credit_limit').value = '100000';
+    document.getElementById('payment_terms').value = '30_days';
+    document.getElementById('vendor_category').value = 'food';
+    document.getElementById('lead_time').value = '2';
+    document.getElementById('vendor_status').value = 'active';
+    document.getElementById('bank_name').value = '';
+    document.getElementById('account_number').value = '';
+    document.getElementById('ifsc_code').value = '';
+    document.getElementById('branch').value = '';
+    document.getElementById('vendor_notes').value = '';
+    
+    // Hide error messages
+    document.getElementById('name_error').style.display = 'none';
+    document.getElementById('phone_error').style.display = 'none';
+    document.getElementById('gst_error').style.display = 'none';
+}
+
+function loadVendors() {
+    try {
+        // Simulate loading vendors - in real implementation, this would fetch from API
+        const mockVendors = [
+            { id: 1, name: 'ABC Food Suppliers', code: 'VEND-001', contact_person: 'Raj Kumar', phone: '9876543210', email: 'raj@abcfoods.com', gst: 'GSTIN1234567890', category: 'food', status: 'active', credit_limit: 200000, current_credit: 75000, payment_terms: '30_days', lead_time: 2, delivery_time: '2.1', quality_score: '4.5', on_time_delivery: '96%' },
+            { id: 2, name: 'XYZ Dairy Products', code: 'VEND-002', contact_person: 'Priya Sharma', phone: '9876543211', email: 'priya@xyzdairy.com', gst: 'GSTIN0987654321', category: 'dairy', status: 'preferred', credit_limit: 150000, current_credit: 45000, payment_terms: '15_days', lead_time: 1, delivery_time: '1.2', quality_score: '4.8', on_time_delivery: '98%' },
+            { id: 3, name: 'PQR Bakery Supplies', code: 'VEND-003', contact_person: 'Suresh Patel', phone: '9876543212', email: 'suresh@pqrbakery.com', gst: 'GSTIN1122334455', category: 'bakery', status: 'active', credit_limit: 100000, current_credit: 30000, payment_terms: '7_days', lead_time: 3, delivery_time: '2.8', quality_score: '4.0', on_time_delivery: '92%' },
+            { id: 4, name: 'LMN Grocery Wholesalers', code: 'VEND-004', contact_person: 'Meena Devi', phone: '9876543213', email: 'meena@lmngrocery.com', gst: 'GSTIN5566778899', category: 'grocery', status: 'inactive', credit_limit: 50000, current_credit: 0, payment_terms: 'immediate', lead_time: 4, delivery_time: '3.5', quality_score: '3.5', on_time_delivery: '85%' },
+            { id: 5, name: 'DEF Snacks Distributors', code: 'VEND-005', contact_person: 'Vikram Singh', phone: '9876543214', email: 'vikram@defsnacks.com', gst: 'GSTIN9988776655', category: 'snacks', status: 'preferred', credit_limit: 300000, current_credit: 120000, payment_terms: '60_days', lead_time: 5, delivery_time: '4.2', quality_score: '4.3', on_time_delivery: '89%' }
+        ];
+        
+        vendors = mockVendors;
+        filteredVendors = [...vendors];
+        renderVendors();
+        renderPreferredVendors();
+    } catch (e) {
+        showToast('Failed to load vendors', false);
+    }
+}
+
+function filterVendors() {
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const categoryFilter = document.getElementById('categoryFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredVendors = vendors.filter(vendor => {
+        const matchSearch = !search || 
+            vendor.name.toLowerCase().includes(search) ||
+            vendor.code.toLowerCase().includes(search) ||
+            vendor.contact_person.toLowerCase().includes(search) ||
+            vendor.phone.includes(search);
+        const matchCategory = !categoryFilter || vendor.category === categoryFilter;
+        const matchStatus = !statusFilter || vendor.status === statusFilter;
+        
+        return matchSearch && matchCategory && matchStatus;
+    });
+    
+    renderVendors();
+}
+
+function renderVendors() {
+    const el = document.getElementById('vendorList');
+    document.getElementById('vendorCount').textContent = filteredVendors.length;
+    
+    if (!filteredVendors.length) {
+        el.innerHTML = '<div class="empty">No vendors found</div>';
+        return;
+    }
+    
+    el.innerHTML = filteredVendors.map(vendor => {
+        const statusClass = vendor.status;
+        const statusText = vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1);
+        const categoryText = vendor.category.charAt(0).toUpperCase() + vendor.category.slice(1);
+        
+        return `
+        <div class="vendor-item">
+            <div class="vendor-info">
+                <h3>${vendor.name}</h3>
+                <p>${vendor.code} | ${categoryText} | ${vendor.contact_person}</p>
+                <p>📞 ${vendor.phone} | ✉️ ${vendor.email}</p>
+                <p>GST: ${vendor.gst} | Credit Limit: ₹${vendor.credit_limit.toLocaleString('en-IN')}</p>
+                <p style="font-size:11px;color:var(--sub);margin-top:4px;">
+                    Payment Terms: ${vendor.payment_terms.replace('_', ' ')} | 
+                    Lead Time: ${vendor.lead_time} days | 
+                    Current Credit: ₹${vendor.current_credit.toLocaleString('en-IN')}
+                </p>
+                <span class="vendor-badge ${statusClass}">${statusText}</span>
+                ${vendor.status === 'preferred' ? '<span style="margin-left:8px;font-size:11px;background:#dbeafe;color:#2563eb;padding:2px 6px;border-radius:4px;font-weight:600;">⭐ Preferred</span>' : ''}
+            </div>
+            <div class="vendor-actions">
+                <button class="btn-sm btn-edit" onclick="editVendor(${vendor.id})"><i data-lucide="edit"></i> Edit</button>
+                <button class="btn-sm btn-success" onclick="viewVendor(${vendor.id})"><i data-lucide="eye"></i> View</button>
+                <button class="btn-sm btn-danger" onclick="deleteVendor(${vendor.id})"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderPreferredVendors() {
+    const el = document.getElementById('preferredVendors');
+    const preferred = vendors.filter(v => v.status === 'preferred');
+    
+    if (!preferred.length) {
+        el.innerHTML = '<div class="empty">No preferred vendors</div>';
+        return;
+    }
+    
+    el.innerHTML = preferred.map(vendor => `
+        <div style="background:#fafafa;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <strong>${vendor.name}</strong>
+                    <div style="font-size:12px;color:var(--sub);">${vendor.contact_person} | ${vendor.phone}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:14px;font-weight:600;color:var(--wine);">₹${vendor.current_credit.toLocaleString('en-IN')}</div>
+                    <div style="font-size:11px;color:var(--sub);">Current Credit</div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function saveVendor() {
+    // Validation
+    const name = document.getElementById('vendor_name').value.trim();
+    const phone = document.getElementById('vendor_phone').value.trim();
+    const gst = document.getElementById('vendor_gst').value.trim();
+    
+    if (!name) {
+        document.getElementById('name_error').style.display = 'block';
+        return;
+    }
+    
+    if (!phone || phone.length < 10) {
+        document.getElementById('phone_error').style.display = 'block';
+        return;
+    }
+    
+    if (!gst) {
+        document.getElementById('gst_error').style.display = 'block';
+        return;
+    }
+    
+    try {
+        // In a real implementation, this would POST to API
+        showToast('Vendor saved successfully');
+        hideVendorForm();
+        loadVendors();
+    } catch (e) {
+        showToast('Failed to save vendor', false);
+    }
+}
+
+function editVendor(id) {
+    const vendor = vendors.find(v => v.id === id);
+    if (vendor) {
+        showNewVendor();
+        document.getElementById('formTitle').innerHTML = '<i data-lucide="edit"></i> Edit Vendor';
+        document.getElementById('saveBtn').innerHTML = '<i data-lucide="save"></i> Update Vendor';
+        document.getElementById('edit_vendor_id').value = vendor.id;
+        document.getElementById('vendor_name').value = vendor.name;
+        document.getElementById('vendor_code').value = vendor.code;
+        document.getElementById('contact_person').value = vendor.contact_person;
+        document.getElementById('vendor_phone').value = vendor.phone;
+        document.getElementById('vendor_email').value = vendor.email || '';
+        document.getElementById('vendor_gst').value = vendor.gst;
+        document.getElementById('vendor_address').value = vendor.address || '';
+        document.getElementById('credit_limit').value = vendor.credit_limit;
+        document.getElementById('payment_terms').value = vendor.payment_terms;
+        document.getElementById('vendor_category').value = vendor.category;
+        document.getElementById('lead_time').value = vendor.lead_time;
+        document.getElementById('vendor_status').value = vendor.status;
+        // In a real implementation, populate other fields
+    }
+}
+
+function viewVendor(id) {
+    const vendor = vendors.find(v => v.id === id);
+    if (vendor) {
+        showToast(`Viewing details for ${vendor.name}`);
+        // In a real implementation, this would show detailed vendor information
+    }
+}
+
+function deleteVendor(id) {
+    if (!confirm('Delete this vendor? This action cannot be undone.')) return;
+    
+    try {
+        // In a real implementation, this would DELETE from API
+        showToast('Vendor deleted');
+        loadVendors();
+    } catch (e) {
+        showToast('Failed to delete vendor', false);
+    }
+}
+
+function exportData() {
+    showToast('Exporting vendor data...', true);
+    // In a real implementation, this would export to Excel
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadVendors();
+    document.getElementById('vendor_code').value = 'VEND-' + new Date().getTime();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

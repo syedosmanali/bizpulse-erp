@@ -1,0 +1,495 @@
+<!-- Standard Form Component with Wine Color Scheme -->
+
+<div class="form-container" id="standardFormContainer" style="display: none;">
+    <div class="card">
+        <div class="card-title" id="formTitle">Form Title</div>
+        
+        <form id="standardForm">
+            <div id="formFieldsContainer"></div>
+            
+            <div style="display:flex;gap:10px;margin-top:12px;">
+                <button type="submit" class="btn-primary" id="submitBtn">Save</button>
+                <button type="button" class="btn-secondary" onclick="hideStandardForm()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Form validation utilities
+const FormValidator = {
+    required: (value) => {
+        return value !== null && value !== undefined && value.toString().trim() !== '';
+    },
+    
+    minLength: (value, min) => {
+        return value && value.length >= min;
+    },
+    
+    maxLength: (value, max) => {
+        return value && value.length <= max;
+    },
+    
+    email: (value) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+    },
+    
+    phone: (value) => {
+        const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+        return phoneRegex.test(value.replace(/[\s\-\(\)]/g, ''));
+    },
+    
+    number: (value) => {
+        return !isNaN(parseFloat(value)) && isFinite(value);
+    },
+    
+    positiveNumber: (value) => {
+        return FormValidator.number(value) && parseFloat(value) > 0;
+    },
+    
+    integer: (value) => {
+        return Number.isInteger(Number(value));
+    },
+    
+    gstNumber: (value) => {
+        const gstRegex = /^[\d]{2}[A-Z]{5}[\d]{4}[A-Z]{1}[\d]{1}[Z]{1}[A-Z\d]{1}$/;
+        return gstRegex.test(value.toUpperCase());
+    },
+    
+    panNumber: (value) => {
+        const panRegex = /^[A-Z]{5}[\d]{4}[A-Z]{1}$/;
+        return panRegex.test(value.toUpperCase());
+    },
+    
+    hsnCode: (value) => {
+        if (!value) return true; // HSN is optional
+        if (!/^\d+$/.test(value)) return false; // Must be digits only
+        return [4, 6, 8].includes(value.length); // Must be 4, 6, or 8 digits
+    }
+};
+
+// Form builder class
+class StandardFormBuilder {
+    constructor(formId = 'standardForm') {
+        this.formId = formId;
+        this.fields = [];
+        this.onSubmitCallback = null;
+    }
+    
+    addField(type, config) {
+        this.fields.push({...config, type});
+        return this;
+    }
+    
+    setOnSubmit(callback) {
+        this.onSubmitCallback = callback;
+        return this;
+    }
+    
+    setTitle(title) {
+        document.getElementById('formTitle').textContent = title;
+        return this;
+    }
+    
+    render() {
+        const container = document.getElementById('formFieldsContainer');
+        container.innerHTML = '';
+        
+        this.fields.forEach(field => {
+            let fieldElement;
+            switch(field.type) {
+                case 'text':
+                case 'email':
+                case 'tel':
+                case 'password':
+                    fieldElement = this.createTextField(field);
+                    break;
+                case 'select':
+                    fieldElement = this.createSelectField(field);
+                    break;
+                case 'number':
+                    fieldElement = this.createNumberField(field);
+                    break;
+                case 'date':
+                    fieldElement = this.createDateField(field);
+                    break;
+                case 'checkbox':
+                    fieldElement = this.createCheckboxField(field);
+                    break;
+                case 'textarea':
+                    fieldElement = this.createTextareaField(field);
+                    break;
+                default:
+                    fieldElement = this.createTextField({...field, type: 'text'});
+            }
+            
+            container.appendChild(fieldElement);
+        });
+        
+        // Attach form submit event
+        const form = document.getElementById(this.formId);
+        form.onsubmit = (e) => {
+            e.preventDefault();
+            if (this.validate()) {
+                if (this.onSubmitCallback) {
+                    this.onSubmitCallback(this.getData());
+                }
+            }
+        };
+    }
+    
+    createTextField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.textContent = config.label;
+        
+        const input = document.createElement('input');
+        input.type = config.type || 'text';
+        input.id = config.id;
+        input.name = config.name;
+        input.placeholder = config.placeholder || '';
+        if (config.required) input.required = true;
+        if (config.value) input.value = config.value;
+        if (config.maxLength) input.maxLength = config.maxLength;
+        if (config.minLength) input.minLength = config.minLength;
+        
+        const errorSpan = document.createElement('span');
+        errorSpan.id = `${config.id}-error`;
+        errorSpan.className = 'error-msg';
+        errorSpan.style.display = 'none';
+        errorSpan.textContent = config.errorMsg || 'This field is required';
+        
+        groupDiv.appendChild(label);
+        groupDiv.appendChild(input);
+        groupDiv.appendChild(errorSpan);
+        
+        return groupDiv;
+    }
+    
+    createSelectField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.textContent = config.label;
+        
+        const select = document.createElement('select');
+        select.id = config.id;
+        select.name = config.name;
+        if (config.required) select.required = true;
+        
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = config.placeholder || 'Select an option';
+        select.appendChild(defaultOption);
+        
+        // Add options
+        if (config.options) {
+            config.options.forEach(option => {
+                const opt = document.createElement('option');
+                opt.value = option.value;
+                opt.textContent = option.text;
+                select.appendChild(opt);
+            });
+        }
+        
+        const errorSpan = document.createElement('span');
+        errorSpan.id = `${config.id}-error`;
+        errorSpan.className = 'error-msg';
+        errorSpan.style.display = 'none';
+        errorSpan.textContent = config.errorMsg || 'Please select an option';
+        
+        groupDiv.appendChild(label);
+        groupDiv.appendChild(select);
+        groupDiv.appendChild(errorSpan);
+        
+        return groupDiv;
+    }
+    
+    createNumberField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.textContent = config.label;
+        
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.id = config.id;
+        input.name = config.name;
+        input.placeholder = config.placeholder || '';
+        if (config.required) input.required = true;
+        if (config.value) input.value = config.value;
+        if (config.min !== undefined) input.min = config.min;
+        if (config.max !== undefined) input.max = config.max;
+        if (config.step) input.step = config.step;
+        
+        const errorSpan = document.createElement('span');
+        errorSpan.id = `${config.id}-error`;
+        errorSpan.className = 'error-msg';
+        errorSpan.style.display = 'none';
+        errorSpan.textContent = config.errorMsg || 'Please enter a valid number';
+        
+        groupDiv.appendChild(label);
+        groupDiv.appendChild(input);
+        groupDiv.appendChild(errorSpan);
+        
+        return groupDiv;
+    }
+    
+    createDateField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.textContent = config.label;
+        
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.id = config.id;
+        input.name = config.name;
+        if (config.required) input.required = true;
+        if (config.value) input.value = config.value;
+        
+        const errorSpan = document.createElement('span');
+        errorSpan.id = `${config.id}-error`;
+        errorSpan.className = 'error-msg';
+        errorSpan.style.display = 'none';
+        errorSpan.textContent = config.errorMsg || 'Please select a date';
+        
+        groupDiv.appendChild(label);
+        groupDiv.appendChild(input);
+        groupDiv.appendChild(errorSpan);
+        
+        return groupDiv;
+    }
+    
+    createCheckboxField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        groupDiv.style.display = 'flex';
+        groupDiv.style.alignItems = 'center';
+        groupDiv.style.gap = '8px';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = config.id;
+        checkbox.name = config.name;
+        checkbox.style.width = '16px';
+        checkbox.style.height = '16px';
+        if (config.checked) checkbox.checked = true;
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.style.margin = '0';
+        label.style.cursor = 'pointer';
+        label.textContent = config.label;
+        
+        groupDiv.appendChild(checkbox);
+        groupDiv.appendChild(label);
+        
+        return groupDiv;
+    }
+    
+    createTextareaField(config) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'form-group';
+        
+        const label = document.createElement('label');
+        label.setAttribute('for', config.id);
+        label.textContent = config.label;
+        
+        const textarea = document.createElement('textarea');
+        textarea.id = config.id;
+        textarea.name = config.name;
+        textarea.placeholder = config.placeholder || '';
+        textarea.rows = config.rows || 3;
+        if (config.required) textarea.required = true;
+        if (config.value) textarea.value = config.value;
+        
+        const errorSpan = document.createElement('span');
+        errorSpan.id = `${config.id}-error`;
+        errorSpan.className = 'error-msg';
+        errorSpan.style.display = 'none';
+        errorSpan.textContent = config.errorMsg || 'This field is required';
+        
+        groupDiv.appendChild(label);
+        groupDiv.appendChild(textarea);
+        groupDiv.appendChild(errorSpan);
+        
+        return groupDiv;
+    }
+    
+    validate() {
+        let isValid = true;
+        this.fields.forEach(field => {
+            if (field.type === 'checkbox') return; // Skip validation for checkboxes
+            
+            const element = document.getElementById(field.id);
+            if (!element) return;
+            
+            let value = element.value;
+            const errorElement = document.getElementById(`${field.id}-error`);
+            
+            // Reset error state
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+            element.style.borderColor = 'var(--border)';
+            
+            // Check required
+            if (field.required && !FormValidator.required(value)) {
+                isValid = false;
+                if (errorElement) {
+                    errorElement.textContent = field.errorMsg || 'This field is required';
+                    errorElement.style.display = 'block';
+                }
+                element.style.borderColor = '#dc2626';
+                return;
+            }
+            
+            // Run custom validators
+            if (field.validators) {
+                for (const validator of field.validators) {
+                    if (!validator.fn(value)) {
+                        isValid = false;
+                        if (errorElement) {
+                            errorElement.textContent = validator.msg;
+                            errorElement.style.display = 'block';
+                        }
+                        element.style.borderColor = '#dc2626';
+                        break;
+                    }
+                }
+            }
+        });
+        
+        return isValid;
+    }
+    
+    getData() {
+        const data = {};
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    data[field.name] = element.checked;
+                } else {
+                    data[field.name] = element.value;
+                }
+            }
+        });
+        return data;
+    }
+    
+    setData(data) {
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element && data.hasOwnProperty(field.name)) {
+                if (element.type === 'checkbox') {
+                    element.checked = !!data[field.name];
+                } else {
+                    element.value = data[field.name] || '';
+                }
+            }
+        });
+    }
+    
+    show() {
+        document.getElementById('standardFormContainer').style.display = 'block';
+        document.getElementById('standardFormContainer').scrollIntoView({behavior: 'smooth'});
+    }
+    
+    hide() {
+        document.getElementById('standardFormContainer').style.display = 'none';
+        this.clear();
+    }
+    
+    clear() {
+        this.fields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                if (element.type === 'checkbox') {
+                    element.checked = false;
+                } else {
+                    element.value = '';
+                }
+                // Clear error states
+                const errorElement = document.getElementById(`${field.id}-error`);
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+                element.style.borderColor = 'var(--border)';
+            }
+        });
+    }
+}
+
+// Global function to hide the form
+function hideStandardForm() {
+    document.getElementById('standardFormContainer').style.display = 'none';
+}
+
+// Example usage:
+/*
+const formBuilder = new StandardFormBuilder();
+formBuilder
+    .setTitle('Add New Product')
+    .addField('text', {
+        id: 'product_code',
+        name: 'product_code',
+        label: 'Product Code *',
+        placeholder: 'Enter product code',
+        required: true,
+        errorMsg: 'Product code is required'
+    })
+    .addField('text', {
+        id: 'product_name',
+        name: 'product_name',
+        label: 'Product Name *',
+        placeholder: 'Enter product name',
+        required: true,
+        errorMsg: 'Product name is required'
+    })
+    .addField('select', {
+        id: 'category',
+        name: 'category',
+        label: 'Category',
+        placeholder: 'Select category',
+        options: [
+            {value: 'grocery', text: 'Grocery'},
+            {value: 'electronics', text: 'Electronics'},
+            {value: 'clothing', text: 'Clothing'}
+        ]
+    })
+    .addField('number', {
+        id: 'selling_price',
+        name: 'selling_price',
+        label: 'Selling Price *',
+        placeholder: 'Enter selling price',
+        required: true,
+        errorMsg: 'Selling price is required',
+        validators: [{
+            fn: FormValidator.positiveNumber,
+            msg: 'Price must be a positive number'
+        }]
+    })
+    .setOnSubmit((formData) => {
+        console.log('Form submitted:', formData);
+        // Process form data here
+        showToast('Product saved successfully!');
+        formBuilder.hide();
+    })
+    .render();
+
+// To show the form: formBuilder.show();
+*/
+</script>

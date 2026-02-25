@@ -1,0 +1,182 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Expense Categories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finance-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .category-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
+    }
+
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .category-card h3 {
+        color: #732C3F;
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .category-icon {
+        width: 50px;
+        height: 50px;
+        background: #732C3F;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .category-amount {
+        font-size: 28px;
+        font-weight: 700;
+        color: #EF4444;
+        margin: 10px 0;
+    }
+
+    .category-details {
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .progress-bar {
+        height: 8px;
+        background: #E5E7EB;
+        border-radius: 4px;
+        margin-top: 15px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #732C3F;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <div class="page-header">
+        <h1>Expense Categories</h1>
+        <p>Track expenses by category</p>
+    </div>
+
+    <div class="categories-grid">
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Rent & Utilities</h3>
+                <div class="category-icon">🏢</div>
+            </div>
+            <div class="category-amount">₹45,000</div>
+            <div class="category-details">15 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 75%"></div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Salaries & Wages</h3>
+                <div class="category-icon">👥</div>
+            </div>
+            <div class="category-amount">₹1,25,000</div>
+            <div class="category-details">8 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 90%"></div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Marketing</h3>
+                <div class="category-icon">📢</div>
+            </div>
+            <div class="category-amount">₹32,500</div>
+            <div class="category-details">12 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 60%"></div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Office Supplies</h3>
+                <div class="category-icon">📦</div>
+            </div>
+            <div class="category-amount">₹18,750</div>
+            <div class="category-details">22 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 45%"></div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Transportation</h3>
+                <div class="category-icon">🚗</div>
+            </div>
+            <div class="category-amount">₹15,200</div>
+            <div class="category-details">18 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 50%"></div>
+            </div>
+        </div>
+
+        <div class="category-card">
+            <div class="category-header">
+                <h3>Miscellaneous</h3>
+                <div class="category-icon">📝</div>
+            </div>
+            <div class="category-amount">₹9,800</div>
+            <div class="category-details">25 transactions this month</div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 35%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

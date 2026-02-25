@@ -1,0 +1,208 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Balance Sheet{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finance-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .balance-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 30px;
+    }
+
+    .balance-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .balance-section h2 {
+        color: #732C3F;
+        font-size: 22px;
+        margin: 0 0 20px 0;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #732C3F;
+    }
+
+    .balance-category {
+        margin-bottom: 20px;
+    }
+
+    .balance-category h3 {
+        color: #374151;
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 12px 0;
+    }
+
+    .balance-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        padding-left: 15px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .balance-row:last-child {
+        border-bottom: none;
+    }
+
+    .balance-row.total {
+        font-weight: 700;
+        font-size: 18px;
+        color: #732C3F;
+        border-top: 2px solid #732C3F;
+        padding-top: 15px;
+        margin-top: 10px;
+        padding-left: 0;
+    }
+
+    .balance-label {
+        color: #6B7280;
+    }
+
+    .balance-amount {
+        font-weight: 600;
+        color: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <div class="page-header">
+        <h1>Balance Sheet</h1>
+        <p>Financial position as of February 24, 2026</p>
+    </div>
+
+    <div class="balance-grid">
+        <div class="balance-section">
+            <h2>Assets</h2>
+
+            <div class="balance-category">
+                <h3>Current Assets</h3>
+                <div class="balance-row">
+                    <span class="balance-label">Cash & Bank</span>
+                    <span class="balance-amount">₹3,30,650</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Accounts Receivable</span>
+                    <span class="balance-amount">₹2,45,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Inventory</span>
+                    <span class="balance-amount">₹4,50,000</span>
+                </div>
+                <div class="balance-row total">
+                    <span class="balance-label">Total Current Assets</span>
+                    <span class="balance-amount">₹10,25,650</span>
+                </div>
+            </div>
+
+            <div class="balance-category">
+                <h3>Fixed Assets</h3>
+                <div class="balance-row">
+                    <span class="balance-label">Property & Equipment</span>
+                    <span class="balance-amount">₹8,50,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Furniture & Fixtures</span>
+                    <span class="balance-amount">₹1,25,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Vehicles</span>
+                    <span class="balance-amount">₹3,50,000</span>
+                </div>
+                <div class="balance-row total">
+                    <span class="balance-label">Total Fixed Assets</span>
+                    <span class="balance-amount">₹13,25,000</span>
+                </div>
+            </div>
+
+            <div class="balance-row total" style="font-size: 20px; margin-top: 20px;">
+                <span class="balance-label">TOTAL ASSETS</span>
+                <span class="balance-amount">₹23,50,650</span>
+            </div>
+        </div>
+
+        <div class="balance-section">
+            <h2>Liabilities & Equity</h2>
+
+            <div class="balance-category">
+                <h3>Current Liabilities</h3>
+                <div class="balance-row">
+                    <span class="balance-label">Accounts Payable</span>
+                    <span class="balance-amount">₹1,85,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Short-term Loans</span>
+                    <span class="balance-amount">₹2,50,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Tax Payable</span>
+                    <span class="balance-amount">₹45,000</span>
+                </div>
+                <div class="balance-row total">
+                    <span class="balance-label">Total Current Liabilities</span>
+                    <span class="balance-amount">₹4,80,000</span>
+                </div>
+            </div>
+
+            <div class="balance-category">
+                <h3>Long-term Liabilities</h3>
+                <div class="balance-row">
+                    <span class="balance-label">Long-term Loans</span>
+                    <span class="balance-amount">₹5,00,000</span>
+                </div>
+                <div class="balance-row total">
+                    <span class="balance-label">Total Long-term Liabilities</span>
+                    <span class="balance-amount">₹5,00,000</span>
+                </div>
+            </div>
+
+            <div class="balance-category">
+                <h3>Owner's Equity</h3>
+                <div class="balance-row">
+                    <span class="balance-label">Capital</span>
+                    <span class="balance-amount">₹10,00,000</span>
+                </div>
+                <div class="balance-row">
+                    <span class="balance-label">Retained Earnings</span>
+                    <span class="balance-amount">₹3,70,650</span>
+                </div>
+                <div class="balance-row total">
+                    <span class="balance-label">Total Equity</span>
+                    <span class="balance-amount">₹13,70,650</span>
+                </div>
+            </div>
+
+            <div class="balance-row total" style="font-size: 20px; margin-top: 20px;">
+                <span class="balance-label">TOTAL LIABILITIES & EQUITY</span>
+                <span class="balance-amount">₹23,50,650</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

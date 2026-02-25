@@ -1,0 +1,378 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Terms & Conditions - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #ffffff;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 32px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        min-height: 44px;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    /* Settings Section */
+    .settings-section {
+        background: #fff;
+        border: 1.5px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .settings-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--wine);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+    }
+
+    .setting-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .setting-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .setting-desc {
+        font-size: 12px;
+        color: var(--sub);
+    }
+
+    .setting-input {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .setting-input:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .setting-textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: all 0.2s;
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .setting-textarea:focus {
+        border-color: var(--wine);
+        background: #faf5f7;
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border);
+    }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a1a;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+
+    .toast.show {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .toast.error {
+        background: #dc2626;
+    }
+
+    .toast.success {
+        background: #059669;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .settings-actions {
+            flex-direction: column-reverse;
+        }
+
+        .settings-actions .btn {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .page-header h1 {
+            font-size: 20px;
+        }
+
+        .settings-section {
+            padding: 16px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="file-check"></i> Terms & Conditions</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="resetForm()"><i data-lucide="rotate-ccw"></i> Reset</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i data-lucide="save"></i> Save</button>
+        </div>
+    </div>
+
+    <!-- Terms & Conditions Settings -->
+    <div class="settings-section">
+        <div class="settings-title"><i data-lucide="settings"></i> Terms & Conditions Configuration</div>
+        <div class="settings-grid">
+            <div class="setting-item" style="grid-column: 1 / -1;">
+                <label class="setting-label">Terms & Conditions Text *</label>
+                <textarea class="setting-textarea" id="termsText" placeholder="Enter your terms and conditions..." required></textarea>
+                <div class="setting-desc">Text to display on invoices and documents</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Payment Terms *</label>
+                <input type="text" class="setting-input" id="paymentTerms" placeholder="e.g., Net 30" required>
+                <div class="setting-desc">Default payment terms</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Delivery Terms</label>
+                <input type="text" class="setting-input" id="deliveryTerms" placeholder="e.g., FOB">
+                <div class="setting-desc">Default delivery terms</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Return Policy</label>
+                <input type="text" class="setting-input" id="returnPolicy" placeholder="e.g., 30 days">
+                <div class="setting-desc">Return policy period</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Warranty Period</label>
+                <input type="text" class="setting-input" id="warrantyPeriod" placeholder="e.g., 1 year">
+                <div class="setting-desc">Product warranty period</div>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">Late Payment Charges (%)</label>
+                <input type="number" class="setting-input" id="lateCharges" min="0" max="100" placeholder="0">
+                <div class="setting-desc">Percentage for late payments</div>
+            </div>
+            <div class="setting-item" style="grid-column: 1 / -1;">
+                <label class="setting-label">Additional Notes</label>
+                <textarea class="setting-textarea" id="additionalNotes" placeholder="Enter any additional notes..." style="min-height: 80px;"></textarea>
+                <div class="setting-desc">Additional information to display</div>
+            </div>
+        </div>
+        <div class="settings-actions">
+            <button class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i data-lucide="save"></i> Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_BASE = '/api/erp';
+
+function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadSettings() {
+    try {
+        const response = await fetch(`${API_BASE}/terms-conditions`);
+        if (!response.ok) throw new Error('Failed to load terms and conditions');
+        
+        const data = await response.json();
+        document.getElementById('termsText').value = data.terms_text || '';
+        document.getElementById('paymentTerms').value = data.payment_terms || '';
+        document.getElementById('deliveryTerms').value = data.delivery_terms || '';
+        document.getElementById('returnPolicy').value = data.return_policy || '';
+        document.getElementById('warrantyPeriod').value = data.warranty_period || '';
+        document.getElementById('lateCharges').value = data.late_payment_charges || 0;
+        document.getElementById('additionalNotes').value = data.additional_notes || '';
+    } catch (e) {
+        console.error('Error loading terms and conditions:', e);
+    }
+}
+
+function resetForm() {
+    loadSettings();
+}
+
+async function saveSettings() {
+    const termsText = document.getElementById('termsText').value;
+    const paymentTerms = document.getElementById('paymentTerms').value;
+
+    if (!termsText || !paymentTerms) {
+        showToast('Please fill all required fields', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE}/terms-conditions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                terms_text: termsText,
+                payment_terms: paymentTerms,
+                delivery_terms: document.getElementById('deliveryTerms').value,
+                return_policy: document.getElementById('returnPolicy').value,
+                warranty_period: document.getElementById('warrantyPeriod').value,
+                late_payment_charges: parseFloat(document.getElementById('lateCharges').value) || 0,
+                additional_notes: document.getElementById('additionalNotes').value
+            })
+        });
+
+        if (!response.ok) throw new Error('Failed to save terms and conditions');
+        showToast('Terms and conditions saved successfully', 'success');
+    } catch (e) {
+        console.error('Error saving terms and conditions:', e);
+        showToast('Failed to save terms and conditions', 'error');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

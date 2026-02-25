@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ERP System{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --wine-primary: #732C3F;
+            --wine-dark: #5a2332;
+            --wine-light: #8d3a4f;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow-x: hidden;
+            background: #f5f5f5;
+        }
+
+        /* Persistent Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--wine-primary);
+            color: white;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: var(--wine-dark);
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 10px 0;
+        }
+
+        .nav-section {
+            margin-bottom: 5px;
+        }
+
+        .nav-section-title {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .nav-section-title:hover {
+            background: var(--wine-light);
+        }
+
+        .nav-section-title .arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .nav-section-title.active .arrow {
+            transform: rotate(90deg);
+        }
+
+        .nav-items {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease;
+        }
+
+        .nav-items.open {
+            max-height: 500px;
+        }
+
+        .nav-item {
+            padding: 12px 20px 12px 40px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            min-height: 44px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 1001;
+            background: var(--wine-primary);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.2s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+        }
+
+        /* Scrollbar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+    <!-- Persistent Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>ERP System</h1>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <!-- Setup & Configuration -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Setup & Configuration</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/core-setup-control" class="nav-item">Core Setup & Control</a>
+                    <a href="/erp/company-setup" class="nav-item">Company Setup</a>
+                    <a href="/erp/bank-management" class="nav-item">Bank Management</a>
+                    <a href="/erp/staff-operator" class="nav-item">Staff & Operators</a>
+                    <a href="/erp/backup-settings" class="nav-item">Backup & Settings</a>
+                </div>
+            </div>
+
+            <!-- Inventory Management -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Inventory Management</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/products" class="nav-item">Products Master</a>
+                    <a href="/erp/stock" class="nav-item">Stock Management</a>
+                    <a href="/erp/batch-expiry" class="nav-item">Batch & Expiry</a>
+                    <a href="/erp/barcode" class="nav-item">Barcode Management</a>
+                </div>
+            </div>
+
+            <!-- Sales & Billing -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Sales & Billing</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/invoices" class="nav-item">Invoices</a>
+                    <a href="/erp/challan" class="nav-item">Challan/Delivery</a>
+                </div>
+            </div>
+
+            <!-- Purchase Management -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Purchase Management</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/purchase" class="nav-item">Purchase Entry</a>
+                    <a href="/erp/purchase-order" class="nav-item">Purchase Orders</a>
+                    <a href="/erp/grn" class="nav-item">GRN (Goods Receipt)</a>
+                </div>
+            </div>
+
+            <!-- Parties -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Parties</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/customers" class="nav-item">Customers</a>
+                    <a href="/erp/vendor" class="nav-item">Vendors/Suppliers</a>
+                    <a href="/erp/crm" class="nav-item">CRM & Leads</a>
+                </div>
+            </div>
+
+            <!-- Finance & Accounts -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Finance & Accounts</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/payments" class="nav-item">Payments</a>
+                    <a href="/erp/income-expense" class="nav-item">Income & Expense</a>
+                    <a href="/erp/accounting" class="nav-item">Accounting Reports</a>
+                </div>
+            </div>
+
+            <!-- Reports -->
+            <div class="nav-section">
+                <div class="nav-section-title" onclick="toggleSection(this)">
+                    <span>Reports</span>
+                    <span class="arrow">▶</span>
+                </div>
+                <div class="nav-items">
+                    <a href="/erp/reports" class="nav-item">Comprehensive Reports</a>
+                </div>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        function toggleSection(element) {
+            const navItems = element.nextElementSibling;
+            const isOpen = navItems.classList.contains('open');
+            
+            document.querySelectorAll('.nav-items').forEach(item => {
+                item.classList.remove('open');
+            });
+            document.querySelectorAll('.nav-section-title').forEach(title => {
+                title.classList.remove('active');
+            });
+            
+            if (!isOpen) {
+                navItems.classList.add('open');
+                element.classList.add('active');
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !menuToggle.contains(event.target) &&
+                sidebar.classList.contains('open')) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Highlight active menu item
+        const currentPath = window.location.pathname;
+        document.querySelectorAll('.nav-item').forEach(item => {
+            if (item.getAttribute('href') === currentPath) {
+                item.classList.add('active');
+                // Open parent section
+                const parentSection = item.closest('.nav-section');
+                if (parentSection) {
+                    parentSection.querySelector('.nav-items').classList.add('open');
+                    parentSection.querySelector('.nav-section-title').classList.add('active');
+                }
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

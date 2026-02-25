@@ -5,21 +5,73 @@ COPIED AS-IS from app.py
 
 import sqlite3
 from modules.shared.database import get_db_connection, generate_id, hash_password
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
+import hashlib
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 
 class AuthService:
+    def __init__(self):
+        # Authentication result cache
+        self.auth_cache = {}
+        self.cache_lock = threading.Lock()  # Thread-safe cache access
+        # Cache timeout in seconds (15 minutes)
+        self.CACHE_TIMEOUT = 15 * 60
+
+    def _get_cache_key(self, login_id, password):
+        """Generate a unique cache key for login credentials"""
+        combined = f"{login_id}:{password}"
+        return hashlib.sha256(combined.encode()).hexdigest()
+
+    def _is_cache_valid(self, timestamp):
+        """Check if cached result is still valid"""
+        return (datetime.now() - timestamp).seconds < self.CACHE_TIMEOUT
+
+    def _get_cached_result(self, login_id, password):
+        """Retrieve cached authentication result if still valid"""
+        key = self._get_cache_key(login_id, password)
+        with self.cache_lock:
+            if key in self.auth_cache:
+                result, timestamp = self.auth_cache[key]
+                if self._is_cache_valid(timestamp):
+                    logger.info(f"🎯 Cache HIT for user: {login_id}")
+                    return result
+                else:
+                    # Remove expired cache entry
+                    del self.auth_cache[key]
+        return None
+
+    def _cache_result(self, login_id, password, result):
+        """Store authentication result in cache"""
+        key = self._get_cache_key(login_id, password)
+        with self.cache_lock:
+            self.auth_cache[key] = (result, datetime.now())
+            logger.info(f"💾 Cached auth result for user: {login_id}")
     
     def authenticate_user(self, login_id, password):
         """Authenticate user against all user tables"""
+        import time
+        start_time = time.time()
+        
+        # First, check if result is cached
+        cached_result = self._get_cached_result(login_id, password)
+        if cached_result:
+            cache_time = time.time() - start_time
+            logger.info(f"🎯 Returning cached authentication result for: {login_id} (cached lookup: {cache_time:.3f}s)")
+            return cached_result
+        
         conn = get_db_connection()
         cursor = conn.cursor()
         
         from modules.shared.database import get_db_type
         db_type = get_db_type()
         placeholder = '%s' if db_type == 'postgresql' else '?'
+        
+        # Log authentication attempt
+        logger.info(f"🔒 Authentication attempt for: {login_id}")
         
         try:
             # First check users table (includes BizPulse admin users)
@@ -36,6 +88,7 @@ class AuthService:
                     # Check if user is active
                     if not user_dict.get('is_active', True):
                         conn.close()
+                        logger.warning(f"🔒 Authentication blocked: Account {login_id} is inactive")
                         return {'success': False, 'message': 'Account is inactive'}
                         
                     # Determine if this is a BizPulse admin user
@@ -71,6 +124,7 @@ class AuthService:
                     try:
                         cursor.execute(f"UPDATE users SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (user_dict['id'],))
                         conn.commit()
+                        logger.info(f"📅 Last login updated for user {user_dict['id']}")
                     except Exception as e:
                         logger.warning(f"Failed to update last login: {e}")
                         # Continue anyway, this shouldn't prevent login
@@ -81,11 +135,12 @@ class AuthService:
                     from modules.sync.utils import sync_on_login
                     try:
                         sync_data = sync_on_login(user_dict['id'])
+                        logger.info(f"🔄 Sync triggered on login for user {user_dict['id']}")
                     except Exception as e:
                         logger.warning(f"Sync on login failed: {e}")
                         # Continue anyway, sync shouldn't prevent login
                     
-                    return {
+                    result = {
                         'success': True,
                         'token': 'user-jwt-token',
                         'session_data': session_data,
@@ -100,6 +155,11 @@ class AuthService:
                             "is_super_admin": is_bizpulse_admin
                         }
                     }
+                    
+                    logger.info(f"✅ Authentication successful for user {user_dict['id']} ({user_dict['email']}) - Type: {'admin' if is_bizpulse_admin else 'client'}")
+                    # Cache the successful result
+                    self._cache_result(login_id, password, result)
+                    return result
             
             # Then check user_accounts table (new user management system)
             user_account_query = f"""
@@ -126,6 +186,7 @@ class AuthService:
                     # Check if user account is active
                     if user_account['status'] != 'active':
                         conn.close()
+                        logger.warning(f"🔒 User account {login_id} is inactive")
                         return {'success': False, 'message': 'Account is inactive'}
                         
                     # Parse permissions from JSON string if needed
@@ -160,12 +221,12 @@ class AuthService:
                         """
                         cursor.execute(last_login_query, (user_account['id'],))
                         conn.commit()
+                        logger.info(f"📅 Last login updated for user account {user_account['id']}")
                     except Exception as e:
                         logger.warning(f"Failed to update last login for user account: {e}")
                         # Continue anyway, this shouldn't prevent login
                     
-                    conn.close()
-                    return {
+                    result = {
                         'success': True,
                         'token': 'employee-jwt-token',
                         'session_data': session_data,
@@ -183,6 +244,12 @@ class AuthService:
                             "is_super_admin": False
                         }
                     }
+                    
+                    conn.close()
+                    logger.info(f"✅ User account authentication successful for {user_account['id']} ({user_account['username']}) - Type: employee")
+                    # Cache the successful result
+                    self._cache_result(login_id, password, result)
+                    return result
             
             # Then check client database (business owners)
             cursor.execute(f"SELECT id, company_name, contact_name, contact_email, username, password_hash, is_active FROM clients WHERE (contact_email = {placeholder} OR username = {placeholder})", (login_id, login_id))
@@ -198,6 +265,7 @@ class AuthService:
                     # Check if client is active
                     if not client_dict.get('is_active', True):
                         conn.close()
+                        logger.warning(f"🔒 Client account {login_id} is inactive")
                         return {'success': False, 'message': 'Account is inactive'}
                         
                     session_data = {
@@ -214,12 +282,12 @@ class AuthService:
                     try:
                         cursor.execute(f"UPDATE clients SET last_login = CURRENT_TIMESTAMP, login_count = COALESCE(login_count, 0) + 1 WHERE id = {placeholder}", (client_dict['id'],))
                         conn.commit()
+                        logger.info(f"📅 Last login updated for client {client_dict['id']}")
                     except Exception as e:
                         logger.warning(f"Failed to update last login for client: {e}")
                         # Continue anyway, this shouldn't prevent login
                     
-                    conn.close()
-                    return {
+                    result = {
                         'success': True,
                         'token': 'client-jwt-token',
                         'session_data': session_data,
@@ -234,6 +302,12 @@ class AuthService:
                             "is_super_admin": False
                         }
                     }
+                    
+                    conn.close()
+                    logger.info(f"✅ Client authentication successful for {client_dict['id']} ({client_dict['username']}) - Type: client")
+                    # Cache the successful result
+                    self._cache_result(login_id, password, result)
+                    return result
             
             # Finally check staff and employee tables
             staff_query = f"SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = {placeholder} OR s.username = {placeholder}) AND s.is_active = TRUE" if db_type == 'postgresql' else "SELECT s.id, s.name, s.email, s.username, s.password_hash, s.role, s.is_active, s.business_owner_id, c.company_name as business_name FROM staff s JOIN clients c ON s.business_owner_id = c.id WHERE (s.email = ? OR s.username = ?) AND s.is_active = 1"
@@ -244,6 +318,7 @@ class AuthService:
                 # Check if staff member is active
                 if not staff['is_active']:
                     conn.close()
+                    logger.warning(f"🔒 Staff account {login_id} is inactive")
                     return {'success': False, 'message': 'Staff account is inactive'}
                     
                 session_data = {
@@ -262,12 +337,12 @@ class AuthService:
                     update_staff_query = f"UPDATE staff SET last_login = CURRENT_TIMESTAMP WHERE id = {placeholder}"
                     cursor.execute(update_staff_query, (staff['id'],))
                     conn.commit()
+                    logger.info(f"📅 Last login updated for staff {staff['id']}")
                 except Exception as e:
                     logger.warning(f"Failed to update last login for staff: {e}")
                     # Continue anyway, this shouldn't prevent login
                 
-                conn.close()
-                return {
+                result = {
                     'success': True,
                     'token': 'staff-jwt-token',
                     'session_data': session_data,
@@ -283,6 +358,12 @@ class AuthService:
                         "is_super_admin": False
                     }
                 }
+                
+                conn.close()
+                logger.info(f"✅ Staff authentication successful for {staff['id']} ({staff['username']}) - Role: {staff['role']}")
+                # Cache the successful result
+                self._cache_result(login_id, password, result)
+                return result
             
             # Check client users (employees) - wrap in try-except for missing table
             client_user = None
@@ -299,6 +380,7 @@ class AuthService:
                 # Check if client user is active
                 if not client_user['is_active']:
                     conn.close()
+                    logger.warning(f"🔒 Employee account {login_id} is inactive")
                     return {'success': False, 'message': 'Employee account is inactive'}
                     
                 session_data = {
@@ -316,12 +398,12 @@ class AuthService:
                     update_client_user_query = f"UPDATE client_users SET last_login = CURRENT_TIMESTAMP WHERE id = {placeholder}"
                     cursor.execute(update_client_user_query, (client_user['id'],))
                     conn.commit()
+                    logger.info(f"📅 Last login updated for client user {client_user['id']}")
                 except Exception as e:
                     logger.warning(f"Failed to update last login for client user: {e}")
                     # Continue anyway, this shouldn't prevent login
                 
-                conn.close()
-                return {
+                result = {
                     'success': True,
                     'token': 'employee-jwt-token',
                     'session_data': session_data,
@@ -337,6 +419,12 @@ class AuthService:
                         "is_super_admin": False
                     }
                 }
+                
+                conn.close()
+                logger.info(f"✅ Employee authentication successful for {client_user['id']} ({client_user['username']}) - Role: {client_user['role']}")
+                # Cache the successful result
+                self._cache_result(login_id, password, result)
+                return result
             
             # Check RBAC tenants (clients created by super admin) - Skip for now to avoid errors
             # tenant = conn.execute("""
@@ -348,6 +436,7 @@ class AuthService:
             # """, (login_id,)).fetchone()
             
             conn.close()
+            # On failure, ensure cache doesn't store negative results
             return {'success': False, 'message': 'Invalid credentials'}
             
         except Exception as e:
@@ -366,6 +455,9 @@ class AuthService:
         user_type = session.get('user_type')
         user_name = session.get('user_name')
         
+        # Log the user info request
+        logger.info(f"📋 User info request for user_id: {user_id}, type: {user_type}")
+        
         # If it's a client, get the actual contact name from database
         if user_type == 'client' and user_id:
             conn = get_db_connection()
@@ -381,13 +473,17 @@ class AuthService:
                     actual_name = client['contact_name'] or client['company_name'] or user_name
                     profile_picture = client['profile_picture']
                     email = client['contact_email']
+                    logger.info(f"📋 Retrieved client profile for {user_id}")
                 else:
                     actual_name = user_name
                     profile_picture = None
                     email = None
+                    logger.warning(f"📋 Client profile not found for user_id: {user_id}")
                     
             except Exception as e:
-                print(f"Error getting client profile: {e}")
+                logger.error(f"❌ Error getting client profile: {e}")
+                import traceback
+                traceback.print_exc()
                 actual_name = user_name
                 profile_picture = None
                 email = None
@@ -398,7 +494,7 @@ class AuthService:
             profile_picture = None
             email = None
         
-        return {
+        user_info = {
             "user_id": user_id,
             "user_type": user_type,
             "user_name": actual_name,
@@ -408,6 +504,9 @@ class AuthService:
             "is_super_admin": session.get('is_super_admin', False),
             "staff_role": session.get('staff_role')  # For staff members
         }
+        
+        logger.info(f"📋 Returning user info for {user_id} (type: {user_type})")
+        return user_info
     
     def register_user(self, data):
         """Register a new user"""

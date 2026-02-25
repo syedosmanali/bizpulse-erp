@@ -1,0 +1,128 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Finance & Accounting{% endblock %}
+
+{% block extra_css %}
+<style>
+    .finance-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .page-header p {
+        color: #6B7280;
+        margin: 0;
+    }
+
+    .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 25px;
+    }
+
+    .module-card {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: block;
+    }
+
+    .module-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(115, 44, 63, 0.2);
+    }
+
+    .module-icon {
+        width: 70px;
+        height: 70px;
+        background: #732C3F;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+        margin-bottom: 20px;
+    }
+
+    .module-card h3 {
+        color: #732C3F;
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0 0 10px 0;
+    }
+
+    .module-card p {
+        color: #6B7280;
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="finance-container">
+    <div class="page-header">
+        <h1>Finance & Accounting</h1>
+        <p>Manage your financial operations and accounting</p>
+    </div>
+
+    <div class="modules-grid">
+        <a href="/erp/finance/cash-bank-ledger" class="module-card">
+            <div class="module-icon">💰</div>
+            <h3>Cash & Bank Ledger</h3>
+            <p>Track all cash and bank transactions, view balances and transaction history</p>
+        </a>
+
+        <a href="/erp/finance/expense-categories" class="module-card">
+            <div class="module-icon">📊</div>
+            <h3>Expense Categories</h3>
+            <p>Organize and track expenses by categories for better financial management</p>
+        </a>
+
+        <a href="/erp/finance/profit-loss" class="module-card">
+            <div class="module-icon">📈</div>
+            <h3>Profit & Loss</h3>
+            <p>View detailed profit and loss statements with revenue and expense breakdown</p>
+        </a>
+
+        <a href="/erp/finance/balance-sheet" class="module-card">
+            <div class="module-icon">⚖️</div>
+            <h3>Balance Sheet</h3>
+            <p>Complete overview of assets, liabilities, and owner's equity</p>
+        </a>
+
+        <a href="/erp/finance/gst-summary" class="module-card">
+            <div class="module-icon">🧾</div>
+            <h3>GST Summary</h3>
+            <p>GST collected, paid, and detailed breakup by tax rates</p>
+        </a>
+
+        <a href="/erp/finance/tax-breakup" class="module-card">
+            <div class="module-icon">📋</div>
+            <h3>Tax Breakup Reports</h3>
+            <p>Comprehensive tax analysis including GST, income tax, and other taxes</p>
+        </a>
+    </div>
+</div>
+{% endblock %}

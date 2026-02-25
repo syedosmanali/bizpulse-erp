@@ -1,0 +1,1015 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Unit Conversion - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #f8f9fa;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+    }
+
+    .page-wrapper {
+        background: var(--bg);
+        min-height: 100vh;
+        padding: 24px 20px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .page-header h1 i {
+        color: var(--wine);
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 8px;
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .tab-btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        background: transparent;
+        color: var(--sub);
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .tab-btn:hover {
+        background: #f3f4f6;
+    }
+
+    .tab-btn.active {
+        background: var(--wine);
+        color: white;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Content Card */
+    .content-card {
+        background: #fff;
+        border-radius: var(--radius);
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .content-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .content-header h2 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--text);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .btn {
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 10px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: var(--wine);
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background: var(--wine-light);
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: var(--text);
+    }
+
+    .btn-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    /* Search Bar */
+    .search-bar {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 16px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .search-bar:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    /* Table */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .data-table thead {
+        background: #f8f9fa;
+    }
+
+    .data-table th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--sub);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border);
+    }
+
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .data-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .badge-warning {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .action-btns {
+        display: flex;
+        gap: 8px;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: #f3f4f6;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+        background: var(--wine);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--sub);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+        color: var(--text);
+    }
+
+    .empty-state p {
+        font-size: 14px;
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .modal.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: var(--radius);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--wine);
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--sub);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    /* Quick Converter */
+    .converter-box {
+        background: linear-gradient(135deg, #732C3F 0%, #8B4A5C 100%);
+        border-radius: var(--radius);
+        padding: 24px;
+        color: white;
+        margin-bottom: 20px;
+    }
+
+    .converter-box h3 {
+        font-size: 18px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .converter-inputs {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .converter-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .converter-field label {
+        font-size: 13px;
+        font-weight: 500;
+        opacity: 0.9;
+    }
+
+    .converter-field input,
+    .converter-field select {
+        padding: 12px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .converter-arrow {
+        font-size: 24px;
+        padding-bottom: 8px;
+    }
+
+    .converter-result {
+        margin-top: 16px;
+        padding: 16px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 8px;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .page-wrapper {
+            padding: 16px 12px;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tab-nav {
+            flex-direction: column;
+        }
+
+        .content-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-bar {
+            max-width: 100%;
+        }
+
+        .data-table {
+            font-size: 13px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 10px 12px;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .converter-inputs {
+            grid-template-columns: 1fr;
+        }
+
+        .converter-arrow {
+            transform: rotate(90deg);
+            padding: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="repeat"></i> Unit Conversion</h1>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="converter">
+            <i data-lucide="calculator"></i>
+            Quick Converter
+        </button>
+        <button class="tab-btn" data-tab="conversions">
+            <i data-lucide="list"></i>
+            Manage Conversions
+        </button>
+        <button class="tab-btn" data-tab="presets">
+            <i data-lucide="bookmark"></i>
+            Common Units
+        </button>
+    </div>
+
+    <!-- Quick Converter Tab -->
+    <div class="tab-content active" id="converter-tab">
+        <div class="converter-box">
+            <h3><i data-lucide="zap"></i> Quick Unit Converter</h3>
+            <div class="converter-inputs">
+                <div class="converter-field">
+                    <label>From</label>
+                    <input type="number" id="fromValue" value="1" step="any" placeholder="Enter value">
+                    <select id="fromUnit">
+                        <option value="">Select Unit</option>
+                        <option value="pcs">Pieces (pcs)</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="gram">Gram (g)</option>
+                        <option value="ltr">Liter (L)</option>
+                        <option value="ml">Milliliter (mL)</option>
+                        <option value="box">Box</option>
+                        <option value="dozen">Dozen</option>
+                        <option value="meter">Meter (m)</option>
+                    </select>
+                </div>
+                <div class="converter-arrow">
+                    <i data-lucide="arrow-right"></i>
+                </div>
+                <div class="converter-field">
+                    <label>To</label>
+                    <input type="number" id="toValue" readonly placeholder="Result">
+                    <select id="toUnit">
+                        <option value="">Select Unit</option>
+                        <option value="pcs">Pieces (pcs)</option>
+                        <option value="kg">Kilogram (kg)</option>
+                        <option value="gram">Gram (g)</option>
+                        <option value="ltr">Liter (L)</option>
+                        <option value="ml">Milliliter (mL)</option>
+                        <option value="box">Box</option>
+                        <option value="dozen">Dozen</option>
+                        <option value="meter">Meter (m)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="converter-result" id="converterResult">
+                Enter values and select units to convert
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Conversions Tab -->
+    <div class="tab-content" id="conversions-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Unit Conversions</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="conversionSearch" placeholder="Search conversions...">
+                    <button class="btn btn-primary" onclick="openConversionModal()">
+                        <i data-lucide="plus"></i>
+                        Add Conversion
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Base Unit</th>
+                        <th>Conversion Unit</th>
+                        <th>Ratio</th>
+                        <th>Formula</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="conversionsTableBody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i data-lucide="repeat"></i>
+                                <h3>No Conversions Yet</h3>
+                                <p>Add your first unit conversion</p>
+                                <button class="btn btn-primary" onclick="openConversionModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Conversion
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Common Units Tab -->
+    <div class="tab-content" id="presets-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Common Unit Conversions</h2>
+                <button class="btn btn-secondary" onclick="loadPresets()">
+                    <i data-lucide="refresh-cw"></i>
+                    Refresh
+                </button>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Conversion</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="presetsTableBody">
+                    <tr>
+                        <td>Weight</td>
+                        <td>Kilogram (kg)</td>
+                        <td>Gram (g)</td>
+                        <td>1 kg = 1000 g</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="addPreset('kg', 'gram', 1, 1000)">
+                                <i data-lucide="plus"></i>
+                                Add
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Volume</td>
+                        <td>Liter (L)</td>
+                        <td>Milliliter (mL)</td>
+                        <td>1 L = 1000 mL</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="addPreset('ltr', 'ml', 1, 1000)">
+                                <i data-lucide="plus"></i>
+                                Add
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quantity</td>
+                        <td>Dozen</td>
+                        <td>Pieces (pcs)</td>
+                        <td>1 dozen = 12 pcs</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="addPreset('dozen', 'pcs', 1, 12)">
+                                <i data-lucide="plus"></i>
+                                Add
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Quantity</td>
+                        <td>Box</td>
+                        <td>Pieces (pcs)</td>
+                        <td>1 box = 12 pcs (customizable)</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="addPreset('box', 'pcs', 1, 12)">
+                                <i data-lucide="plus"></i>
+                                Add
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Weight</td>
+                        <td>Gram (g)</td>
+                        <td>Milligram (mg)</td>
+                        <td>1 g = 1000 mg</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="addPreset('gram', 'mg', 1, 1000)">
+                                <i data-lucide="plus"></i>
+                                Add
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Conversion Modal -->
+<div class="modal" id="conversionModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="conversionModalTitle">Add Unit Conversion</h3>
+            <button class="icon-btn" onclick="closeConversionModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="conversionForm">
+                <input type="hidden" id="conversionId">
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="baseUnit">Base Unit *</label>
+                        <select id="baseUnit" required>
+                            <option value="">Select Base Unit</option>
+                            <option value="pcs">Pieces (pcs)</option>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="gram">Gram (g)</option>
+                            <option value="ltr">Liter (L)</option>
+                            <option value="ml">Milliliter (mL)</option>
+                            <option value="box">Box</option>
+                            <option value="dozen">Dozen</option>
+                            <option value="meter">Meter (m)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="conversionUnit">Conversion Unit *</label>
+                        <select id="conversionUnit" required>
+                            <option value="">Select Conversion Unit</option>
+                            <option value="pcs">Pieces (pcs)</option>
+                            <option value="kg">Kilogram (kg)</option>
+                            <option value="gram">Gram (g)</option>
+                            <option value="ltr">Liter (L)</option>
+                            <option value="ml">Milliliter (mL)</option>
+                            <option value="box">Box</option>
+                            <option value="dozen">Dozen</option>
+                            <option value="meter">Meter (m)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="baseQuantity">Base Quantity *</label>
+                        <input type="number" id="baseQuantity" value="1" min="0.001" step="any" required>
+                        <small>e.g., 1</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="conversionQuantity">Conversion Quantity *</label>
+                        <input type="number" id="conversionQuantity" min="0.001" step="any" required>
+                        <small>e.g., 12</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="conversionRatio">Conversion Ratio (Auto-calculated)</label>
+                    <input type="text" id="conversionRatio" readonly style="background: #f3f4f6;">
+                </div>
+
+                <div class="form-group">
+                    <label for="conversionDescription">Description</label>
+                    <textarea id="conversionDescription" rows="2" placeholder="Optional description"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="isActive" checked style="width: 16px; height: 16px; margin-right: 8px;">
+                        Active
+                    </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeConversionModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveConversion()">Save Conversion</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let conversions = [];
+
+// Tab Switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+        
+        lucide.createIcons();
+    });
+});
+
+// Quick Converter
+document.getElementById('fromValue').addEventListener('input', performConversion);
+document.getElementById('fromUnit').addEventListener('change', performConversion);
+document.getElementById('toUnit').addEventListener('change', performConversion);
+
+function performConversion() {
+    const fromValue = parseFloat(document.getElementById('fromValue').value) || 0;
+    const fromUnit = document.getElementById('fromUnit').value;
+    const toUnit = document.getElementById('toUnit').value;
+    
+    if (!fromUnit || !toUnit) {
+        document.getElementById('converterResult').textContent = 'Select both units to convert';
+        document.getElementById('toValue').value = '';
+        return;
+    }
+    
+    if (fromUnit === toUnit) {
+        document.getElementById('toValue').value = fromValue;
+        document.getElementById('converterResult').textContent = `${fromValue} ${fromUnit} = ${fromValue} ${toUnit}`;
+        return;
+    }
+    
+    // Find conversion
+    const conversion = conversions.find(c => 
+        (c.base_unit === fromUnit && c.conversion_unit === toUnit) ||
+        (c.base_unit === toUnit && c.conversion_unit === fromUnit)
+    );
+    
+    if (conversion) {
+        let result;
+        if (conversion.base_unit === fromUnit) {
+            result = fromValue * (conversion.conversion_quantity / conversion.base_quantity);
+        } else {
+            result = fromValue / (conversion.conversion_quantity / conversion.base_quantity);
+        }
+        
+        document.getElementById('toValue').value = result.toFixed(4);
+        document.getElementById('converterResult').textContent = 
+            `${fromValue} ${fromUnit} = ${result.toFixed(4)} ${toUnit}`;
+    } else {
+        document.getElementById('toValue').value = '';
+        document.getElementById('converterResult').textContent = 
+            `No conversion found between ${fromUnit} and ${toUnit}`;
+    }
+}
+
+// Load Conversions
+async function loadConversions() {
+    try {
+        // Mock data - replace with actual API call
+        conversions = [
+            { id: 1, base_unit: 'kg', conversion_unit: 'gram', base_quantity: 1, conversion_quantity: 1000, is_active: true, description: '1 kilogram = 1000 grams' },
+            { id: 2, base_unit: 'ltr', conversion_unit: 'ml', base_quantity: 1, conversion_quantity: 1000, is_active: true, description: '1 liter = 1000 milliliters' },
+            { id: 3, base_unit: 'dozen', conversion_unit: 'pcs', base_quantity: 1, conversion_quantity: 12, is_active: true, description: '1 dozen = 12 pieces' },
+            { id: 4, base_unit: 'box', conversion_unit: 'pcs', base_quantity: 1, conversion_quantity: 12, is_active: true, description: '1 box = 12 pieces' }
+        ];
+        
+        renderConversions();
+    } catch (error) {
+        console.error('Error loading conversions:', error);
+    }
+}
+
+function renderConversions() {
+    const tbody = document.getElementById('conversionsTableBody');
+    
+    if (conversions.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                        <i data-lucide="repeat"></i>
+                        <h3>No Conversions Yet</h3>
+                        <p>Add your first unit conversion</p>
+                        <button class="btn btn-primary" onclick="openConversionModal()">
+                            <i data-lucide="plus"></i>
+                            Add Conversion
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = conversions.map(conv => {
+            const ratio = (conv.conversion_quantity / conv.base_quantity).toFixed(4);
+            return `
+                <tr>
+                    <td><strong>${conv.base_unit.toUpperCase()}</strong></td>
+                    <td><strong>${conv.conversion_unit.toUpperCase()}</strong></td>
+                    <td>${ratio}</td>
+                    <td>${conv.base_quantity} ${conv.base_unit} = ${conv.conversion_quantity} ${conv.conversion_unit}</td>
+                    <td><span class="badge ${conv.is_active ? 'badge-success' : 'badge-warning'}">${conv.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick="editConversion('${conv.id}')" title="Edit">
+                                <i data-lucide="edit-2"></i>
+                            </button>
+                            <button class="icon-btn" onclick="deleteConversion('${conv.id}')" title="Delete">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+// Modal Functions
+function openConversionModal(id = null) {
+    document.getElementById('conversionModal').classList.add('active');
+    document.getElementById('conversionModalTitle').textContent = id ? 'Edit Conversion' : 'Add Unit Conversion';
+    document.getElementById('conversionForm').reset();
+    document.getElementById('conversionId').value = id || '';
+    
+    if (id) {
+        const conv = conversions.find(c => c.id == id);
+        if (conv) {
+            document.getElementById('baseUnit').value = conv.base_unit;
+            document.getElementById('conversionUnit').value = conv.conversion_unit;
+            document.getElementById('baseQuantity').value = conv.base_quantity;
+            document.getElementById('conversionQuantity').value = conv.conversion_quantity;
+            document.getElementById('conversionDescription').value = conv.description || '';
+            document.getElementById('isActive').checked = conv.is_active;
+            calculateRatio();
+        }
+    }
+    
+    lucide.createIcons();
+}
+
+function closeConversionModal() {
+    document.getElementById('conversionModal').classList.remove('active');
+}
+
+function calculateRatio() {
+    const baseQty = parseFloat(document.getElementById('baseQuantity').value) || 1;
+    const convQty = parseFloat(document.getElementById('conversionQuantity').value) || 1;
+    const baseUnit = document.getElementById('baseUnit').value;
+    const convUnit = document.getElementById('conversionUnit').value;
+    
+    if (baseUnit && convUnit) {
+        const ratio = (convQty / baseQty).toFixed(4);
+        document.getElementById('conversionRatio').value = 
+            `${baseQty} ${baseUnit} = ${convQty} ${convUnit} (Ratio: ${ratio})`;
+    }
+}
+
+document.getElementById('baseQuantity').addEventListener('input', calculateRatio);
+document.getElementById('conversionQuantity').addEventListener('input', calculateRatio);
+document.getElementById('baseUnit').addEventListener('change', calculateRatio);
+document.getElementById('conversionUnit').addEventListener('change', calculateRatio);
+
+async function saveConversion() {
+    const id = document.getElementById('conversionId').value;
+    const baseUnit = document.getElementById('baseUnit').value;
+    const conversionUnit = document.getElementById('conversionUnit').value;
+    const baseQuantity = parseFloat(document.getElementById('baseQuantity').value);
+    const conversionQuantity = parseFloat(document.getElementById('conversionQuantity').value);
+    
+    if (!baseUnit || !conversionUnit) {
+        alert('Please select both units');
+        return;
+    }
+    
+    if (baseUnit === conversionUnit) {
+        alert('Base unit and conversion unit cannot be the same');
+        return;
+    }
+    
+    if (!baseQuantity || baseQuantity <= 0 || !conversionQuantity || conversionQuantity <= 0) {
+        alert('Quantities must be greater than 0');
+        return;
+    }
+    
+    const data = {
+        base_unit: baseUnit,
+        conversion_unit: conversionUnit,
+        base_quantity: baseQuantity,
+        conversion_quantity: conversionQuantity,
+        description: document.getElementById('conversionDescription').value,
+        is_active: document.getElementById('isActive').checked
+    };
+    
+    // Mock save - replace with actual API call
+    if (id) {
+        const index = conversions.findIndex(c => c.id == id);
+        conversions[index] = { ...conversions[index], ...data };
+        alert('Conversion updated successfully');
+    } else {
+        conversions.push({ id: Date.now(), ...data });
+        alert('Conversion added successfully');
+    }
+    
+    closeConversionModal();
+    renderConversions();
+}
+
+async function editConversion(id) {
+    openConversionModal(id);
+}
+
+async function deleteConversion(id) {
+    if (!confirm('Are you sure you want to delete this conversion?')) return;
+    
+    conversions = conversions.filter(c => c.id != id);
+    renderConversions();
+    alert('Conversion deleted successfully');
+}
+
+function addPreset(baseUnit, convUnit, baseQty, convQty) {
+    document.getElementById('baseUnit').value = baseUnit;
+    document.getElementById('conversionUnit').value = convUnit;
+    document.getElementById('baseQuantity').value = baseQty;
+    document.getElementById('conversionQuantity').value = convQty;
+    calculateRatio();
+    openConversionModal();
+}
+
+function loadPresets() {
+    lucide.createIcons();
+}
+
+// Search Functionality
+document.getElementById('conversionSearch').addEventListener('input', (e) => {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#conversionsTableBody tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+    });
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    loadConversions();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,311 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Role-Based Access{% endblock %}
+
+{% block extra_css %}
+<style>
+    .role-container {
+        padding: 30px;
+        background: #f5f5f5;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-header h1 {
+        color: #732C3F;
+        font-size: 28px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+    }
+
+    .add-role-btn {
+        background: #732C3F;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .add-role-btn:hover {
+        background: #5a2332;
+        transform: translateY(-2px);
+    }
+
+    .roles-table {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        overflow-x: auto;
+    }
+
+    .roles-table h2 {
+        color: #732C3F;
+        font-size: 20px;
+        margin: 0 0 20px 0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+    }
+
+    thead {
+        background: #732C3F;
+        color: white;
+    }
+
+    th {
+        padding: 15px;
+        text-align: center;
+        font-weight: 600;
+        border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    th:first-child {
+        text-align: left;
+    }
+
+    th:last-child {
+        border-right: none;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #E5E7EB;
+        text-align: center;
+    }
+
+    td:first-child {
+        text-align: left;
+        font-weight: 500;
+        color: #374151;
+    }
+
+    tbody tr:hover {
+        background: #F9FAFB;
+    }
+
+    .permission-checkbox {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #732C3F;
+    }
+
+    .save-btn {
+        background: #732C3F;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: all 0.3s;
+    }
+
+    .save-btn:hover {
+        background: #5a2332;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="role-container">
+    <div class="page-header">
+        <div>
+            <h1>Role-Based Access Control</h1>
+            <p>Manage permissions for different user roles</p>
+        </div>
+        <button class="add-role-btn" onclick="addNewRole()">+ Add New Role</button>
+    </div>
+
+    <div class="roles-table">
+        <h2>Permissions Matrix</h2>
+        <table id="permissionsTable">
+            <thead>
+                <tr>
+                    <th>Permission</th>
+                    <th>Owner</th>
+                    <th>Manager</th>
+                    <th>Staff</th>
+                    <th>Accountant</th>
+                    <th>Cashier</th>
+                    <th>Operator</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>View Dashboard</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                </tr>
+                <tr>
+                    <td>Manage Products</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Create Invoices</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                </tr>
+                <tr>
+                    <td>View Reports</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Manage Purchases</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Manage Customers</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                </tr>
+                <tr>
+                    <td>Manage Vendors</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>View Financial Reports</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Manage Staff</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Backup/Restore Data</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>System Settings</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+                <tr>
+                    <td>Delete Records</td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox" checked></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                    <td><input type="checkbox" class="permission-checkbox"></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="save-btn" onclick="savePermissions()">Save Permissions</button>
+    </div>
+</div>
+
+<script>
+function addNewRole() {
+    const roleName = prompt("Enter new role name:");
+    if (!roleName) return;
+    
+    const table = document.getElementById('permissionsTable');
+    const headerRow = table.querySelector('thead tr');
+    const newHeader = document.createElement('th');
+    newHeader.textContent = roleName;
+    headerRow.appendChild(newHeader);
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const newCell = document.createElement('td');
+        newCell.innerHTML = '<input type="checkbox" class="permission-checkbox">';
+        row.appendChild(newCell);
+    });
+    
+    alert(`Role "${roleName}" added successfully!`);
+}
+
+function savePermissions() {
+    const permissions = {};
+    const table = document.getElementById('permissionsTable');
+    const headers = Array.from(table.querySelectorAll('thead th')).slice(1).map(th => th.textContent);
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const permissionName = row.querySelector('td:first-child').textContent;
+        const checkboxes = row.querySelectorAll('.permission-checkbox');
+        
+        permissions[permissionName] = {};
+        checkboxes.forEach((checkbox, index) => {
+            permissions[permissionName][headers[index]] = checkbox.checked;
+        });
+    });
+    
+    console.log('Saving permissions:', permissions);
+    alert('Permissions saved successfully!');
+}
+</script>
+{% endblock %}

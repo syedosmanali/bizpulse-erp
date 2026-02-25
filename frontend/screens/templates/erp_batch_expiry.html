@@ -1,0 +1,793 @@
+{% extends "erp_base_layout.html" %}
+
+{% block title %}Batch & Expiry Management - ERP{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --wine: #732C3F;
+        --wine-light: #8d3a4f;
+        --bg: #f8f9fa;
+        --text: #1A1A1A;
+        --sub: #6B7280;
+        --border: #e5e7eb;
+        --radius: 12px;
+        --critical: #dc2626;
+        --warning: #f59e0b;
+    }
+
+    .page-wrapper { background: var(--bg); min-height: 100vh; padding: 24px 20px; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 12px; margin: 0; }
+    .page-header h1 i { color: var(--wine); }
+
+    /* Stats Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #fff; border-radius: var(--radius); padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 16px; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .stat-icon.primary { background: rgba(115, 44, 63, 0.1); color: var(--wine); }
+    .stat-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .stat-icon.critical { background: rgba(220, 38, 38, 0.1); color: var(--critical); }
+    .stat-icon.success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .stat-info .value { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+    .stat-info .label { font-size: 13px; color: var(--sub); font-weight: 500; }
+
+    /* Tab Navigation */
+    .tab-nav { background: #fff; border-radius: var(--radius); padding: 8px; display: flex; gap: 8px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tab-btn { flex: 1; padding: 12px 20px; border: none; background: transparent; color: var(--sub); font-size: 15px; font-weight: 600; border-radius: 8px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .tab-btn:hover { background: #f3f4f6; }
+    .tab-btn.active { background: var(--wine); color: white; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Content Card */
+    .content-card { background: #fff; border-radius: var(--radius); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .content-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .content-header h2 { font-size: 20px; font-weight: 600; color: var(--text); margin: 0; }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+
+    /* Buttons */
+    .btn { border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; padding: 10px 20px; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; text-decoration: none; }
+    .btn-primary { background: var(--wine); color: #fff; }
+    .btn-primary:hover { background: var(--wine-light); }
+    .btn-secondary { background: #f3f4f6; color: var(--text); }
+    .btn-secondary:hover { background: #e5e7eb; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+
+    /* Search Bar */
+    .search-bar { width: 100%; max-width: 400px; padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; transition: all 0.2s; }
+    .search-bar:focus { outline: none; border-color: var(--wine); }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .data-table thead { background: #f8f9fa; }
+    .data-table th { padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--sub); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid var(--border); }
+    .data-table td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+    .data-table tbody tr:hover { background: #f8f9fa; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .badge-critical { background: rgba(220, 38, 38, 0.1); color: var(--critical); }
+
+    /* Action Buttons */
+    .action-btns { display: flex; gap: 8px; }
+    .icon-btn { width: 32px; height: 32px; border: none; background: #f3f4f6; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+    .icon-btn:hover { background: var(--wine); color: white; }
+
+    /* Empty State */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--sub); }
+    .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+    .empty-state p { font-size: 14px; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: var(--radius); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { font-size: 18px; font-weight: 600; margin: 0; }
+    .modal-body { padding: 24px; }
+    .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 12px; }
+
+    /* Form */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; transition: all 0.2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--wine); }
+    .form-group small { display: block; margin-top: 4px; font-size: 12px; color: var(--sub); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-wrapper { padding: 16px 12px; }
+        .page-header { flex-direction: column; align-items: flex-start; }
+        .tab-nav { flex-direction: column; }
+        .stats-grid { grid-template-columns: 1fr; }
+        .content-header { flex-direction: column; align-items: flex-start; }
+        .search-bar { max-width: 100%; }
+        .data-table { font-size: 13px; }
+        .data-table th, .data-table td { padding: 10px 12px; }
+        .form-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i data-lucide="calendar"></i> Batch & Expiry Management</h1>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i data-lucide="package"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="totalBatches">0</div>
+                <div class="label">Total Batches</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i data-lucide="alert-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="expiringSoon">0</div>
+                <div class="label">Expiring Soon</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon critical">
+                <i data-lucide="alert-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="expired">0</div>
+                <div class="label">Expired</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success">
+                <i data-lucide="check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="value" id="activeBatches">0</div>
+                <div class="label">Active Batches</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="all">
+            <i data-lucide="list"></i>
+            All Batches
+        </button>
+        <button class="tab-btn" data-tab="expiring">
+            <i data-lucide="clock"></i>
+            Expiring Soon
+        </button>
+        <button class="tab-btn" data-tab="expired">
+            <i data-lucide="x-circle"></i>
+            Expired
+        </button>
+        <button class="tab-btn" data-tab="quality">
+            <i data-lucide="shield"></i>
+            Quality Control
+        </button>
+    </div>
+
+    <!-- All Batches Tab -->
+    <div class="tab-content active" id="all-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>All Batches</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="searchAll" placeholder="Search batches...">
+                    <button class="btn btn-secondary" onclick="loadBatches()">
+                        <i data-lucide="refresh-cw"></i>
+                        Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="openBatchModal()">
+                        <i data-lucide="plus"></i>
+                        Add Batch
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Batch Number</th>
+                        <th>Product</th>
+                        <th>Mfg Date</th>
+                        <th>Expiry Date</th>
+                        <th>Quantity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="allBatchesBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i data-lucide="inbox"></i>
+                                <h3>No Batches Yet</h3>
+                                <p>Add your first batch to get started</p>
+                                <button class="btn btn-primary" onclick="openBatchModal()">
+                                    <i data-lucide="plus"></i>
+                                    Add Batch
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Expiring Soon Tab -->
+    <div class="tab-content" id="expiring-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Expiring Soon (Next 30 Days)</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="searchExpiring" placeholder="Search...">
+                    <select class="search-bar" style="max-width: 200px;" id="daysFilter" onchange="filterExpiring()">
+                        <option value="7">Next 7 Days</option>
+                        <option value="15">Next 15 Days</option>
+                        <option value="30" selected>Next 30 Days</option>
+                        <option value="60">Next 60 Days</option>
+                    </select>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Batch Number</th>
+                        <th>Product</th>
+                        <th>Expiry Date</th>
+                        <th>Days Left</th>
+                        <th>Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="expiringBatchesBody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i data-lucide="clock"></i>
+                                <h3>No Batches Expiring Soon</h3>
+                                <p>All batches are within safe expiry period</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Expired Tab -->
+    <div class="tab-content" id="expired-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Expired Batches</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="searchExpired" placeholder="Search...">
+                    <button class="btn btn-secondary" onclick="bulkDispose()">
+                        <i data-lucide="trash-2"></i>
+                        Bulk Dispose
+                    </button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllExpired" onchange="toggleSelectAll()"></th>
+                        <th>Batch Number</th>
+                        <th>Product</th>
+                        <th>Expiry Date</th>
+                        <th>Days Expired</th>
+                        <th>Quantity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="expiredBatchesBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i data-lucide="check-circle"></i>
+                                <h3>No Expired Batches</h3>
+                                <p>Great! All batches are within expiry date</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quality Control Tab -->
+    <div class="tab-content" id="quality-tab">
+        <div class="content-card">
+            <div class="content-header">
+                <h2>Quality Control</h2>
+                <div class="header-actions">
+                    <input type="text" class="search-bar" id="searchQuality" placeholder="Search...">
+                    <select class="search-bar" style="max-width: 200px;" id="qualityFilter" onchange="filterQuality()">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending Inspection</option>
+                        <option value="quarantine">Quarantine</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Batch Number</th>
+                        <th>Product</th>
+                        <th>Inspection Date</th>
+                        <th>Quality Status</th>
+                        <th>Inspector</th>
+                        <th>Actions</th>
+                    </tr>
+                </ded', function() {
+    loadBatches();
+    lucide.createIcons();
+});
+</script>
+{% endblock %}
+  if (el) {
+        el.addEventListener('input', (e) => {
+            const search = e.target.value.toLowerCase();
+            const tbody = e.target.closest('.content-card').querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(search) ? '' : 'none';
+            });
+        });
+    }
+});
+
+// Initialize
+document.addEventListener('DOMContentLoah(id);
+}
+
+function bulkDispose() {
+    const selected = Array.from(document.querySelectorAll('.batch-check:checked'));
+    if (selected.length === 0) {
+        alert('Please select at least one batch');
+        return;
+    }
+    if (!confirm(`Dispose ${selected.length} selected batches?`)) return;
+    alert('Bulk dispose functionality - to be implemented');
+}
+
+// Search Functionality
+['searchAll', 'searchExpiring', 'searchExpired', 'searchQuality'].forEach(id => {
+    const el = document.getElementById(id);
+  pi/erp/batches/${id}`, { method: 'DELETE' });
+        const data = await response.json();
+        
+        if (data.success) {
+            loadBatches();
+            alert('Batch deleted successfully');
+        } else {
+            alert(data.error || 'Failed to delete batch');
+        }
+    } catch (error) {
+        console.error('Error deleting batch:', error);
+        alert('Failed to delete batch');
+    }
+}
+
+function disposeBatch(id) {
+    if (!confirm('Mark this batch as disposed?')) return;
+    deleteBatces();
+            alert(id ? 'Batch updated successfully' : 'Batch added successfully');
+        } else {
+            alert(result.error || 'Failed to save batch');
+        }
+    } catch (error) {
+        console.error('Error saving batch:', error);
+        alert('Failed to save batch');
+    }
+}
+
+async function editBatch(id) {
+    openBatchModal(id);
+}
+
+async function deleteBatch(id) {
+    if (!confirm('Are you sure you want to delete this batch?')) return;
+    
+    try {
+        const response = await fetch(`/a    notes: document.getElementById('notes').value
+    };
+    
+    try {
+        const url = id ? `/api/erp/batches/${id}` : '/api/erp/batches';
+        const method = id ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeBatchModal();
+            loadBatchment.getElementById('expiryDate').value;
+    const quantity = document.getElementById('quantity').value;
+    
+    if (!productId || !batchNumber || !mfgDate || !expiryDate || !quantity) {
+        alert('Please fill all required fields');
+        return;
+    }
+    
+    const data = {
+        product_id: productId,
+        batch_number: batchNumber,
+        mfg_date: mfgDate,
+        expiry_date: expiryDate,
+        quantity: parseFloat(quantity),
+        location: document.getElementById('location').value,
+    .getElementById('notes').value = batch.notes || '';
+        }
+    }
+    
+    lucide.createIcons();
+}
+
+function closeBatchModal() {
+    document.getElementById('batchModal').classList.remove('active');
+}
+
+async function saveBatch() {
+    const id = document.getElementById('batchId').value;
+    const productId = document.getElementById('productId').value;
+    const batchNumber = document.getElementById('batchNumber').value;
+    const mfgDate = document.getElementById('mfgDate').value;
+    const expiryDate = docu.find(b => b.id == id);
+        if (batch) {
+            document.getElementById('productId').value = batch.product_id;
+            document.getElementById('batchNumber').value = batch.batch_number;
+            document.getElementById('mfgDate').value = batch.mfg_date;
+            document.getElementById('expiryDate').value = batch.expiry_date;
+            document.getElementById('quantity').value = batch.quantity;
+            document.getElementById('location').value = batch.location || '';
+            documentcument.getElementById('selectAllExpired').checked;
+    document.querySelectorAll('.batch-check').forEach(cb => cb.checked = checked);
+}
+
+// Modal Functions
+function openBatchModal(id = null) {
+    document.getElementById('batchModal').classList.add('active');
+    document.getElementById('batchModalTitle').textContent = id ? 'Edit Batch' : 'Add New Batch';
+    document.getElementById('batchForm').reset();
+    document.getElementById('batchId').value = id || '';
+    
+    if (id) {
+        const batch = batchesh.quantity || 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="disposeBatch('${batch.id}')">
+                            <i data-lucide="trash-2"></i>
+                            Dispose
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+function filterExpiring() {
+    renderExpiringBatches();
+}
+
+function toggleSelectAll() {
+    const checked = dod = Math.ceil((today - expiryDate) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <tr>
+                    <td><input type="checkbox" class="batch-check" data-id="${batch.id}"></td>
+                    <td><strong>${batch.batch_number}</strong></td>
+                    <td>${batch.product_name || '-'}</td>
+                    <td>${batch.expiry_date}</td>
+                    <td><span class="badge badge-critical">${daysExpired} days ago</span></td>
+                    <td>${batc         <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i data-lucide="check-circle"></i>
+                        <h3>No Expired Batches</h3>
+                        <p>Great! All batches are within expiry date</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = expiredBatches.map(batch => {
+            const expiryDate = new Date(batch.expiry_date);
+            const daysExpire <i data-lucide="edit-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+function renderExpiredBatches() {
+    const tbody = document.getElementById('expiredBatchesBody');
+    const today = new Date();
+    
+    const expiredBatches = batches.filter(b => new Date(b.expiry_date) < today);
+    
+    if (expiredBatches.length === 0) {
+        tbody.innerHTML = `
+              <td><strong>${batch.batch_number}</strong></td>
+                    <td>${batch.product_name || '-'}</td>
+                    <td>${batch.expiry_date}</td>
+                    <td><span class="badge badge-warning">${daysLeft} days</span></td>
+                    <td>${batch.quantity || 0}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick="editBatch('${batch.id}')" title="Edit">
+                               <i data-lucide="clock"></i>
+                        <h3>No Batches Expiring Soon</h3>
+                        <p>All batches are within safe expiry period</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = expiringBatches.map(batch => {
+            const expiryDate = new Date(batch.expiry_date);
+            const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            
+            return `
+                <tr>
+         ById('daysFilter')?.value || 30);
+    const today = new Date();
+    const futureDate = new Date(today.getTime() + days * 24 * 60 * 60 * 1000);
+    
+    const expiringBatches = batches.filter(b => {
+        const expiryDate = new Date(b.expiry_date);
+        return expiryDate > today && expiryDate <= futureDate;
+    });
+    
+    if (expiringBatches.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6">
+                    <div class="empty-state">
+                          </button>
+                            <button class="icon-btn" onclick="deleteBatch('${batch.id}')" title="Delete">
+                                <i data-lucide="trash-2"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    lucide.createIcons();
+}
+
+function renderExpiringBatches() {
+    const tbody = document.getElementById('expiringBatchesBody');
+    const days = parseInt(document.getElement                <td>${batch.mfg_date || '-'}</td>
+                    <td>${batch.expiry_date || '-'}</td>
+                    <td>${batch.quantity || 0}</td>
+                    <td><span class="badge badge-${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="icon-btn" onclick="editBatch('${batch.id}')" title="Edit">
+                                <i data-lucide="edit-2"></i>
+                          tusClass = 'success';
+            let statusText = 'Active';
+            
+            if (isExpired) {
+                statusClass = 'critical';
+                statusText = 'Expired';
+            } else if (daysLeft <= 30) {
+                statusClass = 'warning';
+                statusText = 'Expiring Soon';
+            }
+            
+            return `
+                <tr>
+                    <td><strong>${batch.batch_number}</strong></td>
+                    <td>${batch.product_name || '-'}</td>
+              <i data-lucide="plus"></i>
+                            Add Batch
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = batches.map(batch => {
+            const today = new Date();
+            const expiryDate = new Date(batch.expiry_date);
+            const isExpired = expiryDate < today;
+            const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+            
+            let sta renderAllBatches() {
+    const tbody = document.getElementById('allBatchesBody');
+    
+    if (batches.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7">
+                    <div class="empty-state">
+                        <i data-lucide="inbox"></i>
+                        <h3>No Batches Yet</h3>
+                        <p>Add your first batch to get started</p>
+                        <button class="btn btn-primary" onclick="openBatchModal()">
+                   > today && expiryDate <= thirtyDaysLater;
+    }).length;
+    
+    const expired = batches.filter(b => new Date(b.expiry_date) < today).length;
+    const active = batches.filter(b => new Date(b.expiry_date) >= today).length;
+    
+    document.getElementById('totalBatches').textContent = batches.length;
+    document.getElementById('expiringSoon').textContent = expiringSoon;
+    document.getElementById('expired').textContent = expired;
+    document.getElementById('activeBatches').textContent = active;
+}
+
+functionhes = data.data || [];
+            renderAllBatches();
+            renderExpiringBatches();
+            renderExpiredBatches();
+            updateStats();
+        }
+    } catch (error) {
+        console.error('Error loading batches:', error);
+    }
+}
+
+function updateStats() {
+    const today = new Date();
+    const thirtyDaysLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    
+    const expiringSoon = batches.filter(b => {
+        const expiryDate = new Date(b.expiry_date);
+        return expiryDatetorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`${tab}-tab`).classList.add('active');
+        lucide.createIcons();
+    });
+});
+
+// Load Batches
+async function loadBatches() {
+    try {
+        const response = await fetch('/api/erp/batches');
+        const data = await response.json();
+        
+        if (data.success) {
+            batc </label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBatchModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveBatch()">Save Batch</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let batches = [];
+
+// Tab Switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        document.querySelec">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" rows="3" placeholder="Additional notes about this batch"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="qualityCheck" style="width: 16px; height: 16px; margin-right: 8px;">
+                        Requires Quality Inspection
+                            <option value="pcs">Pieces</option>
+                            <option value="kg">Kilogram</option>
+                            <option value="ltr">Liter</option>
+                            <option value="box">Box</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Storage Location</label>
+                    <input type="text" id="location" placeholder="e.g., Warehouse A, Shelf 3iryDate" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantity">Quantity *</label>
+                        <input type="number" id="quantity" min="1" step="any" required placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="unit">Unit</label>
+                        <select id="unit">
+                   -001">
+                    <small>Unique identifier for this batch</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mfgDate">Manufacturing Date *</label>
+                        <input type="date" id="mfgDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiryDate">Expiry Date *</label>
+                        <input type="date" id="exp"form-group">
+                    <label for="productId">Product *</label>
+                    <select id="productId" required>
+                        <option value="">Select Product</option>
+                    </select>
+                    <small>Select the product for this batch</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="batchNumber">Batch Number *</label>
+                    <input type="text" id="batchNumber" required placeholder="e.g., BATCH-2024
+        </div>
+    </div>
+</div>
+
+<!-- Batch Modal -->
+<div class="modal" id="batchModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="batchModalTitle">Add New Batch</h3>
+            <button class="icon-btn" onclick="closeBatchModal()">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="batchForm">
+                <input type="hidden" id="batchId">
+                
+                <div class=thead>
+                <tbody id="qualityBatchesBody">
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i data-lucide="shield"></i>
+                                <h3>No Quality Inspections</h3>
+                                <p>All batches have passed quality control</p>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>

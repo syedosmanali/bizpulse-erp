@@ -1,0 +1,4 @@
+# file: C:\Users\osman\OneDrive\Desktop\Mobile-ERP\modules\erp_modules\service.py
+# hypothesis_version: 6.151.9
+
+[400, 404, 422, '%s', '?', 'CUSTOMER_NOT_FOUND', 'Customer not found', 'INCORRECT_PASSWORD', 'Invalid credentials', 'USER_NOT_FOUND', 'User not found', 'Z', 'admin', 'business_name', 'business_owner_id', 'credit_limit', 'current_outstanding', 'customer_id', 'email', 'error', 'error_code', 'id', 'is_active', 'message', 'new_amount', 'operator', 'outstanding_balance', 'password_hash', 'postgresql', 'success', 'user', 'user_id', 'utf-8']

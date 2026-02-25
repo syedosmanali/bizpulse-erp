@@ -1,0 +1,222 @@
+{% extends 'erp_base_layout.html' %}
+
+{% block title %}Income & Expense - ERP System{% endblock %}
+
+{% block extra_css %}
+<style>
+
+        :root { --wine: #732C3F; --wine2: #B85450; --bg: #F9F6F7; --card: #fff; --text: #1A1A1A; --sub: #6B7280; --border: rgba(0,0,0,0.08); --radius: 12px; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+        .top-bar { background:var(--wine); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:100; }
+        .back-btn { background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:8px; cursor:pointer; font-size:18px; }
+        .top-bar h1 { font-size:17px; font-weight:600; flex:1; }
+        .tabs { display:flex; background:var(--card); border-bottom:1px solid var(--border); }
+        .tab { flex:1; padding:12px; text-align:center; font-size:13px; font-weight:500; cursor:pointer; color:var(--sub); border-bottom:2px solid transparent; }
+        .tab.active { color:var(--wine); border-bottom-color:var(--wine); font-weight:600; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; }
+        .container { max-width:700px; margin:0 auto; padding:16px; }
+        .card { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:14px; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .card-title { font-size:14px; font-weight:600; color:var(--wine); margin-bottom:14px; }
+        .form-group { margin-bottom:12px; }
+        label { display:block; font-size:12px; font-weight:500; color:var(--sub); margin-bottom:4px; }
+        input, select, textarea { width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:8px; font-size:14px; font-family:'Inter',sans-serif; background:#fafafa; outline:none; }
+        input:focus, select:focus, textarea:focus { border-color:var(--wine); background:#fff; }
+        .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .btn-primary { background:var(--wine); color:#fff; border:none; padding:11px 20px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; }
+        .btn-sm { padding:6px 12px; font-size:12px; border-radius:6px; border:none; cursor:pointer; font-weight:500; }
+        .btn-danger { background:#fee2e2; color:#dc2626; }
+        .type-toggle { display:flex; background:#f3f4f6; border-radius:10px; padding:3px; margin-bottom:14px; }
+        .type-btn { flex:1; padding:8px; text-align:center; border-radius:8px; font-size:13px; font-weight:500; cursor:pointer; transition:all 0.2s; }
+        .type-btn.income.active { background:#dcfce7; color:#16a34a; }
+        .type-btn.expense.active { background:#fee2e2; color:#dc2626; }
+        .stats-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; }
+        .stat-box { background:var(--card); border-radius:10px; padding:12px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+        .stat-box .num { font-size:18px; font-weight:700; }
+        .stat-box .lbl { font-size:11px; color:var(--sub); margin-top:2px; }
+        .txn-item { background:#fafafa; border:1.5px solid var(--border); border-radius:10px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+        .txn-item .info h3 { font-size:13px; font-weight:600; }
+        .txn-item .info p { font-size:11px; color:var(--sub); }
+        .txn-amount { font-size:15px; font-weight:700; }
+        .cat-filter { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+        .cat-pill { padding:5px 12px; border-radius:20px; font-size:12px; cursor:pointer; background:#f3f4f6; color:var(--sub); border:none; font-family:'Inter',sans-serif; }
+        .cat-pill.active { background:var(--wine); color:#fff; }
+        .empty { text-align:center; padding:30px; color:var(--sub); font-size:14px; }
+        .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a1a1a; color:#fff; padding:10px 20px; border-radius:20px; font-size:13px; z-index:9999; opacity:0; transition:opacity 0.3s; }
+        .toast.show { opacity:1; }
+        @media(max-width:500px){ .form-row{grid-template-columns:1fr;} .stats-row{grid-template-columns:1fr 1fr;} }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="top-bar">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <h1>💹 Income & Expense</h1>
+</div>
+<div class="tabs">
+    <div class="tab active" onclick="switchTab('entry')"><i data-lucide="plus"></i> Add Entry</div>
+    <div class="tab" onclick="switchTab('list')"><i data-lucide="clipboard-list"></i> All Entries</div>
+    <div class="tab" onclick="switchTab('reports')"><i data-lucide="bar-chart-3"></i> Reports</div>
+</div>
+
+<!-- ADD ENTRY TAB -->
+<div id="tab-entry" class="tab-content active">
+<div class="container">
+    <div class="card">
+        <div class="card-title"><i data-lucide="plus"></i> Add Entry</div>
+        <div class="type-toggle">
+            <div class="type-btn income active" id="type-income" onclick="setType('income')">💚 Income</div>
+            <div class="type-btn expense" id="type-expense" onclick="setType('expense')">🔴 Expense</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Category</label>
+                <select id="txn_cat" id="txn_cat">
+                    <option>Sales Revenue</option><option>Service Income</option><option>Other Income</option>
+                    <option>Rent</option><option>Salary</option><option>Utilities</option>
+                    <option>Transport</option><option>Purchase</option><option>Marketing</option><option>Miscellaneous</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Amount (₹) *</label><input id="txn_amount" type="number" min="0" placeholder="0.00"></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Date</label><input id="txn_date" type="date"></div>
+            <div class="form-group"><label>Description</label><input id="txn_desc" placeholder="Brief description"></div>
+        </div>
+        <button class="btn-primary" style="width:100%;" onclick="addTransaction()"><i data-lucide="save"></i> Save Entry</button>
+    </div>
+</div>
+</div>
+
+<!-- LIST TAB -->
+<div id="tab-list" class="tab-content">
+<div class="container">
+    <div class="stats-row">
+        <div class="stat-box"><div class="num" id="l-income" style="color:#16a34a;">₹0</div><div class="lbl">Income</div></div>
+        <div class="stat-box"><div class="num" id="l-expense" style="color:#dc2626;">₹0</div><div class="lbl">Expense</div></div>
+        <div class="stat-box"><div class="num" id="l-net">₹0</div><div class="lbl">Net P&L</div></div>
+    </div>
+    <div class="card">
+        <div class="card-title"><i data-lucide="clipboard-list"></i> All Transactions</div>
+        <div class="cat-filter">
+            <button class="cat-pill active" onclick="filterCat('all', this)">All</button>
+            <button class="cat-pill" onclick="filterCat('income', this)">Income</button>
+            <button class="cat-pill" onclick="filterCat('expense', this)">Expense</button>
+        </div>
+        <div id="txnList"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<!-- REPORTS TAB -->
+<div id="tab-reports" class="tab-content">
+<div class="container">
+    <div class="card">
+        <div class="card-title"><i data-lucide="bar-chart-3"></i> Income vs Expense Report</div>
+        <div id="reportContent"><div class="empty">Loading...</div></div>
+    </div>
+</div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script>
+let currentType='income', allTxns=[], filteredTxns=[];
+function showToast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.background=ok?'#1a1a1a':'#dc2626';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function switchTab(tab){
+    const tabs=['entry','list','reports'];
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+    document.getElementById('tab-' <i data-lucide="plus"></i> tab).classList.add('active');
+    if(tab!=='entry')loadTransactions();
+}
+function setType(type){
+    currentType=type;
+    document.getElementById('type-income').classList.toggle('active',type==='income');
+    document.getElementById('type-expense').classList.toggle('active',type==='expense');
+    // Update categories
+    const cat=document.getElementById('txn_cat');
+    if(type==='income'){cat.innerHTML='<option>Sales Revenue</option><option>Service Income</option><option>Commission</option><option>Other Income</option>';}
+    else{cat.innerHTML='<option>Rent</option><option>Salary</option><option>Utilities</option><option>Transport</option><option>Purchase</option><option>Marketing</option><option>Miscellaneous</option>';}
+}
+async function addTransaction(){
+    const amount=parseFloat(document.getElementById('txn_amount').value)||0;
+    if(!amount){showToast('Enter amount',false);return;}
+    const payload={type:currentType,category:document.getElementById('txn_cat').value,amount,description:document.getElementById('txn_desc').value,date:document.getElementById('txn_date').value};
+    try{
+        const r=await fetch('/api/erp/transactions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const d=await r.json();
+        if(d.success){showToast('<i data-lucide="package-check"></i> Entry saved!');document.getElementById('txn_amount').value='';document.getElementById('txn_desc').value='';}
+        else showToast('<i data-lucide="x"></i> ' <i data-lucide="plus"></i> d.error,false);
+    }catch(e){showToast('<i data-lucide="x"></i> Network error',false);}
+}
+function filterCat(cat, btn){
+    document.querySelectorAll('.cat-pill').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    filteredTxns=cat==='all'?allTxns:allTxns.filter(t=>t.type===cat);
+    renderTxns();
+}
+async function loadTransactions(){
+    try{
+        const r=await fetch('/api/erp/transactions');const d=await r.json();
+        if(d.success){
+            allTxns=d.data||[];filteredTxns=[...allTxns];
+            const income=allTxns.filter(t=>t.type==='income').reduce((s,t)=>s <i data-lucide="plus"></i> parseFloat(t.amount||0),0);
+            const expense=allTxns.filter(t=>t.type==='expense').reduce((s,t)=>s <i data-lucide="plus"></i> parseFloat(t.amount||0),0);
+            const net=income-expense;
+            document.getElementById('l-income').textContent='₹' <i data-lucide="plus"></i> income.toLocaleString('en-IN');
+            document.getElementById('l-expense').textContent='₹' <i data-lucide="plus"></i> expense.toLocaleString('en-IN');
+            const netEl=document.getElementById('l-net');
+            netEl.textContent='₹' <i data-lucide="plus"></i> Math.abs(net).toLocaleString('en-IN');
+            netEl.style.color=net>=0?'#16a34a':'#dc2626';
+            renderTxns();
+            renderReport(income,expense,allTxns);
+        }
+    }catch(e){}
+}
+function renderTxns(){
+    const el=document.getElementById('txnList');
+    if(!filteredTxns.length){el.innerHTML='<div class="empty">No entries found</div>';return;}
+    el.innerHTML=filteredTxns.map(t=>`<div class="txn-item">
+        <div class="info"><h3>${t.category}</h3><p>${t.date||''} ${t.description?'— ' <i data-lucide="plus"></i> t.description:''}</p></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <div class="txn-amount" style="color:${t.type==='income'?'#16a34a':'#dc2626'};">${t.type==='expense'?'-':''}₹${parseFloat(t.amount||0).toLocaleString('en-IN')}</div>
+            <button class="btn-sm btn-danger" onclick="deleteTxn('${t.id}')">✕</button>
+        </div>
+    </div>`).join('');
+}
+function renderReport(income, expense, txns){
+    const el=document.getElementById('reportContent');
+    const cats={};
+    txns.forEach(t=>{
+        const key=t.type <i data-lucide="plus"></i> ':' <i data-lucide="plus"></i> t.category;
+        if(!cats[key])cats[key]={type:t.type,cat:t.category,total:0};
+        cats[key].total <i data-lucide="plus"></i>= parseFloat(t.amount||0);
+    });
+    const sorted=Object.values(cats).sort((a,b)=>b.total-a.total);
+    el.innerHTML=`<div style="display:flex;flex-direction:column;gap:8px;">
+        ${sorted.map(c=>`<div style="display:flex;justify-content:space-between;padding:10px 12px;background:${c.type==='income'?'#f0fdf4':'#fef2f2'};border-radius:8px;">
+            <span style="font-size:13px;">${c.type==='income'?'💚':'🔴'} ${c.cat}</span>
+            <strong style="color:${c.type==='income'?'#16a34a':'#dc2626'};">${c.type==='expense'?'-':''}₹${c.total.toLocaleString('en-IN')}</strong>
+        </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding:12px;background:${income-expense>=0?'#dcfce7':'#fee2e2'};border-radius:8px;border:1px solid ${income-expense>=0?'#86efac':'#fca5a5'};margin-top:8px;">
+            <span style="font-weight:600;">Net Profit / Loss</span>
+            <strong style="font-size:16px;color:${income-expense>=0?'#16a34a':'#dc2626'};">₹${(income-expense).toLocaleString('en-IN')}</strong>
+        </div>
+    </div>`;
+}
+async function deleteTxn(id){
+    try{await fetch(`/api/erp/transactions/${id}`,{method:'DELETE'});showToast('Entry deleted');loadTransactions();}catch(e){}
+}
+document.getElementById('txn_date').valueAsDate=new Date();
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+lucide.createIcons();
+</script>
+{% endblock %}
