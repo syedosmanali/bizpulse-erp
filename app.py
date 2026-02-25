@@ -432,7 +432,7 @@ def print_startup_info():
     print("=" * 50)
     print("🔗 Main URL: http://localhost:5000")
     print("📱 Mobile: http://localhost:5000/mobile")
-    print("🏪 Retail: http://localhost:5000/retail/dashboard")
+    print("🏪 ERP Dashboard: http://localhost:5000/erp/dashboard")
     print("🏨 Hotel: http://localhost:5000/hotel/dashboard")
     print("=" * 50)
     print("✅ All modules loaded successfully!")

@@ -67,15 +67,15 @@ def user_management_dashboard():
         user_type = session.get('user_type')
         if user_type == 'employee':
             # Silently redirect employees to dashboard instead of showing error
-            return redirect('/retail/dashboard')
+            return redirect('/erp/dashboard')
         
         if user_type != 'client' and not session.get('is_super_admin'):
             # Redirect other user types to dashboard
-            return redirect('/retail/dashboard')
+            return redirect('/erp/dashboard')
         
         return render_template('user_management_dashboard.html')
     except Exception as e:
-        return redirect('/retail/dashboard')
+        return redirect('/erp/dashboard')
 
 # ==================== API ROUTES ====================
 

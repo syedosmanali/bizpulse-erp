@@ -803,7 +803,7 @@ def universal_search():
         
         # 4. Search Modules/Navigation (predefined list)
         modules = [
-            {'name': 'dashboard', 'title': 'Dashboard', 'url': '/retail/dashboard', 'icon': '📊'},
+            {'name': 'dashboard', 'title': 'Dashboard', 'url': '/erp/dashboard', 'icon': '📊'},
             {'name': 'sales', 'title': 'Sales Management', 'url': '/retail/sales', 'icon': '💰'},
             {'name': 'products', 'title': 'Product Management', 'url': '/products', 'icon': '📦'},
             {'name': 'customers', 'title': 'Customer Management', 'url': '/customers', 'icon': '👤'},

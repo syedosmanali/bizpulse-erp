@@ -317,7 +317,7 @@ def login_as_client(client_id):
         return jsonify({
             'success': True,
             'message': f'Now logged in as {client[1]}',
-            'redirect_url': '/retail/dashboard'
+            'redirect_url': '/erp/dashboard'
         })
         
     except Exception as e:

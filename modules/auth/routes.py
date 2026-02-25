@@ -546,7 +546,7 @@ def login_as_client():
             return jsonify({
                 'success': True,
                 'message': 'Logged in as client',
-                'redirect': '/retail/dashboard'
+                'redirect': '/erp/dashboard'
             })
         else:
             return jsonify({'success': False, 'message': 'Client not found'}), 404
